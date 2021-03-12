@@ -96,6 +96,7 @@
 % fcn_loadRawData line 255, and maybe add a flag for this type of error
 
 %% TO_DO LIST
+% *) fix the KF bugs(check page 25 of documents/Route Data Processing Steps_2021_03_04.pptx) for trips_id =7 
 % *) Go through the functions and add headers / comments to each, and if
 % possible, add argument checking (similar to Path class library)
 % 
