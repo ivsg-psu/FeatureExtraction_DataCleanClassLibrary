@@ -31,7 +31,7 @@
 %  2019_11_21 - Continued working on KF signal merging for yaw angle
 %  2019_11_22 - Added time check, as some time vectors are not counting up
 %  2019_11_23 - Fixed plotting to work with new time gaps in NaN from above
-%  time check. 
+%  time check.
 %  2019_11_24 - Fixed bugs in plotting (zUp was missing). Added checks for
 %  NaN values.
 %  2019_11_25 - Fixed bugs in time alignment, where deltaT was wrong.
@@ -46,11 +46,11 @@
 %  2020_02_05 - fix bugs when DGPS ia active all time
 %  2020_05_20 - fixed bug on the yaw angle plots
 %  2020_06_20 - add raw data query functions
-%  2020_08_30 - add database query method 
-%  2020_10_20 - functionalize the database query 
-%  2021_01_07 
+%  2020_08_30 - add database query method
+%  2020_10_20 - functionalize the database query
+%  2021_01_07
 %       -- started new DataClean class funtionality, code works now ONLY
-%       for mapping van data 
+%       for mapping van data
 %  2021_01_08
 %       -- create a function to query data from database or load from file
 %  2021-01-10
@@ -59,7 +59,7 @@
 %  2021-01-10
 %       -- Add geoplot capability to results so that we can see XY plots on the map
 %       automatically (Done by Liming)
-% 
+%
 % Known issues:
 %  (as of 2019_10_04) - Odometry on the rear encoders is quite wonky. For
 %  some reason, need to do absolute value on speeds - unclear why. And the
@@ -86,7 +86,7 @@
 %  (as of 2019_11_26) - Check that the increments in x and y, replotted as
 %  velocities, do not cause violations relative to measured absolute
 %  velocity.
-% 
+%
 %  (as of 2019_11_26) - Need to add zUp increments throughout, so that we
 %  can KF this variable
 %
@@ -96,10 +96,10 @@
 % fcn_loadRawData line 255, and maybe add a flag for this type of error
 
 %% TO_DO LIST
-% *) fix the KF bugs(check page 25 of documents/Route Data Processing Steps_2021_03_04.pptx) for trips_id =7 
+% *) fix the KF bugs(check page 25 of documents/Route Data Processing Steps_2021_03_04.pptx) for trips_id =7
 % *) Go through the functions and add headers / comments to each, and if
 % possible, add argument checking (similar to Path class library)
-% 
+%
 % *) Create a Powerpoint document that shows specific examples and outputs
 % of each function, so that we know what each subfunction is doing
 %
@@ -111,14 +111,14 @@
 % to log the data processing results
 %
 % *) Create a KF function to hold all the KF merge sub-functions
-% *) Add the lidar data process 
+% *) Add the lidar data process
 %% Prep the workspace
 
 % Clear the command window and workspace
 clc
 clear all %#ok<CLALL>
 
-% Make sure we can see the utilities folder 
+% Make sure we can see the utilities folder
 addpath '../Utilities';
 addpath '../data'; % add the data path
 addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
@@ -130,16 +130,16 @@ addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 % in the function below.
 
 flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
-flag.DBinsert = true; %set to true if yoi want to insert cleaned data to cleaned data database 
+flag.DBinsert = true; %set to true if yoi want to insert cleaned data to cleaned data database
 
 try
     fprintf('Starting the code using variable rawData of length: %d\n', length(rawData));
 catch
     
-    if flag.DBquery == true     
-%       database_name = 'mapping_van_raw';
-%       queryCondition = 'trip'; % raw data can be queried by 'trip', 'date', or 'driver'
-        [rawData,trip_name,trip_id_cleaned,base_station] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw','trip'); % more query condition can be set in the function 
+    if flag.DBquery == true
+        %       database_name = 'mapping_van_raw';
+        %       queryCondition = 'trip'; % raw data can be queried by 'trip', 'date', or 'driver'
+        [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw','trip'); % more query condition can be set in the function
         
     else
         % Load the raw data from file
@@ -154,10 +154,10 @@ catch
         base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
         base_station.latitude= 40.8068919389;
         base_station.longitude= -77.8497968306;
-        base_station.altitude= 337.665496826; 
+        base_station.altitude= 337.665496826;
         
-        rawData = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function 
-
+        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+        
     end
 end
 
@@ -208,7 +208,7 @@ mergedDataNoJumps = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawDa
 % convert  ENU to LLA
 [mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,mergedDataNoJumps.MergedGPS.altitude] ...
     = enu2geodetic(mergedDataNoJumps.MergedGPS.xEast,mergedDataNoJumps.MergedGPS.yNorth,mergedDataNoJumps.MergedGPS.zUp,...
-      base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
+    base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
 
 % Calculate the KF fusion of single signals
 mergedByKFData = mergedDataNoJumps;  % Initialize the structure with prior data
@@ -222,8 +222,10 @@ x1dot = mergedByKFData.MergedIMU.ZGyro*180/pi;
 x1dot_Sigma = mergedByKFData.MergedIMU.ZGyro_Sigma*180/pi;
 nameString = 'Yaw_deg';
 [x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
-mergedByKFData.MergedGPS.Yaw_deg = x_kf;
-mergedByKFData.MergedGPS.Yaw_deg_Sigma = sigma_x;
+x_kf_resampled = interp1(t_x1dot,x_kf,t_x1,'linear','extrap');
+sigma_x_resampled = interp1(t_x1dot,sigma_x,t_x1,'linear','extrap');
+mergedByKFData.MergedGPS.Yaw_deg = x_kf_resampled;
+mergedByKFData.MergedGPS.Yaw_deg_Sigma = sigma_x_resampled;
 
 % KF the xEast_increments and xEast together
 t_x1 = mergedByKFData.MergedGPS.GPS_Time;
@@ -249,10 +251,17 @@ nameString = 'yNorth';
 mergedByKFData.MergedGPS.yNorth = x_kf;
 mergedByKFData.MergedGPS.yNorth_Sigma = sigma_x;
 
-% convert  ENU to LLA
+% convert ENU to LLA
 [mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,mergedByKFData.MergedGPS.altitude] ...
     = enu2geodetic(mergedByKFData.MergedGPS.xEast,mergedByKFData.MergedGPS.yNorth,mergedByKFData.MergedGPS.zUp,...
-      base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
+    base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
+
+
+% add Hemisphere_gps_week to mergedByKFData
+if length(Hemisphere_gps_week) >1
+    error('More than one week data was collected in the trip!')
+end
+mergedByKFData.GPS_Hemisphere.GPS_week = Hemisphere_gps_week;
 
 % Probably can delete the following if statement (VERY old)
 if 1==0
@@ -340,17 +349,17 @@ plottingFlags.flag_plot_Garmin = 0;
 
 % Define which sensors to plot individually
 plottingFlags.SensorsToPlotIndividually = [...
-        {'GPS_Hemisphere'}...
-        {'GPS_Novatel'}...
-        {'MergedGPS'}...
+    {'GPS_Hemisphere'}...
+    {'GPS_Novatel'}...
+    {'MergedGPS'}...
     %    {'VelocityProjectedByYaw'}...
     %     {'GPS_Garmin'}...
     %     {'IMU_Novatel'}...
     %     {'IMU_ADIS'}...
     %     {'Input_Steering'}...
     %     {'Encoder_RearWheels'}...
-    %     {'MergedIMU'}...   
-]; 
+    %     {'MergedIMU'}...
+    ];
 
 % Define zoom points for plotting
 % plottingFlags.XYZoomPoint = [-4426.14413504648 -4215.78947791467 1601.69022519862 1709.39208889317]; % This is the corner after Toftrees, where the DGPS lock is nearly always bad
@@ -371,19 +380,19 @@ plottingFlags.TimeZoomPoint = [185 185+30]; % Strange jump in xEast data
 % if isfield(plottingFlags,'TimeZoomPoint')
 %     plottingFlags = rmfield(plottingFlags,'TimeZoomPoint');
 % end
- 
- 
- % These set common y limits on values
+
+
+% These set common y limits on values
 % plottingFlags.ylim.('xEast') = [-4500 500];
 plottingFlags.ylim.('yNorth') = [500 2500];
 
 plottingFlags.ylim.('xEast_increments') = [-1.5 1.5];
-plottingFlags.ylim.('All_AllSensors_xEast_increments') = [-1.5 1.5]; 
+plottingFlags.ylim.('All_AllSensors_xEast_increments') = [-1.5 1.5];
 plottingFlags.ylim.('yNorth_increments') = [-1.5 1.5];
-plottingFlags.ylim.('All_AllSensors_yNorth_increments') = [-1.5 1.5]; 
+plottingFlags.ylim.('All_AllSensors_yNorth_increments') = [-1.5 1.5];
 
-plottingFlags.ylim.('velMagnitude') = [-5 35]; 
-plottingFlags.ylim.('All_AllSensors_velMagnitude') = [-5 35]; 
+plottingFlags.ylim.('velMagnitude') = [-5 35];
+plottingFlags.ylim.('All_AllSensors_velMagnitude') = [-5 35];
 
 
 plottingFlags.PlotDataDots = 0; % If set to 1, then the data is plotted as dots as well as lines. Useful to see data drops.
@@ -404,26 +413,26 @@ fcn_DataClean_plotStructureData(mergedByKFData,plottingFlags);
 % uncommented versions above, to all scroll/zoom in unison.
 %fcn_plotAxesLinkedTogetherByField;
 
-%% geoplot 
+%% geoplot
 figure(123)
 clf
 geoplot(mergedByKFData.GPS_Hemisphere.Latitude,mergedByKFData.GPS_Hemisphere.Longitude,'b', ...
-mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,'r',...
-mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,'g', 'LineWidth',2)
+    mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,'r',...
+    mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,'g', 'LineWidth',2)
 
 % geolimits([45 62],[-149 -123])
 legend('mergedByKFData.GPS\_Hemisphere','mergedByKFData.MergedGPS','mergedDataNoJumps.MergedGPS')
 geobasemap satellite
 %geobasemap street
 %% OLD STUFF
- 
+
 % %% Export results to Google Earth?
 % %fcn_exportXYZ_to_GoogleKML(rawData.GPS_Hemisphere,'rawData_GPS_Hemisphere.kml');
 % %fcn_exportXYZ_to_GoogleKML(mergedData.MergedGPS,'mergedData_MergedGPS.kml');
 % fcn_exportXYZ_to_GoogleKML(mergedDataNoJumps.MergedGPS,[dir.datafiles 'mergedDataNoJumps_MergedGPS.kml']);
-% 
-% 
-% %% Save cleaned data to .mat file 
+%
+%
+% %% Save cleaned data to .mat file
 % % The following is not used
 % newStr = regexprep(trip_name{1},'\s','_'); % replace whitespace with underscore
 % newStr = strrep(newStr,'-','_');
@@ -431,14 +440,20 @@ geobasemap satellite
 % eval([cleaned_fileName,'=mergedByKFData'])
 % save(strcat(dir.datafiles,cleaned_fileName,'.mat'),cleaned_fileName)
 
+%
 % fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
 % I99_Altoona33_to_StateCollege73 = rmfield(mergedByKFData.MergedGPS,fields);
 % save('I99_Altoona33_to_StateCollege73_20210123.mat','I99_Altoona33_to_StateCollege73')
-fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
-I99_StateCollege73_to_Altoona33 = rmfield(mergedByKFData.MergedGPS,fields);
-save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoona33')
-
-
+if trip_id_cleaned == 7
+    fields_rm = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+    I99_StateCollege73_to_Altoona33 = rmfield(mergedByKFData.MergedGPS,fields_rm);
+    save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoona33')
+    
+    fields_rm = {'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+    I99_StateCollege73_to_Altoona33_mergedDataNoJumps = rmfield(mergedDataNoJumps.MergedGPS,fields_rm);
+    I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station = [0; cumsum(sqrt(diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast).^2+diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth).^2))];
+    save('I99_StateCollege73_to_Altoona33_mergedDataNoJumps_20210123.mat','I99_StateCollege73_to_Altoona33_mergedDataNoJumps')
+end
 
 % extract TestTrack data
 % fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
@@ -447,7 +462,7 @@ save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoo
 % TestTrack_table = TestTrack_all_table(6000:9398,:);
 % TestTrack = table2struct(TestTrack_table,'ToScalar',true);
 % save('TestTrack.mat','TestTrack')
-% 
+%
 % figure(1234)
 % clf
 % geoplot(TestTrack.latitude,TestTrack.longitude,'b', ...
@@ -457,11 +472,82 @@ save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoo
 % legend('Merged')
 % geobasemap satellite
 
-
+%%  Yaw Rate and Curvature Comparision
+if 1 ==0
+    [~, ~, ~, ~,R_spiral,UnitNormalV,concavity]=fnc_parallel_curve(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast, I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth, 1, 0,1,100);
+    
+    yaw_rate = [0; diff(mergedDataNoJumps.MergedGPS.Yaw_deg)./diff(mergedDataNoJumps.MergedGPS.GPS_Time)];
+    
+    figure(23)
+    clf
+    hold on
+    % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
+    plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,mergedDataNoJumps.MergedGPS.Yaw_deg,'b','LineWidth',1)
+    plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,yaw_rate,'r','LineWidth',1)
+    
+    grid on
+    box on
+    xlabel('station (m)')
+    ylabel('yaw and yaw rate (deg)')
+    % ylim([0 0.01])
+    
+    
+    figure(24)
+    clf
+    hold on
+    Ux = mergedDataNoJumps.GPS_Hemisphere.velEast.*cosd(mergedDataNoJumps.MergedGPS.Yaw_deg) + ...
+        mergedDataNoJumps.GPS_Hemisphere.velNorth.*sind(mergedDataNoJumps.MergedGPS.Yaw_deg);
+    plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,Ux,'b','LineWidth',1)
+    plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velNorth,'g')
+    plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velEast,'r','LineWidth',1)
+    
+    % plot(mergedDataNoJumps.IMU_Novatel.GPS_Time,mergedDataNoJumps.IMU_Novatel.ZAccel,'b')
+    grid on
+    box on
+    xlabel('time (s)')
+    ylabel('velocity (m/s)')
+    % ylim([0 0.01])
+    
+    curvature_ss  = (yaw_rate*pi/180)./Ux;
+    
+    figure(22)
+    clf
+    % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
+    hold on
+    % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,curvature_ss,'g','LineWidth',1)
+    plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,abs(concavity).*1./R_spiral,'r','LineWidth',1)
+    grid on
+    box on
+    xlabel('Station (m)')
+    ylabel('Curvature')
+    ylim([-0.01 0.04])
+    
+    
+end
 %% ======================= Insert Cleaned Data to 'mapping_van_cleaned' database =========================
+% Input trips information
+
 tripsInfo.id = trip_id_cleaned;
 tripsInfo.vehicle_id = 1;
 tripsInfo.base_stations_id = base_station.id;
 tripsInfo.name = trip_name;
-
-%fcn_DataClean_insertCleanedData(mergedByKFData,tripsInfo);
+if trip_id_cleaned == 7
+    
+    tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
+    tripsInfo.date = {'2021-01-23 15:00:00'};
+    tripsInfo.driver = {'Wushuang Bai'};
+    tripsInfo.passengers = {'Liming Gao'};
+    tripsInfo.notes = {'Mapping from State College(exit 73) to Altoona (exit 33) through I-99. Lost DGPS mode when approaching Altoona. Drving on the right lane.'};
+    
+elseif trip_id_cleaned == 8
+    tripsInfo.description = {'Map I99 from Altoona (exit 33) to State College(exit 73)'};
+    tripsInfo.date = {'2021-01-23 16:00:00'};
+    tripsInfo.driver = {'Wushuang Bai'};
+    tripsInfo.passengers = {'Liming Gao'};
+    tripsInfo.notes = {'Mapping from Altoona (exit 33) to State College(exit 73) through I-99. Nexver lost DGPS mode except for passing below bridge or traffic sign. Drving on the right lane.'};
+    
+else
+    error("Wrong Trip ID");
+end
+% insert cleaned data
+fcn_DataClean_insertCleanedData(mergedByKFData,tripsInfo,flag);
