@@ -118,7 +118,7 @@ if strcmp(queryCondition(1:4),'trip') % query by trip
     options.sensors.NovAtel_imu = queryFlag.sensors.NovAtel_imu;% default is 1
     options.sensors.adis_imu = queryFlag.sensors.adis_imu;% default is 1
     options.sensors.encoder_left_right = queryFlag.sensors.encoder_left_right;% default is 1
-    options.sensors.laser = queryFlag.sensors.laser; % default is 0
+    options.sensors.laser = queryFlag.sensors.laser; % default is 1, laser = Lidar in this code , it take mush longer(50 times) time to query than GPS. 
     options.sensors.front_left_camera = queryFlag.sensors.front_left_camera; % default is 0
     options.sensors.front_center_camera = queryFlag.sensors.front_center_camera; % default is 0
     options.sensors.front_right_camera = queryFlag.sensors.front_right_camera; % default is 0
