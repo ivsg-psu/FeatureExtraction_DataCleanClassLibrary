@@ -1,4 +1,4 @@
-function rawData = fcn_DataClean_loadRawData(flag_do_debug,varargin)
+function [rawData,varargout] = fcn_DataClean_loadRawData(flag_do_debug,varargin)
 
 % Purpose: This function is used to load and preprocess the raw data collected with the Penn State Mapping Van.
 %
@@ -8,11 +8,11 @@ function rawData = fcn_DataClean_loadRawData(flag_do_debug,varargin)
 %      varargin(2) = variable_names for file loading
 % Returned Results:
 %
-% Author: 
+% Author:
 %      Sean Brennan, Liming Gao
 % Created Date: 2019_10_03
 % modify Date: 2019_11_22
-% 
+%
 % Updates:
 %  2019_10_03 - Dr. Brennan revised from Liming Gao's prior version to
 %  comparmentalize this data loading to a structure
@@ -32,7 +32,7 @@ function rawData = fcn_DataClean_loadRawData(flag_do_debug,varargin)
 %  2020_11_10 - renamed function to prep it for DataClean class
 %  2020_11_15 - update so that it can receive varying argument
 %  2020_12_07 - functionalized each sensor data pre-processing
-% 
+%
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if flag_do_debug
@@ -46,74 +46,108 @@ if flag_do_debug
 end
 
 %% step1: determine the input data type
-if isstring(varargin{1}) || ischar(varargin{1}) % input is a file, filename and variable name 
-   fprintf(1,'\n The data source is a file: %s\n',varargin{1});
-   data_source = 'mat_file';
-   filename = varargin{1};
-   variable_names = varargin{2};
-   
-   %%Load the data
-   data{1}.filename = filename;% 'Route_Wahba.mat';
-   data{1}.variable_names ={variable_names}; % {'Route_WahbaLoop'};
-   
-   for i_data = 1:length(data)
-       ith_filename = data{i_data}.filename;
-       ith_variable_name = data{i_data}.variable_names{1}; % Need to do this as a loop if more than one variable
-       if flag_do_debug
-           % Show what we are doing
-           fprintf(1,'Source file: %s is being used to load variable %s\n',ith_filename,ith_variable_name);
-       end
-       data_name = load(ith_filename,ith_variable_name);
-   end
-   data_struct = data_name.(ith_variable_name); %Accessing Data Using Dynamic Field Names
-
+if isstring(varargin{1}) || ischar(varargin{1}) % input is a file, filename and variable name
+    fprintf(1,'\n The data source is a file: %s\n',varargin{1});
+    data_source = 'mat_file';
+    filename = varargin{1};
+    variable_names = varargin{2};
+    
+    %%Load the data
+    data{1}.filename = filename;% 'Route_Wahba.mat';
+    data{1}.variable_names ={variable_names}; % {'Route_WahbaLoop'};
+    
+    for i_data = 1:length(data)
+        ith_filename = data{i_data}.filename;
+        ith_variable_name = data{i_data}.variable_names{1}; % Need to do this as a loop if more than one variable
+        if flag_do_debug
+            % Show what we are doing
+            fprintf(1,'Source file: %s is being used to load variable %s\n',ith_filename,ith_variable_name);
+        end
+        data_name = load(ith_filename,ith_variable_name);
+    end
+    data_struct = data_name.(ith_variable_name); %Accessing Data Using Dynamic Field Names
+    varargout{1} = unique(data_struct.Hemisphere_DGPS.GPSWeek); % gps week of time
 elseif isstruct(varargin{1}) % input is a struct type data queried from DB
-   fprintf(1,'\n The data source is database. \n');
-   data_source = 'database';
-   data_struct = varargin{1};
-   
+    fprintf(1,'\n The data source is database. \n');
+    data_source = 'database';
+    data_struct = varargin{1};
+    
 else
     msg = 'the data source format is wrong!!';
-    error(msg); 
+    error(msg);
 end
 
 %% step2: pre-processing the data sensor by sensor
 %%Process data from the Hemisphere GPS
 
-% call function to load and pre-process the Hemisphere GPS raw data 
-Hemisphere = fcn_DataClean_loadRawData_Hemisphere(data_struct.Hemisphere_DGPS,data_source,flag_do_debug);
-rawData.GPS_Hemisphere = Hemisphere;
+% call function to load and pre-process the Hemisphere GPS raw data
+try
+    Hemisphere = fcn_DataClean_loadRawData_Hemisphere(data_struct.Hemisphere_DGPS,data_source,flag_do_debug);
+    rawData.GPS_Hemisphere = Hemisphere;
+catch
+    
+    fprintf('There is no GPS_Hemisphere data£¡ \n');
+end
+
 
 %%Process data from Novatel GPS
+try
+    GPS_Novatel = fcn_DataClean_loadRawData_Novatel_GPS(data_struct.GPS_Novatel,Hemisphere,data_source,flag_do_debug);
+    rawData.GPS_Novatel = GPS_Novatel;
+catch
+    
+    fprintf('There is no GPS_Novatel data£¡\n');
+end
 
-GPS_Novatel = fcn_DataClean_loadRawData_Novatel_GPS(data_struct.GPS_Novatel,Hemisphere,data_source,flag_do_debug);
-rawData.GPS_Novatel = GPS_Novatel;
 
 %%Process data from the Garmin
+try
+    GPS_Garmin = fcn_DataClean_loadRawData_Garmin_GPS(data_struct.Garmin_GPS,data_source,flag_do_debug);
+    rawData.GPS_Garmin = GPS_Garmin;
+catch
+    
+    fprintf('There is no GPS_Garmin data£¡\n');
+end
 
-GPS_Garmin = fcn_DataClean_loadRawData_Garmin_GPS(data_struct.Garmin_GPS,data_source,flag_do_debug);
-rawData.GPS_Garmin = GPS_Garmin;
 
 %%Process data from the Novatel IMU
+try
+    IMU_Novatel = fcn_DataClean_loadRawData_IMU_Novatel(data_struct.Novatel_IMU,data_source,flag_do_debug);
+    rawData.IMU_Novatel = IMU_Novatel;
+catch
+    
+    fprintf('There is no IMU_Novatel data£¡\n');
+end
 
-IMU_Novatel = fcn_DataClean_loadRawData_IMU_Novatel(data_struct.Novatel_IMU,data_source,flag_do_debug);
-rawData.IMU_Novatel = IMU_Novatel;
 
 %%Process data from the ADIS IMU
+try
+    IMU_ADIS = fcn_DataClean_loadRawData_IMU_ADIS(data_struct.adis_IMU_data,data_source,flag_do_debug);
+    rawData.IMU_ADIS = IMU_ADIS;
+catch
+    
+    fprintf('There is no IMU_ADIS data£¡\n');
+end
 
-IMU_ADIS = fcn_DataClean_loadRawData_IMU_ADIS(data_struct.adis_IMU_data,data_source,flag_do_debug);
-rawData.IMU_ADIS = IMU_ADIS;
 
 %%Process data from the steering sensor - the sensor stinks, so we won't use it
 
-Input_Steering = fcn_DataClean_loadRawData_Input_Steering(data_struct.Steering_angle,data_source,flag_do_debug);
-rawData.Input_Steering = Input_Steering;
-
+try
+    Input_Steering = fcn_DataClean_loadRawData_Input_Steering(data_struct.Steering_angle,data_source,flag_do_debug);
+    rawData.Input_Steering = Input_Steering;
+catch
+    
+    fprintf('There is no steering angle data data£¡\n');
+end
 %%Process data from the wheel encoders
 % Note: left encoder looks disconnected, and counts on both are not working
-
-Encoder_RearWheels = fcn_DataClean_loadRawData_Encoder_RearWheels(data_struct.Raw_encoder,GPS_Novatel, data_source,flag_do_debug);
-rawData.Encoder_RearWheels = Encoder_RearWheels;
+try
+    Encoder_RearWheels = fcn_DataClean_loadRawData_Encoder_RearWheels(data_struct.Raw_encoder,GPS_Novatel, data_source,flag_do_debug);
+    rawData.Encoder_RearWheels = Encoder_RearWheels;
+catch
+    
+    fprintf('There is no Encoder_RearWheels data£¡\n');
+end
 
 
 % %% Process data from the Route_Wahba.mat file
@@ -135,6 +169,7 @@ rawData.Encoder_RearWheels = Encoder_RearWheels;
 %
 % linkaxes([p1,p2],'x')
 
+
 %% step3: Perform consistency checks
 fcn_DataClean_checkConsistency(rawData,flag_do_debug);
 
@@ -148,14 +183,14 @@ return
 
 % ====================================================================================
 % local functions
-%   _                     _   ______                _   _                 
-%  | |                   | | |  ____|              | | (_)                
-%  | |     ___   ___ __ _| | | |__ _   _ _ __   ___| |_ _  ___  _ __  ___ 
+%   _                     _   ______                _   _
+%  | |                   | | |  ____|              | | (_)
+%  | |     ___   ___ __ _| | | |__ _   _ _ __   ___| |_ _  ___  _ __  ___
 %  | |    / _ \ / __/ _` | | |  __| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
 %  | |___| (_) | (_| (_| | | | |  | |_| | | | | (__| |_| | (_) | | | \__ \
 %  |______\___/ \___\__,_|_| |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
-%                                                                         
-% ========================================================================                                                                         
+%
+% ========================================================================
 function fcn_DataClean_checkConsistency(rawData,flag_do_debug)
 
 if flag_do_debug
