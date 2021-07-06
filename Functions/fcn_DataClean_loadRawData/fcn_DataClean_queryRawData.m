@@ -79,6 +79,7 @@ if DBqueryFlag == true
     varargout{1} = trip_name; % output trip name
     varargout{2} = trip_id_cleaned; % trip id will be used at the data database  
     varargout{3} = result.base_station; % used for LLA and ENU conversion
+    varargout{4} = unique(result.Hemisphere_DGPS.gps_week); % gps week of time
 else
     
     % Load the raw data from file
@@ -89,7 +90,11 @@ else
     % load and pre-process the data
     % rawData = fcn_loadRawData(filename,variable_names); % no longer use
     flag_do_debug = 1;
-    rawData = fcn_DataClean_loadRawData(flag_do_debug,filename,variable_names); %
+    [rawData, Hemisphere_GPSWeek]= fcn_DataClean_loadRawData(flag_do_debug,filename,variable_names); %
+    varargout{1} = 'Route_WahbaLoop'; % output trip name
+    varargout{2} = 1; % trip id will be used at the data database  
+    varargout{3} = []; % used for LLA and ENU conversion
+    varargout{4} = Hemisphere_GPSWeek; % gps week of time
     
 end
 
