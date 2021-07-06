@@ -95,6 +95,9 @@
 % values, whcih means hemisphere did not update its time sometimes? check
 % fcn_loadRawData line 255, and maybe add a flag for this type of error
 
+
+% (as of 2021_07_06 centiSeconds of each sensor is wrong, e.g. GPS is 50ms not 5 ms)
+
 %% TO_DO LIST
 % *) fix the KF bugs(check page 25 of documents/Route Data Processing Steps_2021_03_04.pptx) for trips_id =7
 % *) Go through the functions and add headers / comments to each, and if
@@ -112,11 +115,14 @@
 %
 % *) Create a KF function to hold all the KF merge sub-functions
 % *) Add the lidar data process
+% *) Add variance and plot at fcn_DataClean_loadRawData_Lidar ?
+
 %% Prep the workspace
 
 % Clear the command window and workspace
 clc
 clear all %#ok<CLALL>
+close all 
 
 % Make sure we can see the utilities folder
 addpath '../Utilities';
