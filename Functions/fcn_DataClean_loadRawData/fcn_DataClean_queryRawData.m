@@ -59,19 +59,19 @@ if DBqueryFlag == true
     queryFlag.sensors.hemisphere_gps = 1; % default is 1
     queryFlag.sensors.NovAtel_gps = 1; % default is 1
     queryFlag.sensors.garmin_gps = 1; % default is 1
-    queryFlag.sensors.garmin_velocity = 1; % default is 0
+    queryFlag.sensors.garmin_velocity = 0; % default is 0
     queryFlag.sensors.steering_angle =1; % default is 1
     queryFlag.sensors.NovAtel_imu = 1;% default is 1
     queryFlag.sensors.adis_imu = 1;% default is 1
     queryFlag.sensors.encoder_left_right = 1;% default is 1
-    queryFlag.sensors.laser = 0; % default is 0
+    queryFlag.sensors.laser = 1; % default is 1
     queryFlag.sensors.front_left_camera = 0; % default is 0
     queryFlag.sensors.front_center_camera = 0; % default is 0
     queryFlag.sensors.front_right_camera = 0; % default is 0
     
     % run query function
     [result,trip_name,~,trip_id_cleaned] = fcn_DataClean_mappingVanRawDataQuery(database_name,queryCondition,queryFlag);
-    
+       
     % load and pre-process the data
     % rawData = fcn_preProcessQueryResult(result); % no longer use
     flag_do_debug = 1;
