@@ -445,46 +445,41 @@ classdef MapDatabase < handle
                 end
                 
             end
-            
-            
-            %Notes:(continue edit from here )
-            % Laser
+                     
+            % 9. Laser
             if nargin == 2 || (nargin == 3 && isfield(options.sensors,'laser') && options.sensors.laser == 1)
                 
                 if obj.verbose == 1
-                    fprintf('Loading laser data...\n')
+                    fprintf('Loading laser (SICK Lidar) data...\n')
                 end
                 
-                sensor_id = 2;
+                % SICK LMS511-10100 Pro-SR 
+                sensors_id = 2;
                 table = 'laser';
-                fields = {'id', 'time', 'scan_time', 'ranges', 'intensities', 'latitude', 'longitude', 'altitude'};
-                where_laser = {where, cat(2,'sensor_id = ',num2str(sensor_id))};
+                %{'id','bag_files_id','sensors_id','scan_time','ranges','intensities',
+                % 'latitude','longitude','altitude','geography','roll','pitch','yaw',
+                % 'seconds','nanoseconds','time','timestamp','date_added'}
+                fields = {'id', 'time', 'scan_time', 'ranges', 'intensities', 'seconds','nanoseconds','timestamp'};
+                where_laser = {where, cat(2,'sensors_id = ',num2str(sensors_id))};
                 result_laser = fetchSensor(obj, table, fields, where_laser, orderby);
-                result.laser = result_laser;
+                result.Lidar = result_laser;
                 
-                result_pose = fetchSensorPose(obj, sensor_pose_trip_id, sensor_id);
-                result.laser.pose = result_pose;
+%                 result_pose = fetchSensorPose(obj, sensor_pose_trip_id, sensors_id);
+%                 result.laser.pose = result_pose;
                 
                 table = 'laser_parameters';
                 fields = {'id', 'angle_min', 'angle_max', 'angle_increment', 'time_increment', 'range_min', 'range_max'};
-                where_laser = {cat(2,'sensor_id = ', num2str(sensor_id)), cat(2,'trip_id = ', num2str(trip_id))};
-                result_laser_parameters = fetchSensor(obj, table, fields, where_laser, '');
-                result.laser.parameters = result_laser_parameters;
+                where_laser_para = {cat(2,'sensors_id = ', num2str(sensors_id))};
+                result_laser_parameters = fetchSensor(obj, table, fields, where_laser_para, '');
+                result.Lidar.parameters = result_laser_parameters;
                 
-                if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
-                    
-                    ENU = g.WGSLLA2ENU(result.laser.latitude, result.laser.longitude, result.laser.altitude);
-                    station = obj.calculateStation(ENU');
-                    
-                    result.laser.station = station;
-                    result.laser.X = ENU(1,:)';
-                    result.laser.Y = ENU(2,:)';
-                    result.laser.Z = ENU(3,:)';
-                    
+                if obj.verbose == 1
+                    fprintf(1,'Load laser (SICK Lidar) data Done! \n\n')
                 end
                 
             end
             
+            %Notes:(continue edit from here )
             %%% Camera %%%
             
             % Rear left camera
