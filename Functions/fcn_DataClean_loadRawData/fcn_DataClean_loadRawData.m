@@ -144,11 +144,19 @@ end
 try
     Encoder_RearWheels = fcn_DataClean_loadRawData_Encoder_RearWheels(data_struct.Raw_encoder,GPS_Novatel, data_source,flag_do_debug);
     rawData.Encoder_RearWheels = Encoder_RearWheels;
+catch ME
+    fprintf('There is no Encoder_RearWheels data£¡\n');
+    rethrow(ME)
+
+end
+
+try
+    Lidar = fcn_DataClean_loadRawData_Lidar(data_struct.Lidar,data_source,flag_do_debug);
+    rawData.Lidar = Lidar;
 catch
     
     fprintf('There is no Encoder_RearWheels data£¡\n');
 end
-
 
 % %% Process data from the Route_Wahba.mat file
 % steeringAngleTime = data_struct.Steering_angle.Time - ...
