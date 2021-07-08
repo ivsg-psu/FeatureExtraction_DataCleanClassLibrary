@@ -62,6 +62,7 @@ elseif strcmp(data_source,'database')
     GPS_Novatel.ROS_Time       = d.time;
     GPS_Novatel.GPS_Time       = d.gps_seconds;
     GPS_Novatel.centiSeconds   = 5; % This is sampled every 5 ms
+    GPS_Novatel.GPS_week       = d.gps_week;
     
     GPS_Novatel.Npoints        = length(GPS_Novatel.ROS_Time(:,1));
     GPS_Novatel.EmptyVector    = fcn_DataClean_fillEmptyStructureVector(GPS_Novatel); % Fill in empty vector (this is useful later)
