@@ -57,6 +57,7 @@ if strcmp(data_source,'mat_file')
 elseif strcmp(data_source,'database')
     Hemisphere.ROS_Time         = d.time;
     Hemisphere.GPS_Time         = d.gps_seconds;
+    Hemisphere.GPS_week         = d.gps_week;
     Hemisphere.centiSeconds     = 5; % This is sampled every 5 ms
     
     Hemisphere.Npoints          = length(Hemisphere.ROS_Time(:,1));
