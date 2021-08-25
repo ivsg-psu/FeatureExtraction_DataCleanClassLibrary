@@ -419,6 +419,10 @@ fcn_DataClean_plotStructureData(mergedByKFData,plottingFlags);
 % uncommented versions above, to all scroll/zoom in unison.
 %fcn_plotAxesLinkedTogetherByField;
 
+% Step 9: Lidar data process
+mergedByKFData.Lidar = rawData.Lidar;
+
+
 %% geoplot
 figure(123)
 clf
@@ -537,7 +541,15 @@ tripsInfo.id = trip_id_cleaned;
 tripsInfo.vehicle_id = 1;
 tripsInfo.base_stations_id = base_station.id;
 tripsInfo.name = trip_name;
-if trip_id_cleaned == 7
+if trip_id_cleaned == 2
+    
+    tripsInfo.description = {'Test Track MappingVan night middle speed'};
+    tripsInfo.date = {'2019-10-18 20:39:30'};
+    tripsInfo.driver = {'Liming Gao'};
+    tripsInfo.passengers = {'N/A'};
+    tripsInfo.notes = {'without traffic light, at night. DGPS mode was activated. middle speed. 7 traversals'};
+    
+elseif trip_id_cleaned == 7
     
     tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
     tripsInfo.date = {'2021-01-23 15:00:00'};
