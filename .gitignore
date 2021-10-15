@@ -2,6 +2,12 @@
 # Windows default autosave extension
 *.asv
 
+# Data folder (has HUGE files)
+Data/
+
+# Class libraries that support this one
+PathClassLibrary/
+
 # OSX / *nix default autosave extension
 *.m~
 
