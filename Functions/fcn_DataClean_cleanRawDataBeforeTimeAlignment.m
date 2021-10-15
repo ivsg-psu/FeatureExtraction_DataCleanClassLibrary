@@ -29,7 +29,7 @@ cleanData.GPS_Garmin         = fcn_DataClean_cleanGPSData(rawDataWithSigmasAndMe
 cleanData.IMU_Novatel        = fcn_DataClean_cleanIMUData(rawDataWithSigmasAndMedianFiltered.IMU_Novatel);
 cleanData.IMU_ADIS           = fcn_DataClean_cleanIMUData(rawDataWithSigmasAndMedianFiltered.IMU_ADIS);
 cleanData.Encoder_RearWheels = fcn_DataClean_cleanEncoderData(rawDataWithSigmasAndMedianFiltered.Encoder_RearWheels);
-
+cleanData.Lidar              = fcn_DataClean_cleanLidarData(rawDataWithSigmasAndMedianFiltered.Lidar);
 
 
 %% Tell user we are leaving

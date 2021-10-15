@@ -123,7 +123,7 @@
 
 % Clear the command window and workspace
 clc
-clear all %#ok<CLALL>
+% clear all %#ok<CLALL>
 close all 
 
 % Make sure we can see the utilities folder
@@ -137,35 +137,42 @@ addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 % raw data. It can be loaded either from a database or a file - details are
 % in the function below.
 
-flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
-flag.DBinsert = true; %set to true if yoi want to insert cleaned data to cleaned data database
+%flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
+%flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
+
+flag.DBquery = false; %set to true if you want to query raw data from database insteading of loading from default *.mat file
+flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
+flag.LoadToWorkspace = true; % set to true if you want to load variables directly to workspace
 
 try
     fprintf('Starting the code using variable rawData of length: %d\n', length(rawData));
 catch
-    
-    if flag.DBquery == true
-        %       database_name = 'mapping_van_raw';
-        %       queryCondition = 'trip'; % raw data can be queried by 'trip', 'date', or 'driver'
-        [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw','trip'); % more query condition can be set in the function
-        
+    if flag.LoadToWorkspace == true
+        load('TestTrack_rawData.mat');  % Loads TestTrack data and creates 'rawData' variable directly
     else
-        % Load the raw data from file
-        % test one
-        %filename  = 'MappingVan_DecisionMaking_03132020.mat';
-        %variable_names = 'MappingVan_DecisionMaking_03132020';
-        %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
-        
-        % test two
-        filename  = 'Route_Wahba.mat';
-        variable_names = 'Route_WahbaLoop';
-        base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
-        base_station.latitude= 40.8068919389;
-        base_station.longitude= -77.8497968306;
-        base_station.altitude= 337.665496826;
-        
-        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
-        
+        if flag.DBquery == true
+            %       database_name = 'mapping_van_raw';
+            %       queryCondition = 'trip'; % raw data can be queried by 'trip', 'date', or 'driver'
+            [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw','trip'); % more query condition can be set in the function
+            
+        else
+            
+            % Load the raw data from file
+            % test one
+            %filename  = 'MappingVan_DecisionMaking_03132020.mat';
+            %variable_names = 'MappingVan_DecisionMaking_03132020';
+            %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
+            
+            % test two
+            filename  = 'Route_Wahba.mat';
+            variable_names = 'Route_WahbaLoop';
+            base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
+            base_station.latitude= 40.8068919389;
+            base_station.longitude= -77.8497968306;
+            base_station.altitude= 337.665496826;
+            
+            [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+        end
     end
 end
 
@@ -213,6 +220,7 @@ mergedData = fcn_DataClean_mergeTimeAlignedData(timeFilteredData);
 
 % Remove jumps from merged data caused by DGPS outages
 mergedDataNoJumps = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData);
+
 % convert  ENU to LLA
 [mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,mergedDataNoJumps.MergedGPS.altitude] ...
     = enu2geodetic(mergedDataNoJumps.MergedGPS.xEast,mergedDataNoJumps.MergedGPS.yNorth,mergedDataNoJumps.MergedGPS.zUp,...
@@ -258,6 +266,10 @@ nameString = 'yNorth';
 [x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
 mergedByKFData.MergedGPS.yNorth = x_kf;
 mergedByKFData.MergedGPS.yNorth_Sigma = sigma_x;
+
+
+%% Add interpolation to Lidar data to create field in Lidar that has GPS position in ENU
+
 
 % convert ENU to LLA
 [mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,mergedByKFData.MergedGPS.altitude] ...

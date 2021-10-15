@@ -125,7 +125,7 @@ for i_data = 1:length(names)
                 if flag_do_debug
                     fprintf(1,'\tProcessing subfield: %s \n',subFieldName);
                     fprintf(1,'\t\tDuration in seconds: %f \n ',t_interval);
-                    fprintf(1,'\t\tSampled every %d ms\n ',centiSeconds);
+                    fprintf(1,'\t\tSampled every %d ms\n ',centiSeconds*10);
                     fprintf(1,'\t\tNum samples: %d\n',length(t(:,1)));
                     fprintf(1,'\t\tNum expected: %d',num_expected);
                     if 1==flag_length_error_detected
@@ -193,11 +193,16 @@ for i_data = 1:length(names)
                                     diff_tvec = diff(tvec);
                                     if 1==0 % For severe debugging
                                         fprintf(1,'\t\tBad interval detected from %d to %d\n',i_bad_start,i_bad_end);
-                                        fprintf(1,'\t\t\tSample: ');
-                                        fprintf(1,'%f\t',tvec);
-                                        fprintf(1,'\n');
-                                        fprintf(1,'\t\t\tDiff: ');
-                                        fprintf(1,'%f\t',diff_tvec);
+                                        NtoPrint = min(length(tvec),5);
+                                        fprintf(1,'\t\tHere are the first %d examples:\n',NtoPrint);
+                                        fprintf(1,'\t\t\tSample time: \t\t Offset Time: \t\t Difference:\n');
+                                        for ith_print = 1:NtoPrint
+                                            if ith_print == 1
+                                                fprintf(1,'\t\t\t%f\t\t 0 \n',tvec(ith_print));
+                                            else
+                                                fprintf(1,'\t\t\t%f\t\t %f \t\t %f \n',tvec(ith_print), tvec(ith_print)-tvec(1), diff_tvec(ith_print-1));
+                                            end
+                                        end
                                         fprintf(1,'\n\n');
                                     end
                                 end
@@ -249,20 +254,33 @@ for i_data = 1:length(names)
                                     % Grab the data vector
                                     data = d.(subFieldName2);
                                     
-                                    % some data has matrix structure, for
-                                    % example, Lidar data, so we need to
-                                    % check to see if we are deal column
-                                    % data or matrix data.
-                                    if length(data)
-                                
                                     % If the data is same length of time, set
                                     % values to NaN, then fix
                                     if length(data(:,1))==length(t)
-                                        data(bad_indices,1) = nan;
+                                        try
+                                            data(bad_indices,:) = nan;
+                                        catch
+                                            disp('Debug here');
+                                        end
                                     end
-
-                                    data = fillmissing(data,'linear');                                
-
+                                        
+                                    % Some data has matrix structure, for
+                                    % example, Lidar data. So we need to
+                                    % check to see if we are dealing with
+                                    % column data or matrix data.
+                                    if length(data(1,:))>1 % We are dealing with a matrix
+                                        switch subFieldName2                                            
+                                            case 'ranges' % LIDAR ranges
+                                                data = fillmissing(data,'linear',1); % 
+                                            case 'intensities' % LIDAR intensities - these are quantized so we don't want to interpolate
+                                                data = fillmissing(data,'nearest',1); %
+                                            otherwise
+                                                error('Unknown field detected: %s \n',subFieldName2)                                        
+                                        end
+                                    else % We are dealing with normal column data                                        
+                                        data = fillmissing(data,'linear');
+                                    end
+                                    
                                     % Push corrected data into the dout data
                                     % structure
                                     dout.(subFieldName2) = data;
