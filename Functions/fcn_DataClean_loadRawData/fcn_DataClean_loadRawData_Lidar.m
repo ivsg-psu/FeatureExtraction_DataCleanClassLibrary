@@ -31,7 +31,7 @@ elseif strcmp(data_source,'database')
     Lidar.nsecs         = d.nanoseconds;
     Lidar.datetime         = d.timestamp;
     
-    Lidar.centiSeconds     = 0.04; % This is sampled every 0.04s, 25Hz
+    Lidar.centiSeconds     = 4 ; % This is sampled every 0.04s, 25Hz
     
     Lidar.Npoints          = length(Lidar.ROS_Time(:,1));
     Lidar.EmptyVector      = fcn_DataClean_fillEmptyStructureVector(Lidar); % Fill in empty vector (this is useful later)
