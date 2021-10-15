@@ -29,7 +29,7 @@ elseif strcmp(data_source,'database')
     Lidar.scan_time         = d.scan_time;
     Lidar.secs        = d.seconds;
     Lidar.nsecs         = d.nanoseconds;
-    Lidar.datetime         = d.timestamp;
+    %Lidar.datetime         = d.timestamp;
     
     Lidar.centiSeconds     = 4 ; % This is sampled every 0.04s, 25Hz
     

@@ -459,7 +459,8 @@ classdef MapDatabase < handle
                 %{'id','bag_files_id','sensors_id','scan_time','ranges','intensities',
                 % 'latitude','longitude','altitude','geography','roll','pitch','yaw',
                 % 'seconds','nanoseconds','time','timestamp','date_added'}
-                fields = {'id', 'time', 'scan_time', 'ranges', 'intensities', 'seconds','nanoseconds','timestamp'};
+                %fields = {'id', 'time', 'scan_time', 'ranges', 'intensities', 'seconds','nanoseconds','timestamp'};
+                fields = {'id', 'time', 'scan_time', 'ranges', 'intensities', 'seconds','nanoseconds'};
                 where_laser = {where, cat(2,'sensors_id = ',num2str(sensors_id))};
                 result_laser = fetchSensor(obj, table, fields, where_laser, orderby);
                 result.Lidar = result_laser;
