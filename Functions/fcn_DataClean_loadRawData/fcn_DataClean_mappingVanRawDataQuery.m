@@ -125,6 +125,13 @@ if strcmp(queryCondition(1:4),'trip') % query by trip
     
     options.ENU_ref = queryFlag.ENU_ref; % 0 use default setting in database, 1 test track, 2 LTI, Larson  Transportation Institute
     
+    % NOTE: we need to first check the total size of data we are trying to
+    % query. If it is large, we may have to break the query into smaller
+    % parts, query each part, and then assemble the results back into the
+    % original query.
+    
+    
+    
     % fetchByTripID
     result = MDB.fetchByTripID(trip_id,options);
     
