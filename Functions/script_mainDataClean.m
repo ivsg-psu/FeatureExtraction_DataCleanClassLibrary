@@ -140,23 +140,22 @@ addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 %flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 %flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
 
-flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
+flag.DBquery = false; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
-flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
+% flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
+flag.SaveQueriedData = true; 
 
 try
     fprintf('Starting the code using variable rawData of length: %d\n', length(rawData));
 catch
-    if flag.LoadToWorkspace == true
-        load('TestTrack_rawData.mat');  % Loads TestTrack data and creates 'rawData' variable directly
-    else
+
         if flag.DBquery == true
             %       database_name = 'mapping_van_raw';
             queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
             [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
-            
-            save('../data/rawData.mat','rawData','trip_name','trip_id_cleaned','base_station','Hemisphere_gps_week');
-            
+            if flag.SaveQueriedData && (trip_id_cleaned==2)
+                save('../data/TestTrack_rawData_2019_10_18.mat','rawData','trip_name','trip_id_cleaned','base_station','Hemisphere_gps_week');
+            end
             
         else
             
@@ -167,16 +166,19 @@ catch
             %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
             
             % test two
-            filename  = 'Route_Wahba.mat';
-            variable_names = 'Route_WahbaLoop';
-            base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
-            base_station.latitude= 40.8068919389;
-            base_station.longitude= -77.8497968306;
-            base_station.altitude= 337.665496826;
+            % filename  = 'Route_Wahba.mat';
+            % variable_names = 'Route_WahbaLoop';
+            % base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
+            % base_station.latitude= 40.8068919389;
+            % base_station.longitude= -77.8497968306;
+            % base_station.altitude= 337.665496826;
+            %
+            % [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
             
-            [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+            % test three
+            load('TestTrack_rawData_2019_10_18.mat');  % Loads TestTrack data and creates 'rawData' variable directly
+
         end
-    end
 end
 
 %% ======================= Raw Data Clean and Merge =========================
@@ -221,15 +223,11 @@ timeFilteredData = fcn_DataClean_timeFilterData(cleanAndTimeAlignedData);
 % averaging across same state
 mergedData = fcn_DataClean_mergeTimeAlignedData(timeFilteredData);
 
-% Remove jumps from merged data caused by DGPS outages
-mergedDataNoJumps = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData);
+% Step 8: Remove jumps from merged data caused by DGPS outages
+mergedDataNoJumps = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData,base_station);
 
-% convert  ENU to LLA (for geoplot)
-[mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,mergedDataNoJumps.MergedGPS.altitude] ...
-    = enu2geodetic(mergedDataNoJumps.MergedGPS.xEast,mergedDataNoJumps.MergedGPS.yNorth,mergedDataNoJumps.MergedGPS.zUp,...
-    base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
 
-% Calculate the KF fusion of single signals
+% Step 9: Calculate the KF fusion of single signals
 mergedByKFData = mergedDataNoJumps;  % Initialize the structure with prior data
 
 % KF the yawrate and yaw together
@@ -270,37 +268,26 @@ nameString = 'yNorth';
 mergedByKFData.MergedGPS.yNorth = x_kf;
 mergedByKFData.MergedGPS.yNorth_Sigma = sigma_x;
 
-
-%% Step 8: Add interpolation to Lidar data to create field in Lidar that has GPS position in ENU
-
-% Use linear interpolation
-% vq = interp1(x,v,xq,method)
-try
-    mergedByKFData.Lidar.xEast = interp1(mergedByKFData.MergedGPS.GPS_Time, mergedByKFData.MergedGPS.xEast,...
-        mergedByKFData.Lidar.GPS_Time,'linear','extrap');
-    mergedByKFData.Lidar.yNorth = interp1(mergedByKFData.MergedGPS.GPS_Time, mergedByKFData.MergedGPS.yNorth,...
-        mergedByKFData.Lidar.GPS_Time,'linear','extrap');
-    mergedByKFData.Lidar.zUp = interp1(mergedByKFData.MergedGPS.GPS_Time, mergedByKFData.MergedGPS.zUp,...
-        mergedByKFData.Lidar.GPS_Time,'linear','extrap');
-catch
-    disp('Debug here');
-    pause;
-end
-
-
-% convert ENU to LLA
+% convert ENU to LLA (used for geoplot)
 [mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,mergedByKFData.MergedGPS.altitude] ...
     = enu2geodetic(mergedByKFData.MergedGPS.xEast,mergedByKFData.MergedGPS.yNorth,mergedByKFData.MergedGPS.zUp,...
     base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
-[mergedByKFData.Lidar.latitude,mergedByKFData.Lidar.longitude,mergedByKFData.Lidar.altitude] ...
-    = enu2geodetic(mergedByKFData.Lidar.xEast,mergedByKFData.Lidar.yNorth,mergedByKFData.Lidar.zUp,...
-    base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
 
-%% add Hemisphere_gps_week to mergedByKFData
+%% Step 10: Add interpolation to Lidar data to create field in Lidar that has GPS position in ENU
+
+[mergedDataNoJumps,mergedByKFData] = fcn_DataClean_AddLocationToLidar(mergedDataNoJumps,mergedByKFData,base_station);
+% Note: mergedDataNoJumps may have better GPS location data than
+% mergedByKFData if the Kalman filter fusion does not work well, for
+% example, the data at test track with trip_id =2.
+
+% add Hemisphere_gps_week to mergedDataNoJumps and mergedByKFData
 if length(Hemisphere_gps_week) >1
     error('More than one week data was collected in the trip!')
 end
-mergedByKFData.GPS_Hemisphere.GPS_week = Hemisphere_gps_week;
+mergedDataNoJumps.MergedGPS.GPS_week = Hemisphere_gps_week;
+mergedDataNoJumps.Lidar.GPS_week = Hemisphere_gps_week;
+mergedByKFData.MergedGPS.GPS_week = Hemisphere_gps_week;
+mergedByKFData.Lidar.GPS_week = Hemisphere_gps_week;
 
 % Probably can delete the following if statement (VERY old)
 if 1==0
@@ -581,7 +568,7 @@ if trip_id_cleaned == 2
     tripsInfo.driver = {'Liming Gao'};
     tripsInfo.passengers = {'N/A'};
     tripsInfo.notes = {'without traffic light, at night. DGPS mode was activated. middle speed. 7 traversals'};
-    
+    cleanedData  = mergedDataNoJumps;
 elseif trip_id_cleaned == 7
     
     tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
@@ -589,16 +576,16 @@ elseif trip_id_cleaned == 7
     tripsInfo.driver = {'Wushuang Bai'};
     tripsInfo.passengers = {'Liming Gao'};
     tripsInfo.notes = {'Mapping from State College(exit 73) to Altoona (exit 33) through I-99. Lost DGPS mode when approaching Altoona. Drving on the right lane.'};
-    
+    cleanedData  = mergedByKFData;
 elseif trip_id_cleaned == 8
     tripsInfo.description = {'Map I99 from Altoona (exit 33) to State College(exit 73)'};
     tripsInfo.date = {'2021-01-23 16:00:00'};
     tripsInfo.driver = {'Wushuang Bai'};
     tripsInfo.passengers = {'Liming Gao'};
     tripsInfo.notes = {'Mapping from Altoona (exit 33) to State College(exit 73) through I-99. Nexver lost DGPS mode except for passing below bridge or traffic sign. Drving on the right lane.'};
-    
+    cleanedData  = mergedByKFData;
 else
     error("Wrong Trip ID");
 end
 % insert cleaned data
-fcn_DataClean_insertCleanedData(mergedByKFData,tripsInfo,flag);
+fcn_DataClean_insertCleanedData(cleanedData,tripsInfo,flag);
