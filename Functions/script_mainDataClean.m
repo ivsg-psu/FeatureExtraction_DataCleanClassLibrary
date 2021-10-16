@@ -140,9 +140,9 @@ addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 %flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 %flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
 
-flag.DBquery = false; %set to true if you want to query raw data from database insteading of loading from default *.mat file
+flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
-flag.LoadToWorkspace = true; % set to true if you want to load variables directly to workspace
+flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
 
 try
     fprintf('Starting the code using variable rawData of length: %d\n', length(rawData));
@@ -152,8 +152,11 @@ catch
     else
         if flag.DBquery == true
             %       database_name = 'mapping_van_raw';
-            %       queryCondition = 'trip'; % raw data can be queried by 'trip', 'date', or 'driver'
-            [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw','trip'); % more query condition can be set in the function
+            queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
+            [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
+            
+            save('../data/rawData.mat','rawData','trip_name','trip_id_cleaned','base_station','Hemisphere_gps_week');
+            
             
         else
             
@@ -221,7 +224,7 @@ mergedData = fcn_DataClean_mergeTimeAlignedData(timeFilteredData);
 % Remove jumps from merged data caused by DGPS outages
 mergedDataNoJumps = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData);
 
-% convert  ENU to LLA
+% convert  ENU to LLA (for geoplot)
 [mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,mergedDataNoJumps.MergedGPS.altitude] ...
     = enu2geodetic(mergedDataNoJumps.MergedGPS.xEast,mergedDataNoJumps.MergedGPS.yNorth,mergedDataNoJumps.MergedGPS.zUp,...
     base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
@@ -268,16 +271,32 @@ mergedByKFData.MergedGPS.yNorth = x_kf;
 mergedByKFData.MergedGPS.yNorth_Sigma = sigma_x;
 
 
-%% Add interpolation to Lidar data to create field in Lidar that has GPS position in ENU
+%% Step 8: Add interpolation to Lidar data to create field in Lidar that has GPS position in ENU
+
+% Use linear interpolation
+% vq = interp1(x,v,xq,method)
+try
+    mergedByKFData.Lidar.xEast = interp1(mergedByKFData.MergedGPS.GPS_Time, mergedByKFData.MergedGPS.xEast,...
+        mergedByKFData.Lidar.GPS_Time,'linear','extrap');
+    mergedByKFData.Lidar.yNorth = interp1(mergedByKFData.MergedGPS.GPS_Time, mergedByKFData.MergedGPS.yNorth,...
+        mergedByKFData.Lidar.GPS_Time,'linear','extrap');
+    mergedByKFData.Lidar.zUp = interp1(mergedByKFData.MergedGPS.GPS_Time, mergedByKFData.MergedGPS.zUp,...
+        mergedByKFData.Lidar.GPS_Time,'linear','extrap');
+catch
+    disp('Debug here');
+    pause;
+end
 
 
 % convert ENU to LLA
 [mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,mergedByKFData.MergedGPS.altitude] ...
     = enu2geodetic(mergedByKFData.MergedGPS.xEast,mergedByKFData.MergedGPS.yNorth,mergedByKFData.MergedGPS.zUp,...
     base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
+[mergedByKFData.Lidar.latitude,mergedByKFData.Lidar.longitude,mergedByKFData.Lidar.altitude] ...
+    = enu2geodetic(mergedByKFData.Lidar.xEast,mergedByKFData.Lidar.yNorth,mergedByKFData.Lidar.zUp,...
+    base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
 
-
-% add Hemisphere_gps_week to mergedByKFData
+%% add Hemisphere_gps_week to mergedByKFData
 if length(Hemisphere_gps_week) >1
     error('More than one week data was collected in the trip!')
 end
