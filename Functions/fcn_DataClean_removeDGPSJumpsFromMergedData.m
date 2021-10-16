@@ -1,4 +1,4 @@
-function mergedData = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData)
+function mergedData = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData,base_station)
 
 % Revision history:
 % 2019_12_01 - first write of the function by sbrennan@psu.edu
@@ -61,6 +61,14 @@ if ~isempty(pairings)
         mergedData.MergedGPS.yNorth(indices_of_interest) = yNorth_clean;    
     end
 end 
+
+% convert  ENU to LLA (for geoplot)
+[mergedData.MergedGPS.latitude,mergedData.MergedGPS.longitude,mergedData.MergedGPS.altitude] ...
+    = enu2geodetic(mergedData.MergedGPS.xEast,mergedData.MergedGPS.yNorth,mergedData.MergedGPS.zUp,...
+    base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
+
+
+
 if flag_do_debug
     % Show what we are doing
     fprintf(1,'Exiting function: %s\n',namestr);
