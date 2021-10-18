@@ -522,7 +522,7 @@ for i_data = 1:length(names)
             else
                 % This is a vector of data - need to resize
                 timeInUnevenGPSTime = target_GPS_time(good_target_time_indices_intersect);
-                dataInUnevenGPSTime = dataInSubfield(good_search_time_indices_intersect);
+                dataInUnevenGPSTime = dataInSubfield(good_search_time_indices_intersect,:);
                 
                 % Resample the data - put zero in if extrapolating
                 if any(strcmp(subFieldName,fields_to_interpolate_to_nearest_neighbor))
@@ -558,14 +558,37 @@ for i_data = 1:length(names)
                         end
                         
                         % Do the interpolation
-                        try
+                        if size(dataInUnevenGPSTime,2) > 1 % if the data is more than one column
+                            
+                            switch subFieldName
+                                case 'ranges' % LIDAR ranges
+                                   dataInGPSTime = NaN(length(target_GPS_time),size(dataInUnevenGPSTime,2));
+                                    for i = 1:size(dataInUnevenGPSTime,2)
+                                        dataInGPSTime(:,i) = interp1(...
+                                            timeInUnevenGPSTime,...
+                                            dataInUnevenGPSTime(:,i),target_GPS_time,'linear','extrap');
+                                    end
+                                case 'intensities' % LIDAR intensities - these are quantized so we don't want to interpolate
+                                    % %  data = fillmissing(data,'nearest',1); %
+                                    
+                                    for i = 1:size(dataInUnevenGPSTime,2)
+                                        dataInGPSTime(:,i) = interp1(...
+                                            timeInUnevenGPSTime,...
+                                            dataInUnevenGPSTime(:,i),target_GPS_time,'nearest','extrap');
+                                    end
+                                otherwise
+                                    error('Unknown field detected: %s \n',subFieldName2)
+                                    disp('Debug here'); %#ok<UNRCH>
+                                    pause;
+                            end
+                            
+                        else
+                            
                             dataInGPSTime = interp1(...
                                 timeInUnevenGPSTime,...
                                 dataInUnevenGPSTime,target_GPS_time,'linear','extrap');
-                        catch
-                            disp('Debug here');
-                            pause;
                         end
+                        
                     else
                         error('Data is nothing but NaN - unable to interpolate.');
                     end
