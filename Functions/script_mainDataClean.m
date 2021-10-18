@@ -118,7 +118,19 @@
 % *) Create a KF function to hold all the KF merge sub-functions
 % *) Add the lidar data process
 % *) Add variance and plot at fcn_DataClean_loadRawData_Lidar ?
+% *) Query the data size before query the data. If the data size is too
+%    large, split the query into several actions. https://www.postgresqltutorial.com/postgresql-database-indexes-table-size/
+%                 
+%             %select table_name, pg_size_pretty( pg_total_relation_size(quote_ident(table_name)) )
+%             sqlquery_tablesize = [' select table_name, pg_size_pretty( pg_relation_size(quote_ident(table_name)) )' ...
+%                                   ' from information_schema.tables '...
+%                                   ' where table_schema = ''public'' '...
+%                                   ' order by 2 desc;'];
+%             %exec(DB.db_connection,sqlquery_tablesize)
+%             sss= fetch(DB.db_connection,sqlquery_tablesize,'DataReturnFormat','table');
+%             
 
+%
 %% Prep the workspace
 
 % Clear the command window and workspace
