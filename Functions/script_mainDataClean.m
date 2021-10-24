@@ -153,7 +153,7 @@ addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 %flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
 
 flag.DBquery = false; %set to true if you want to query raw data from database insteading of loading from default *.mat file
-flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
+flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
 % flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
 flag.SaveQueriedData = true; 
 
@@ -601,3 +601,4 @@ else
 end
 % insert cleaned data
 fcn_DataClean_insertCleanedData(cleanedData,rawData,tripsInfo,flag);
+% save('cleanedData.mat','cleanedData')
