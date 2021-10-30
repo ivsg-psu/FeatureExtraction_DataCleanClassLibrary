@@ -595,7 +595,7 @@ if trip_id_cleaned == 2
     start_point.start_yaw_angle = 37.38; %deg
     start_point.expectedRouteLength = 1555.5; % meters
     start_point.direction = 'CCW'; %
-    
+    cleanedData.start_point = start_point;
 elseif trip_id_cleaned == 7
     
     tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
