@@ -581,6 +581,21 @@ if trip_id_cleaned == 2
     tripsInfo.passengers = {'N/A'};
     tripsInfo.notes = {'without traffic light, at night. DGPS mode was activated. middle speed. 7 traversals'};
     cleanedData  = mergedDataNoJumps;
+    
+    start_point.start_longitude=-77.833842140800000;  %deg
+    start_point.start_latitude =40.862636161300000;   %deg
+    start_point.start_xEast=1345.204537286125; % meters
+    start_point.start_yNorth=6190.884280063217; % meters
+    
+    start_point.end_longitude=-77.833842140800000;  %deg
+    start_point.end_latitude =40.862636161300000;   %deg
+    start_point.end_xEast=1345.204537286125; % meters
+    start_point.end_yNorth=6190.884280063217; % meters
+    
+    start_point.start_yaw_angle = 37.38; %deg
+    start_point.expectedRouteLength = 1555.5; % meters
+    start_point.direction = 'CCW'; %
+    
 elseif trip_id_cleaned == 7
     
     tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
