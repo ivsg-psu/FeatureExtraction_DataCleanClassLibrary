@@ -277,7 +277,7 @@ lidar.intensities = num2cell(rawData.Lidar.intensities,2);
 lidar_table = struct2table(lidar);
 % insert data into road_segment_reference
 if flag.DBinsert
-    insert_rows = 50000;
+    insert_rows = 1000;
     Split = ceil(height(lidar_table)/insert_rows); % insert 100,000 rows each loop,40seconds
     tic
     for i= 1:Split
@@ -368,7 +368,7 @@ lidar_cleaned.intensities = num2cell(cleanedData.Lidar.intensities,2);
 lidar_cleaned_table = struct2table(lidar_cleaned);
 % insert data into road_segment_reference
 if flag.DBinsert
-    insert_rows = 5000;
+    insert_rows = 1000;
     Split = ceil(height(lidar_cleaned_table)/insert_rows); % insert 100,000 rows each loop,40seconds
     tic
     for i= 1:Split
