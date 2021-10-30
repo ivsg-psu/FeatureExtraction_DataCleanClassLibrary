@@ -360,6 +360,7 @@ lidar_cleaned.altitude = cleanedData.Lidar.altitude;
 lidar_cleaned.xeast = cleanedData.Lidar.xEast;
 lidar_cleaned.ynorth = cleanedData.Lidar.yNorth;
 lidar_cleaned.zup = cleanedData.Lidar.zUp;
+lidar_cleaned.yaw = cleanedData.Lidar.Yaw_deg;
 
 lidar_cleaned.ranges = num2cell(cleanedData.Lidar.ranges,2);
 lidar_cleaned.intensities = num2cell(cleanedData.Lidar.intensities,2);
