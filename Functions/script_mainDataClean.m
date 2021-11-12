@@ -129,7 +129,7 @@
 %             %exec(DB.db_connection,sqlquery_tablesize)
 %             sss= fetch(DB.db_connection,sqlquery_tablesize,'DataReturnFormat','table');
 %             
-
+% *) insert start point to database
 %
 %% Prep the workspace
 
@@ -152,7 +152,7 @@ addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 %flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 %flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
 
-flag.DBquery = false; %set to true if you want to query raw data from database insteading of loading from default *.mat file
+flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
 % flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
 flag.SaveQueriedData = true; 
@@ -450,9 +450,6 @@ fcn_DataClean_plotStructureData(mergedByKFData,plottingFlags);
 % The following function allows similar plots, made when there are repeated
 % uncommented versions above, to all scroll/zoom in unison.
 %fcn_plotAxesLinkedTogetherByField;
-
-% Step 9: Lidar data process
-mergedByKFData.Lidar = rawData.Lidar;
 
 
 %% geoplot
