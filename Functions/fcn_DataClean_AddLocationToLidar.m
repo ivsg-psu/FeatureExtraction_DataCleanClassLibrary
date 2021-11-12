@@ -32,7 +32,8 @@ try
     
 catch
     disp('Debug here');
-    pause;
+    error('Debug here')
+%     pause;
 end
 
 % convert ENU to LLA (used for geoplot)
