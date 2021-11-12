@@ -19,7 +19,7 @@ function [start_point] = fcn_defineStartPoint(route_name,timeFilteredData)
         
         start_point.start_yaw_angle = 37.38; %deg
         start_point.expectedRouteLength = 1555.5; % meters
-        start_point.direction = CCW; % meters
+        start_point.direction = 'CCW'; % 
   elseif route_name == 2
         start_point.start_longitude=-77.87652037222755;
         start_point.start_latitude =40.828390558947870;
