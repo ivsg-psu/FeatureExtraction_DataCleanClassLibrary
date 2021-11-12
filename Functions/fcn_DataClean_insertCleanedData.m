@@ -7,7 +7,7 @@ function [outputArg1,outputArg2] = fcn_DataClean_insertCleanedData(cleanedData,r
 % 2. similar to 1, fix lidar.laser_parameters_id = 1*ones(size(lidar.scan_time));
 % 3. insert lidar.timestamp, this information can come from the raw data quer
 % results. chekc Lidar.datetime = d.timestamp; at fcn_DataClean_loadRawData_Lidar(d,data_source,flag_do_debug)
-
+% 4. for the duplication case, add one more option to break the for loop(Done)
 %% ------------------------ CONNECT TO  DATABASE ------------------------ %
 % choose different da name to connect to them
 database_name = 'mapping_van_cleaned';
@@ -293,7 +293,7 @@ if flag.DBinsert
                 case 'database:database:WriteTableDriverError'
                     if strfind(ME.message,'duplicate key value violates unique constraint')
                         warning(ME.message);
-                        prompt = ['Do you want to replace the laser data of trip_id: ' num2str(trips.id) ' ?[y/n]'];
+                        prompt = ['Do you want to replace the laser data of trip_id: ' num2str(trips.id) ' ?[y/n/nn]'];
                         User_input_replace = input(prompt,'s');
                         
                         if strcmpi(User_input_replace,'y')
@@ -313,9 +313,12 @@ if flag.DBinsert
                             sqlwrite(DB.db_connection,'laser',lidar_table_insert);
                             fprintf(1,['trip_id ' num2str(trips.id) ' has been updated!\n']);
                             
+                        elseif strcmpi(User_input_replace,'n')
+                            fprintf(1,'insert is aborted.\n');
                         else
                             fprintf(1,'insert is aborted.\n');
-                            
+                            break
+                           
                         end
                     else
                         rethrow(ME)
@@ -384,7 +387,7 @@ if flag.DBinsert
                 case 'database:database:WriteTableDriverError'
                     if strfind(ME.message,'duplicate key value violates unique constraint')
                         warning(ME.message);
-                        prompt = ['Do you want to replace the laser data of trip_id: ' num2str(trips.id) ' ?[y/n]'];
+                        prompt = ['Do you want to replace the laser data of trip_id: ' num2str(trips.id) ' ?[y/n/nn]'];
                         User_input_replace = input(prompt,'s');
                         
                         if strcmpi(User_input_replace,'y')
@@ -404,9 +407,11 @@ if flag.DBinsert
                             sqlwrite(DB.db_connection,'laser_cleaned',lidar_table_insert);
                             fprintf(1,['trip_id ' num2str(trips.id) ' has been updated!\n']);
                             
+                        elseif strcmpi(User_input_replace,'n')
+                            fprintf(1,'insert is aborted.\n');
                         else
                             fprintf(1,'insert is aborted.\n');
-                            
+                            break
                         end
                     else
                         rethrow(ME)
