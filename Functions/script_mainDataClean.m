@@ -136,6 +136,7 @@
 % Clear the command window and workspace
 clc
 % clear all %#ok<CLALL>
+
 close all 
 
 % Make sure we can see the utilities folder

@@ -64,7 +64,7 @@ if DBqueryFlag == true
     queryFlag.sensors.NovAtel_imu = 1;% default is 1
     queryFlag.sensors.adis_imu = 1;% default is 1
     queryFlag.sensors.encoder_left_right = 1;% default is 1
-    queryFlag.sensors.laser = 1; % default is 1
+    queryFlag.sensors.laser = 0; % default is 1
     queryFlag.sensors.front_left_camera = 0; % default is 0
     queryFlag.sensors.front_center_camera = 0; % default is 0
     queryFlag.sensors.front_right_camera = 0; % default is 0
