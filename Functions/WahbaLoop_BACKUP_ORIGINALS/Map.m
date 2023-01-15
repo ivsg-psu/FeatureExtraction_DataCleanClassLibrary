@@ -136,8 +136,8 @@ classdef Map < handle
 
                    inds = find(data.traversal{i}.station >= max_start_station & data.traversal{i}.station <= min_end_station);
 
-                    % Trim the data to the desired times
-                    data.traversal{i}.time = data.traversal{i}.time(inds) - data.traversal{i}.time(inds(1));
+%                    % Trim the data to the desired times
+%                    data.traversal{i}.time = data.traversal{i}.time(inds) - data.traversal{i}.time(inds(1));
                     data.traversal{i}.station = data.traversal{i}.station(inds);
 %                     data.traversal{i}.latitude = data.traversal{i}.latitude(inds);
 %                     data.traversal{i}.longitude = data.traversal{i}.longitude(inds);

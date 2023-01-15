@@ -3,7 +3,7 @@ classdef GPS < handle
     % Class properties and variables
     properties
         
-        % General parameters
+        % Base station parameters for base station by the fueling tank
         reference_latitude = 40.8623031194444;
         reference_longitude = -77.8362636138889;
         reference_altitude = 333.817;
