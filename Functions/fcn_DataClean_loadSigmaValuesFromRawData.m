@@ -1,24 +1,94 @@
 function RawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(rawData)
-% fcn_DataClean_loadSigmaValuesFromRawData - ensures that key variables have standard
-% deviations defined, if they are left empty during the data loading
-% process.
+% fcn_DataClean_loadSigmaValuesFromRawData
+% Calculates standard deviations on key variables if they are left empty
+% during the data loading process.
+%
+% FORMAT:
+%
+%      RawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(rawData)
+%
+% INPUTS:
+%
+%      rawData: a data structure with fields for each sensor input
+% 
+%      (OPTIONAL INPUTS)
+%
+%      (none)
+%
+% OUTPUTS:
+%
+%      RawDataWithSigmas: the data structure with standard deviations added
+%
+% DEPENDENCIES:
+%
+%      (none)
+%
+% EXAMPLES:
+%
+%     See the script: script_test_fcn_DataClean_loadSigmaValuesFromRawData
+%     for a full test suite.
+%
+% This function was written on 2019_10_10 by S. Brennan
+% Questions or comments? sbrennan@psu.edu 
+
 
 % Revision history:
-% 2019_10_10 - first write of function by sbrennan@psu.edu
-% 2019_11_27 - added more comments, function header.
-% 2020_11_10 - changed file name in prep for DataClean class
+% 2019_10_10 
+% -- first write of function by sbrennan@psu.edu
+% 2019_11_27 
+% -- added more comments, function header.
+% 2020_11_10 
+% -- changed file name in prep for DataClean class
+% 2023_06_12 - sbrennan@psu.edu
+% -- Fixed nanmean and nanstd which is not supported in new MATLAB installs
+% -- Major reformat of function to IVSG style
+% -- Renamed internal function to clearly be an INTERNAL, not external call
 
-flag_do_debug = 1;
+% TO DO
+% 
+
+flag_do_debug = 1; % Flag to show the results for debugging
+flag_do_plots = 0; % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_do_debug
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-
-    % Show what we are doing
-    fprintf(1,'\nWithin function: %s\n',namestr);
-    fprintf(1,'Starting iterations through rawData structure to calculate sigma values.\n');    
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
+
+
+%% check input arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____                   _
+%  |_   _|                 | |
+%    | |  _ __  _ __  _   _| |_ ___
+%    | | | '_ \| '_ \| | | | __/ __|
+%   _| |_| | | | |_) | |_| | |_\__ \
+%  |_____|_| |_| .__/ \__,_|\__|___/
+%              | |
+%              |_|
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if flag_check_inputs
+    % Are there the right number of inputs?
+    narginchk(1,1);
+        
+    % NOTE: data structure SHOULD be checked!
+
+end
+
+
+%% Main code starts here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   __  __       _
+%  |  \/  |     (_)
+%  | \  / | __ _ _ _ __
+%  | |\/| |/ _` | | '_ \
+%  | |  | | (_| | | | | |
+%  |_|  |_|\__,_|_|_| |_|
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% An old code can be found here that calculates sigmas based on standard deviations
 % rawDataWithSigmas = fcn_DataClean_estimateStatesFromIncrementedStatesViaCumsum(rawDataWithSigmasAndMedianFiltered);
@@ -89,7 +159,7 @@ for i_data = 1:length(names)
                 % Some of the dat may have NaN values, so we need to
                 % consider this.
                 data = d.(subFieldName);
-                real_sigma = fcn_DataClean_calcSigmaNoOutliers(data);
+                real_sigma = fcn_INTERNAL_calcSigmaNoOutliers(data);
                 if isnan(real_sigma)
                     error('Sigma calculation produced an NaN value on field %s of sensor %s. Exiting.',subFieldName,data_name);
                 end
@@ -116,29 +186,57 @@ for i_data = 1:length(names)
     
 end  % Ends for loop through all sensor names in rawData
 
-if flag_do_debug
-    % Show what we are doing
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+%% Plot the results (for debugging)?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____       _
+%  |  __ \     | |
+%  | |  | | ___| |__  _   _  __ _
+%  | |  | |/ _ \ '_ \| | | |/ _` |
+%  | |__| |  __/ |_) | |_| | (_| |
+%  |_____/ \___|_.__/ \__,_|\__, |
+%                            __/ |
+%                           |___/
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if flag_do_plots
+    
+    % Nothing to plot        
+    
 end
 
-return % Ends the function
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+end
+
+end % Ends main function
 
 
 
+%% Functions follow
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   ______                _   _
+%  |  ____|              | | (_)
+%  | |__ _   _ _ __   ___| |_ _  ___  _ __  ___
+%  |  __| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+%  | |  | |_| | | | | (__| |_| | (_) | | | \__ \
+%  |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+%
+% See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
 
-%% Subfunctions start here
-function real_sigma = fcn_DataClean_calcSigmaNoOutliers(data)
+
+%% fcn_INTERNAL_calcSigmaNoOutliers
+function real_sigma = fcn_INTERNAL_calcSigmaNoOutliers(data)
 % Some of the data may contain NaN values, hence the use of nanmean and
 % nanstd below.
 
 differences = diff(data);
-deviations = differences - nanmean(differences);
-outlier_sigma = nanstd(deviations);
+deviations = differences - mean(differences,'omitnan');
+outlier_sigma = std(deviations,'omitnan');
 
 % Reject outliers
 deviations_with_no_outliers = deviations(abs(deviations)<(3*outlier_sigma));
-real_sigma = nanstd(deviations_with_no_outliers);
+real_sigma = std(deviations_with_no_outliers,'omitnan');
 
 %real_sigma_vector = real_sigma*
-return
+end % Ends fcn_INTERNAL_calcSigmaNoOutliers
