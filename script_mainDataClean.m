@@ -36,10 +36,10 @@
 % NaN values.
 % 2019_11_25 - Fixed bugs in time alignment, where deltaT was wrong.
 % 2019_11_26 - Fixed plotting routines to allow linking during plotting.
-% 2019_11_27 
+% 2019_11_27
 % -- Worked on KF and Merge functionality. Cleaned up code flow.
 % -- Added filtering of Sigma values.
-% 2019_12_01 
+% 2019_12_01
 % -- Did post-processing after merge functions, but before
 %    Kalman filter, adding another function to remove jumps in xData and
 %    yData in Hemisphere, due to DGPS being lost. Fixed a few bugs in the KF
@@ -62,9 +62,9 @@
 % -- Add geoplot capability to results so that we can see XY plots on the map
 %    automatically (Done by Liming)
 % 2021_10_15 - added ability to process LIDAR time data
-% 2022_08_19 
+% 2022_08_19
 % -- added Debug library dependency and usage
-% 2023_06_11 
+% 2023_06_11
 % -- automated dependency installs
 % -- checked subfields to determine if LIDAR is there
 % -- commented out code that doesn't work
@@ -73,7 +73,7 @@
 % Known issues:
 %  (as of 2019_10_04) - Odometry on the rear encoders is quite wonky. For
 %  some reason, need to do absolute value on speeds - unclear why. And the
-%  left encoder is clearly disconnected. 
+%  left encoder is clearly disconnected.
 %  UPDATE: encoder reattached in 2019_10_15, but still giving positive/negative flipping errors
 %  UPDATE2: encoders rebuilt in 2022 summer to fix this issue
 %
@@ -111,6 +111,61 @@
 % (as of 2021_07_06 centiSeconds of each sensor is wrong, e.g. GPS is 50ms not 5 ms)
 
 %% TO_DO LIST
+% AS OF 2023_06_12
+% We should separate out codes that LOAD data from a source, away from
+% codes that process data. The function stack that starts with
+% fcn_DataClean_queryRawData, then goes to fcn_DataClean_loadRawData, which
+% then calls the sensor-specific calls:
+% fcn_DataClean_loadRawData_Hemisphere,
+% fcn_DataClean_loadRawData_Novatel_GPS, 
+% etc.
+% completely mix up data loading and data processing, and thus the data
+% processing is very confusing as it is done two different ways all the way
+% down to the sensor level; the codes are different from DB versus from
+% file.
+%
+% To fix this, we may need to:
+% 
+% Separate out the fcn_DataClean_queryRawData into two functions for loading data:
+% -- fcn_DataClean_queryRawDataFromDB
+% -- fcn_DataClean_queryRawDataFromFile
+% The first function should ONLY have the DB queries, the second should work
+% with a file input. We may need to write a third one to handle multiple
+% files similar to the formats now produced by the mapping van. 
+% 
+% Then,
+% Move the dB versus file functionality out of fcn_DataClean_loadRawData, 
+% and use this function to ONLY prepare data from each sensor. Perhaps
+% rename it to "loadSensorData"?
+% 
+% Then, 
+% Fix each sensor load call, for example,
+% fcn_DataClean_loadRawData_Hemisphere, try to unify the loading process
+% for these so that all the GPS systems have the same format, all Encoders,
+% all INS, etc. Each function type, say "GPS" should start off with a
+% template data structure that is filled at the top with empty values, and
+% then each field is fixed inside the file. The custom file for each sensor
+% can create a LOT of problems as we get deeper into the codes.
+%
+% ALSO: MUST ADD THE TRIGGER SOURCE as a SENSOR input!!!
+%
+% As well, for each sensor, we need to characterize three time sources:
+% 1) GPS_Time - if it has a "true" time source - such as a GPS sensor that reports UTC
+% time which is true to the nanosecond level. For sensors that do not have
+% this, let's leave this time field empty.
+% 2) Triggered_Time - this is the time stamp assuming the data is
+% externally triggered. This time is calculated with reference to the trigger source and thus should be
+% accurate to microseconds. All sensors should have this time field filled.
+% 3) ROS_time - this is the ROS time, which is accurate (usually) to about 10 milliseconds
+%
+% In later processing steps, we'll need to fix all the data times using the
+% above.
+%
+% Finally, for each of our functions, we need to make the function call
+% have a test script with very simple test cases, make sure the function format matches the IVSG
+% standard, and make sure that the README.md file is updated.
+
+
 % *) fix the KF bugs(check page 25 of documents/Route Data Processing Steps_2021_03_04.pptx) for trips_id =7
 % *) Go through the functions and add headers / comments to each, and if
 % possible, add argument checking (similar to Path class library)
@@ -130,7 +185,7 @@
 % *) Add variance and plot at fcn_DataClean_loadRawData_Lidar ?
 % *) Query the data size before query the data. If the data size is too
 %    large, split the query into several actions. https://www.postgresqltutorial.com/postgresql-database-indexes-table-size/
-%                 
+%
 %             %select table_name, pg_size_pretty( pg_total_relation_size(quote_ident(table_name)) )
 %             sqlquery_tablesize = [' select table_name, pg_size_pretty( pg_relation_size(quote_ident(table_name)) )' ...
 %                                   ' from information_schema.tables '...
@@ -138,50 +193,50 @@
 %                                   ' order by 2 desc;'];
 %             %exec(DB.db_connection,sqlquery_tablesize)
 %             sss= fetch(DB.db_connection,sqlquery_tablesize,'DataReturnFormat','table');
-%             
+%
 % *) insert start point to database
 %
 
 
 % %% Prep the workspace
-% 
+%
 % % Clear the command window and workspace
 % clc
 % % clear all %#ok<CLALL>
-% 
-% close all 
-% 
+%
+% close all
+%
 % % % Make sure we can see the utilities folder
 % % addpath '../Utilities';
 % % addpath '../data'; % add the data path
 % % addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
-% 
+%
 % %% Dependencies and Setup of the Code
 % % The code requires several other libraries to work, namely the following
-% % 
+% %
 % % * DebugTools - the repo can be found at: https://github.com/ivsg-psu/Errata_Tutorials_DebugTools
 % % * PathClassLibrary - the repo can be found at: https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary
 % % * Database - this is a zip of a single file containing the Database class
 % % * GPS - this is a zip of a single file containing the GPS class
 % % * Map - this is a zip of a single file containing the Map class
 % % * MapDatabase - this is a zip of a single file containing the MapDatabase class
-% % 
+% %
 % % Each should be installed in a folder called "Utilities" under the root
 % % folder, namely ./Utilities/DebugTools/ , ./Utilities/PathClassLibrary/ .
 % % If you wish to put these codes in different directories, the function
 % % below can be easily modified with strings specifying the different
 % % location.
-% % 
+% %
 % % For ease of transfer, zip files of the directories used - without the
 % % .git repo information, to keep them small - are included in this repo.
-% % 
+% %
 % % The following code checks to see if the folders flag has been
 % % initialized, and if not, it calls the DebugTools function that loads the
 % % path variables. It then loads the PathClassLibrary functions as well.
 % % Note that the PathClass Library also has sub-utilities that are included.
 % if ~exist('flag_DataClean_Folders_Initialized','var')
-%     
-%     % add necessary directories for function creation utility 
+%
+%     % add necessary directories for function creation utility
 %     %(special case because folders not added yet)
 %     debug_utility_folder = fullfile(pwd, 'Utilities', 'DebugTools');
 %     debug_utility_function_folder = fullfile(pwd, 'Utilities', 'DebugTools','Functions');
@@ -194,22 +249,22 @@
 %     else % Throw an error?
 %         error('The necessary utilities are not found. Please add them (see README.md) and run again.');
 %     end
-%     
+%
 %     % Now can add the Path Class Library automatically
 %     utility_folder_PathClassLibrary = fullfile(pwd, 'Utilities', 'PathClassLibrary');
 %     fcn_DebugTools_addSubdirectoriesToPath(utility_folder_PathClassLibrary,{'Functions','Utilities'});
-%     
+%
 %     % utility_folder_GetUserInputPath = fullfile(pwd, 'Utilities', 'GetUserInputPath');
 %     % fcn_DebugTools_addSubdirectoriesToPath(utility_folder_GetUserInputPath,{'Functions','Utilities'});
-% 
+%
 %     % Now can add all the other utilities automatically
 %     folder_DataCleanClassLibrary = fullfile(pwd);
 %     fcn_DebugTools_addSubdirectoriesToPath(folder_DataCleanClassLibrary,{'Functions'});
-% 
+%
 %     % Now can add all the other utilities automatically
 %     folder_DataCleanClassLibrary = fullfile(pwd);
 %     fcn_DebugTools_addSubdirectoriesToPath(folder_DataCleanClassLibrary,{'Data'});
-% 
+%
 %     % set a flag so we do not have to do this again
 %     flag_DataClean_Folders_Initialized = 1;
 % end
@@ -228,7 +283,7 @@ clc
 % * GPS - this is a zip of a single file containing the GPS class
 % * Map - this is a zip of a single file containing the Map class
 % * MapDatabase - this is a zip of a single file containing the MapDatabase class
-% 
+%
 % The section below installs dependencies in a folder called "Utilities"
 % under the root folder, namely ./Utilities/DebugTools/ ,
 % ./Utilities/PathClassLibrary/ . If you wish to put these codes in
@@ -245,26 +300,26 @@ library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_Deb
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'PathClass_v2023_02_01';
-library_folders{ith_library} = {'Functions'};                                
+library_folders{ith_library} = {'Functions'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/blob/main/Releases/PathClass_v2023_02_01.zip?raw=true';
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'GPSClass_v2023_04_21';
-library_folders{ith_library} = {'Functions'};                                
+library_folders{ith_library} = {'Functions'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_GPSRelatedCodes_GPSClass/archive/refs/tags/GPSClass_v2023_04_21.zip';
 
 
 %% Clear paths and folders, if needed
 if 1==0
 
-   fcn_INTERNAL_clearUtilitiesFromPathAndFolders;
+    fcn_INTERNAL_clearUtilitiesFromPathAndFolders;
 
 end
 
 %% Do we need to set up the work space?
 if ~exist('flag_DataClean_Folders_Initialized','var')
     this_project_folders = {'Functions','Data'};
-    fcn_INTERNAL_initializeUtilities(library_name,library_folders,library_url,this_project_folders);  
+    fcn_INTERNAL_initializeUtilities(library_name,library_folders,library_url,this_project_folders);
     flag_DataClean_Folders_Initialized = 1;
 end
 
@@ -283,42 +338,42 @@ end
 flag.DBquery = false; %true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
 % flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
-flag.SaveQueriedData = true; 
+flag.SaveQueriedData = true;
 
 try
     fprintf('Starting the code using variable rawData of length: %d\n', length(rawData));
 catch
 
-        if flag.DBquery == true
-            %       database_name = 'mapping_van_raw';
-            queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
-            [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
-            if flag.SaveQueriedData && (trip_id_cleaned==2)
-                save('../data/TestTrack_rawData_2019_10_18.mat','rawData','trip_name','trip_id_cleaned','base_station','Hemisphere_gps_week');
-            end
-            
-        else
-            
-            % Load the raw data from file
-            % test one
-            %filename  = 'MappingVan_DecisionMaking_03132020.mat';
-            %variable_names = 'MappingVan_DecisionMaking_03132020';
-            %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
-            
-            % test two
-            filename  = 'Route_Wahba.mat';
-            variable_names = 'Route_WahbaLoop';
-            base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
-            base_station.latitude= 40.8068919389;
-            base_station.longitude= -77.8497968306;
-            base_station.altitude= 337.665496826;
-           
-            [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
-            
-            % test three
-            % load('TestTrack_rawData.mat');  % Loads TestTrack data and creates 'rawData' variable directly
-
+    if flag.DBquery == true
+        %       database_name = 'mapping_van_raw';
+        queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
+        [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
+        if flag.SaveQueriedData && (trip_id_cleaned==2)
+            save('../data/TestTrack_rawData_2019_10_18.mat','rawData','trip_name','trip_id_cleaned','base_station','Hemisphere_gps_week');
         end
+
+    else
+
+        % Load the raw data from file
+        % test one
+        %filename  = 'MappingVan_DecisionMaking_03132020.mat';
+        %variable_names = 'MappingVan_DecisionMaking_03132020';
+        %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
+
+        % test two
+        filename  = 'Route_Wahba.mat';
+        variable_names = 'Route_WahbaLoop';
+        base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
+        base_station.latitude= 40.8068919389;
+        base_station.longitude= -77.8497968306;
+        base_station.altitude= 337.665496826;
+
+        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+
+        % test three
+        % load('TestTrack_rawData.mat');  % Loads TestTrack data and creates 'rawData' variable directly
+
+    end
 end
 
 %% ======================= Raw Data Clean and Merge =========================
@@ -435,12 +490,12 @@ mergedByKFData.Lidar.GPS_week = Hemisphere_gps_week;
 if 1==0
     % The following shows that we should NOT use yaw angles to calculate yaw rate
     fcn_plotArtificialYawRateFromYaw(MergedData,timeFilteredData);
-    
+
     % Now to check to see if raw integration of YawRate can recover the yaw
     % angle
     fcn_plotArtificialYawFromYawRate(MergedData,timeFilteredData);
-    
-    
+
+
     %fcn_plotArtificialVelocityFromXAccel(MergedData,timeFilteredData);
     fcn_plotArtificialPositionFromIncrementsAndVelocity(MergedData,cleanAndTimeAlignedData)
 end
@@ -613,16 +668,16 @@ geobasemap satellite
 % fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
 % I99_Altoona33_to_StateCollege73 = rmfield(mergedByKFData.MergedGPS,fields);
 % save('I99_Altoona33_to_StateCollege73_20210123.mat','I99_Altoona33_to_StateCollege73')
-if trip_id_cleaned == 7
-    fields_rm = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
-    I99_StateCollege73_to_Altoona33 = rmfield(mergedByKFData.MergedGPS,fields_rm);
-    save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoona33')
-    
-    fields_rm = {'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
-    I99_StateCollege73_to_Altoona33_mergedDataNoJumps = rmfield(mergedDataNoJumps.MergedGPS,fields_rm);
-    I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station = [0; cumsum(sqrt(diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast).^2+diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth).^2))];
-    save('I99_StateCollege73_to_Altoona33_mergedDataNoJumps_20210123.mat','I99_StateCollege73_to_Altoona33_mergedDataNoJumps')
-end
+% if trip_id_cleaned == 7
+%     fields_rm = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+%     I99_StateCollege73_to_Altoona33 = rmfield(mergedByKFData.MergedGPS,fields_rm);
+%     save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoona33')
+% 
+%     fields_rm = {'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+%     I99_StateCollege73_to_Altoona33_mergedDataNoJumps = rmfield(mergedDataNoJumps.MergedGPS,fields_rm);
+%     I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station = [0; cumsum(sqrt(diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast).^2+diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth).^2))];
+%     save('I99_StateCollege73_to_Altoona33_mergedDataNoJumps_20210123.mat','I99_StateCollege73_to_Altoona33_mergedDataNoJumps')
+% end
 
 % extract TestTrack data
 % fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
@@ -644,23 +699,23 @@ end
 %%  Yaw Rate and Curvature Comparision
 if 1 ==0
     [~, ~, ~, ~,R_spiral,UnitNormalV,concavity]=fnc_parallel_curve(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast, I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth, 1, 0,1,100);
-    
+
     yaw_rate = [0; diff(mergedDataNoJumps.MergedGPS.Yaw_deg)./diff(mergedDataNoJumps.MergedGPS.GPS_Time)];
-    
+
     figure(23)
     clf
     hold on
     % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
     plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,mergedDataNoJumps.MergedGPS.Yaw_deg,'b','LineWidth',1)
     plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,yaw_rate,'r','LineWidth',1)
-    
+
     grid on
     box on
     xlabel('station (m)')
     ylabel('yaw and yaw rate (deg)')
     % ylim([0 0.01])
-    
-    
+
+
     figure(24)
     clf
     hold on
@@ -669,16 +724,16 @@ if 1 ==0
     plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,Ux,'b','LineWidth',1)
     plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velNorth,'g')
     plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velEast,'r','LineWidth',1)
-    
+
     % plot(mergedDataNoJumps.IMU_Novatel.GPS_Time,mergedDataNoJumps.IMU_Novatel.ZAccel,'b')
     grid on
     box on
     xlabel('time (s)')
     ylabel('velocity (m/s)')
     % ylim([0 0.01])
-    
+
     curvature_ss  = (yaw_rate*pi/180)./Ux;
-    
+
     figure(22)
     clf
     % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
@@ -690,41 +745,41 @@ if 1 ==0
     xlabel('Station (m)')
     ylabel('Curvature')
     ylim([-0.01 0.04])
-    
-    
+
+
 end
 %% ======================= Insert Cleaned Data to 'mapping_van_cleaned' database =========================
 % Input trips information
-% 
+%
 % tripsInfo.id = trip_id_cleaned;
 % tripsInfo.vehicle_id = 1;
 % tripsInfo.base_stations_id = base_station.id;
 % tripsInfo.name = trip_name;
 % if trip_id_cleaned == 2
-%     
+%
 %     tripsInfo.description = {'Test Track MappingVan night middle speed'};
 %     tripsInfo.date = {'2019-10-18 20:39:30'};
 %     tripsInfo.driver = {'Liming Gao'};
 %     tripsInfo.passengers = {'N/A'};
 %     tripsInfo.notes = {'without traffic light, at night. DGPS mode was activated. middle speed. 7 traversals'};
 %     cleanedData  = mergedDataNoJumps;
-%     
+%
 %     start_point.start_longitude=-77.833842140800000;  %deg
 %     start_point.start_latitude =40.862636161300000;   %deg
 %     start_point.start_xEast=1345.204537286125; % meters
 %     start_point.start_yNorth=6190.884280063217; % meters
-%     
+%
 %     start_point.end_longitude=-77.833842140800000;  %deg
 %     start_point.end_latitude =40.862636161300000;   %deg
 %     start_point.end_xEast=1345.204537286125; % meters
 %     start_point.end_yNorth=6190.884280063217; % meters
-%     
+%
 %     start_point.start_yaw_angle = 37.38; %deg
 %     start_point.expectedRouteLength = 1555.5; % meters
 %     start_point.direction = 'CCW'; %
 %     cleanedData.start_point = start_point;
 % elseif trip_id_cleaned == 7
-%     
+%
 %     tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
 %     tripsInfo.date = {'2021-01-23 15:00:00'};
 %     tripsInfo.driver = {'Wushuang Bai'};
@@ -744,7 +799,7 @@ end
 % % insert cleaned data
 % fcn_DataClean_insertCleanedData(cleanedData,rawData,tripsInfo,flag);
 % % save('cleanedData.mat','cleanedData')
-% 
+%
 
 
 %% Functions follow
@@ -827,21 +882,21 @@ function fcn_INTERNAL_DebugTools_installDependencies(dependency_name, dependency
 % subfoder or any specified sub-subfolders to the MATLAB path.
 %
 % If the Utilities folder does not exist, it is created.
-% 
+%
 % If the specified code package folder and all subfolders already exist,
 % the package is not installed. Otherwise, the folders are created as
 % needed, and the package is installed.
-% 
+%
 % If one does not wish to put these codes in different directories, the
 % function can be easily modified with strings specifying the
 % desired install location.
-% 
+%
 % For path creation, if the "DebugTools" package is being installed, the
 % code installs the package, then shifts temporarily into the package to
 % complete the path definitions for MATLAB. If the DebugTools is not
 % already installed, an error is thrown as these tools are needed for the
 % path creation.
-% 
+%
 % Finally, the code sets a global flag to indicate that the folders are
 % initialized so that, in this session, if the code is called again the
 % folders will not be installed. This global flag can be overwritten by an
@@ -888,8 +943,8 @@ function fcn_INTERNAL_DebugTools_installDependencies(dependency_name, dependency
 %
 % % Define sub-subfolders that are in the code package that also need to be
 % % added to the MATLAB path after install; the package install subfolder
-% % is NOT added to path. OR: Leave empty ({}) to only add 
-% % the subfolder path without any sub-subfolder path additions. 
+% % is NOT added to path. OR: Leave empty ({}) to only add
+% % the subfolder path without any sub-subfolder path additions.
 % dependency_subfolders = {'Functions','Data'};
 %
 % % Define a universal resource locator (URL) pointing to the zip file to
@@ -1014,10 +1069,10 @@ if ~exist(flag_varname,'var') || isempty(eval(flag_varname))
     else
         for ith_folder = 1:length(dependency_subfolders)
             subfolder_name = dependency_subfolders{ith_folder};
-            
+
             % Create the entire path
             subfunction_folder = fullfile(root_directory_name, 'Utilities', dependency_name,subfolder_name);
-            
+
             % Check if the folder and file exists that is typically created when
             % unzipping.
             if ~exist(subfunction_folder,'dir')
@@ -1091,10 +1146,10 @@ if ~exist(flag_varname,'var') || isempty(eval(flag_varname))
         if ~isempty(dependency_subfolders{1})
             for ith_folder = 1:length(dependency_subfolders)
                 subfolder_name = dependency_subfolders{ith_folder};
-                
+
                 % Create the entire path
                 subfunction_folder = fullfile(root_directory_name, 'Utilities', dependency_name,subfolder_name);
-                
+
                 % Check if the folder and file exists that is typically created when
                 % unzipping.
                 if ~exist(subfunction_folder,'dir')
@@ -1102,7 +1157,7 @@ if ~exist(flag_varname,'var') || isempty(eval(flag_varname))
                 end
             end
         end
-         % If any are not there, then throw an error
+        % If any are not there, then throw an error
         if flag_allFoldersThere==0
             error(['The necessary dependency: %s has an error in install, ' ...
                 'or error performing an unzip operation. The subfolders ' ...

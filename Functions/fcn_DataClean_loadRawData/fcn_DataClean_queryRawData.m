@@ -92,8 +92,8 @@ else
     flag_do_debug = 1;
     [rawData, Hemisphere_GPSWeek]= fcn_DataClean_loadRawData(flag_do_debug,filename,variable_names); %
     varargout{1} = 'Route_WahbaLoop'; % output trip name
-    varargout{2} = 1; % trip id will be used at the data database  
-    varargout{3} = []; % used for LLA and ENU conversion
+    varargout{2} = 1; % trip id =  will be used at the data database  
+    varargout{3} = []; % base station - used for LLA and ENU conversion
     varargout{4} = Hemisphere_GPSWeek; % gps week of time
     
 end

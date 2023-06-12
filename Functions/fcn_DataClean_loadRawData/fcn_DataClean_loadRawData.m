@@ -9,9 +9,9 @@ function [rawData,varargout] = fcn_DataClean_loadRawData(flag_do_debug,varargin)
 % Returned Results:
 %
 % Author:
-%      Sean Brennan, Liming Gao
+% Sean Brennan, Liming Gao
 % Created Date: 2019_10_03
-% modify Date: 2019_11_22
+% modify Date: 2023_06_12
 %
 % Updates:
 %  2019_10_03 - Dr. Brennan revised from Liming Gao's prior version to
@@ -73,7 +73,7 @@ elseif isstruct(varargin{1}) % input is a struct type data queried from DB
     data_struct = varargin{1};
     
 else
-    msg = 'the data source format is wrong!!';
+    msg = 'the data source format is not recognized.';
     error(msg);
 end
 

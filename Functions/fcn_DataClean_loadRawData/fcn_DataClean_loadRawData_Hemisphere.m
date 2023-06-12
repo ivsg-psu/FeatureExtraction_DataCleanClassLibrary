@@ -1,9 +1,9 @@
-function Hemisphere = fcn_DataClean_loadRawData_Hemisphere(d,data_source,flag_do_debug)
+function Hemisphere = fcn_DataClean_loadRawData_Hemisphere(data_structure,data_source,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the Hemisphere data
 % Input Variables:
-%      d = raw data from Hemisphere DGPS(format:struct)
+%      data_structure = raw data from Hemisphere DGPS(format:struct)
 %      data_source = the data source of the raw data, can be 'mat_file' or 'database'(format:struct)
 % Returned Results:
 %      Hemisphere
@@ -22,22 +22,22 @@ flag_plot = 0;
 % the field name from mat_file is different from database, so we process
 % them seperately
 if strcmp(data_source,'mat_file')
-    Hemisphere.ROS_Time         = d.Time';
-    Hemisphere.GPS_Time         = d.GPSTimeOfWeek';
+    Hemisphere.ROS_Time         = data_structure.Time';
+    Hemisphere.GPS_Time         = data_structure.GPSTimeOfWeek';
     Hemisphere.centiSeconds     = 5; % This is sampled every 5 ms
     
     Hemisphere.Npoints          = length(Hemisphere.ROS_Time(:,1));
     Hemisphere.EmptyVector      = fcn_DataClean_fillEmptyStructureVector(Hemisphere); % Fill in empty vector (this is useful later)
     
-    Hemisphere.Latitude         = d.Latitude';
-    Hemisphere.Longitude        = d.Longitude';
-    Hemisphere.Altitude         = d.Height';
-    Hemisphere.xEast            = d.xEast';
-    Hemisphere.yNorth           = d.yNorth';
-    Hemisphere.zUp              = d.zUp';
-    Hemisphere.velNorth         = d.VNorth';
-    Hemisphere.velEast          = d.VEast';
-    Hemisphere.velUp            = d.VUp';
+    Hemisphere.Latitude         = data_structure.Latitude';
+    Hemisphere.Longitude        = data_structure.Longitude';
+    Hemisphere.Altitude         = data_structure.Height';
+    Hemisphere.xEast            = data_structure.xEast';
+    Hemisphere.yNorth           = data_structure.yNorth';
+    Hemisphere.zUp              = data_structure.zUp';
+    Hemisphere.velNorth         = data_structure.VNorth';
+    Hemisphere.velEast          = data_structure.VEast';
+    Hemisphere.velUp            = data_structure.VUp';
     Hemisphere.velMagnitude     = sqrt(Hemisphere.velNorth.^2 + Hemisphere.velEast.^2 + Hemisphere.velUp.^2);
     % for debugging - shows that the Hemisphere's velocity signal is horribly bad
     % figure;plot(Hemisphere.ROS_Time-Hemisphere.ROS_Time(1,1),Hemisphere.velMagnitude);
@@ -47,41 +47,41 @@ if strcmp(data_source,'mat_file')
     
     Hemisphere.velMagnitude_Sigma = std(Hemisphere.velMagnitude)*ones(length(Hemisphere.velMagnitude(:,1)),1);
     %Hemisphere.numSatellites    = Hemisphere.EmptyVector;
-    Hemisphere.DGPS_is_active   = 1.00*(d.NavMode==6)';
+    Hemisphere.DGPS_is_active   = 1.00*(data_structure.NavMode==6)';
     %Hemisphere.Roll_deg         = Hemisphere.EmptyVector;
     %Hemisphere.Pitch_deg        = Hemisphere.EmptyVector;
     %Hemisphere.Yaw_deg          = Hemisphere.EmptyVector;
     %Hemisphere.Yaw_deg_Sigma    = Hemisphere.EmptyVector;
-    Hemisphere.OneSigmaPos      = d.StdDevResid';
+    Hemisphere.OneSigmaPos      = data_structure.StdDevResid';
     
 elseif strcmp(data_source,'database')
-    Hemisphere.ROS_Time         = d.time;
-    Hemisphere.GPS_Time         = d.gps_seconds;
-    Hemisphere.GPS_week         = d.gps_week;
+    Hemisphere.ROS_Time         = data_structure.time;
+    Hemisphere.GPS_Time         = data_structure.gps_seconds;
+    Hemisphere.GPS_week         = data_structure.gps_week;
     Hemisphere.centiSeconds     = 5; % This is sampled every 5 ms
     
     Hemisphere.Npoints          = length(Hemisphere.ROS_Time(:,1));
     Hemisphere.EmptyVector      = fcn_DataClean_fillEmptyStructureVector(Hemisphere); % Fill in empty vector (this is useful later)
     
-    Hemisphere.Latitude         = d.latitude;
-    Hemisphere.Longitude        = d.longitude;
-    Hemisphere.Altitude         = d.altitude;
-    Hemisphere.xEast            = d.xeast;
-    Hemisphere.yNorth           = d.ynorth;
-    Hemisphere.zUp              = d.zup;
-    Hemisphere.velNorth         = d.vnorth;
-    Hemisphere.velEast          = d.veast;
-    Hemisphere.velUp            = d.vup;
+    Hemisphere.Latitude         = data_structure.latitude;
+    Hemisphere.Longitude        = data_structure.longitude;
+    Hemisphere.Altitude         = data_structure.altitude;
+    Hemisphere.xEast            = data_structure.xeast;
+    Hemisphere.yNorth           = data_structure.ynorth;
+    Hemisphere.zUp              = data_structure.zup;
+    Hemisphere.velNorth         = data_structure.vnorth;
+    Hemisphere.velEast          = data_structure.veast;
+    Hemisphere.velUp            = data_structure.vup;
     Hemisphere.velMagnitude     = sqrt(Hemisphere.velNorth.^2 + Hemisphere.velEast.^2 + Hemisphere.velUp.^2);
     
     Hemisphere.velMagnitude_Sigma = std(Hemisphere.velMagnitude)*ones(length(Hemisphere.velMagnitude(:,1)),1);
     %Hemisphere.numSatellites    = Hemisphere.EmptyVector;
-    Hemisphere.DGPS_is_active   = 1.00*(d.navmode==6);
+    Hemisphere.DGPS_is_active   = 1.00*(data_structure.navmode==6);
     %Hemisphere.Roll_deg         = Hemisphere.EmptyVector;
     %Hemisphere.Pitch_deg        = Hemisphere.EmptyVector;
     %Hemisphere.Yaw_deg          = Hemisphere.EmptyVector;
     %Hemisphere.Yaw_deg_Sigma    = Hemisphere.EmptyVector;
-    Hemisphere.OneSigmaPos      = d.stddevresid;
+    Hemisphere.OneSigmaPos      = data_structure.stddevresid;
 else
     error('Please indicate the data source')
 end
@@ -161,7 +161,7 @@ if flag_plot
     xlim([539 546]);
 end
 
-clear d %clear temp variable
+clear data_structure %clear temp variable
 
 
 % Close out the loading process
