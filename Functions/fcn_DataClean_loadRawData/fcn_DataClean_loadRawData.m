@@ -86,7 +86,7 @@ try
     rawData.GPS_Hemisphere = Hemisphere;
 catch
     
-    fprintf('There is no GPS_Hemisphere data£¡ \n');
+    fprintf(1,'There is no GPS_Hemisphere data! \n');
 end
 
 
@@ -96,7 +96,7 @@ try
     rawData.GPS_Novatel = GPS_Novatel;
 catch
     
-    fprintf('There is no GPS_Novatel data£¡\n');
+    fprintf(1,'There is no GPS_Novatel data!\n');
 end
 
 
@@ -106,7 +106,7 @@ try
     rawData.GPS_Garmin = GPS_Garmin;
 catch
     
-    fprintf('There is no GPS_Garmin data£¡\n');
+    fprintf('There is no GPS_Garmin data!\n');
 end
 
 
@@ -116,7 +116,7 @@ try
     rawData.IMU_Novatel = IMU_Novatel;
 catch
     
-    fprintf('There is no IMU_Novatel data£¡\n');
+    fprintf('There is no IMU_Novatel data!\n');
 end
 
 
@@ -126,7 +126,7 @@ try
     rawData.IMU_ADIS = IMU_ADIS;
 catch
     
-    fprintf('There is no IMU_ADIS data£¡\n');
+    fprintf('There is no IMU_ADIS data!\n');
 end
 
 
@@ -137,7 +137,7 @@ try
     rawData.Input_Steering = Input_Steering;
 catch
     
-    fprintf('There is no steering angle data data£¡\n');
+    fprintf('There is no steering angle data data!\n');
 end
 %%Process data from the wheel encoders
 % Note: left encoder looks disconnected, and counts on both are not working
@@ -145,7 +145,7 @@ try
     Encoder_RearWheels = fcn_DataClean_loadRawData_Encoder_RearWheels(data_struct.Raw_encoder,GPS_Novatel, data_source,flag_do_debug);
     rawData.Encoder_RearWheels = Encoder_RearWheels;
 catch ME
-    fprintf('There is no Encoder_RearWheels data£¡\n');
+    fprintf('There is no Encoder_RearWheels data!\n');
     rethrow(ME)
 
 end
@@ -155,7 +155,7 @@ try
     rawData.Lidar = Lidar;
 catch
     
-    fprintf('There is no Encoder_RearWheels data£¡\n');
+    fprintf('There is no Encoder_RearWheels data!\n');
 end
 
 % %% Process data from the Route_Wahba.mat file

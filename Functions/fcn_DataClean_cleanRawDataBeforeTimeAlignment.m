@@ -22,15 +22,35 @@ if flag_do_debug
     fprintf(1,'Cleaning indix-based artifacts within data fields, from input structure: %s\n',inputname(1));    
 end
 
+% TO DO - rewrite the following to use a data type to define how data
+% should be cleaned. The types should include:
+% 1. GPS
+% 2. IMU
+% 3. Encoders
+% 4. LIDAR
 
-cleanData.GPS_Hemisphere     = fcn_DataClean_cleanGPSData(rawDataWithSigmasAndMedianFiltered.GPS_Hemisphere);
-cleanData.GPS_Novatel        = fcn_DataClean_cleanGPSData(rawDataWithSigmasAndMedianFiltered.GPS_Novatel);
-cleanData.GPS_Garmin         = fcn_DataClean_cleanGPSData(rawDataWithSigmasAndMedianFiltered.GPS_Garmin);
-cleanData.IMU_Novatel        = fcn_DataClean_cleanIMUData(rawDataWithSigmasAndMedianFiltered.IMU_Novatel);
-cleanData.IMU_ADIS           = fcn_DataClean_cleanIMUData(rawDataWithSigmasAndMedianFiltered.IMU_ADIS);
-cleanData.Encoder_RearWheels = fcn_DataClean_cleanEncoderData(rawDataWithSigmasAndMedianFiltered.Encoder_RearWheels);
-cleanData.Lidar              = fcn_DataClean_cleanLidarData(rawDataWithSigmasAndMedianFiltered.Lidar);
 
+if isfield(rawDataWithSigmasAndMedianFiltered,'GPS_Hemisphere')
+    cleanData.GPS_Hemisphere     = fcn_DataClean_cleanGPSData(rawDataWithSigmasAndMedianFiltered.GPS_Hemisphere);
+end
+if isfield(rawDataWithSigmasAndMedianFiltered,'GPS_Novatel')
+    cleanData.GPS_Novatel        = fcn_DataClean_cleanGPSData(rawDataWithSigmasAndMedianFiltered.GPS_Novatel);
+end
+if isfield(rawDataWithSigmasAndMedianFiltered,'GPS_Garmin')
+    cleanData.GPS_Garmin         = fcn_DataClean_cleanGPSData(rawDataWithSigmasAndMedianFiltered.GPS_Garmin);
+end
+if isfield(rawDataWithSigmasAndMedianFiltered,'IMU_Novatel')
+    cleanData.IMU_Novatel        = fcn_DataClean_cleanIMUData(rawDataWithSigmasAndMedianFiltered.IMU_Novatel);
+end
+if isfield(rawDataWithSigmasAndMedianFiltered,'IMU_ADIS')
+    cleanData.IMU_ADIS           = fcn_DataClean_cleanIMUData(rawDataWithSigmasAndMedianFiltered.IMU_ADIS);
+end
+if isfield(rawDataWithSigmasAndMedianFiltered,'Encoder_RearWheels')
+    cleanData.Encoder_RearWheels = fcn_DataClean_cleanEncoderData(rawDataWithSigmasAndMedianFiltered.Encoder_RearWheels);
+end
+if isfield(rawDataWithSigmasAndMedianFiltered,'Lidar')
+    cleanData.Lidar              = fcn_DataClean_cleanLidarData(rawDataWithSigmasAndMedianFiltered.Lidar);
+end
 
 %% Tell user we are leaving
 if flag_do_debug
