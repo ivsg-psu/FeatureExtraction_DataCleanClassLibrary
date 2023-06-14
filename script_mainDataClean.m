@@ -361,14 +361,16 @@ catch
         %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
 
         % test two
-        filename  = 'Route_Wahba.mat';
-        variable_names = 'Route_WahbaLoop';
+        filename  = 'Route_Wahba.mat'; %'TestTrackOneLap-2023-06-05.mat';
+        variable_names = 'Route_WahbaLoop'; %'TestTrackOneLap-2023-06-05'; 
         base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
         base_station.latitude= 40.8068919389;
         base_station.longitude= -77.8497968306;
         base_station.altitude= 337.665496826;
-
-        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+        
+         flag_do_debug = 1;
+        [rawData,Hemisphere_GPSWeek] = fcn_DataClean_loadRawDataFromFile(flag_do_debug,filename,variable_names);
+        %[rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
 
         % test three
         % load('TestTrack_rawData.mat');  % Loads TestTrack data and creates 'rawData' variable directly
