@@ -6,6 +6,9 @@ function RawDataWithoutTimeGaps = fcn_DataClean_removeTimeGapsFromRawData(rawDat
 % Revision history:
 % 2019_11_22 - first write by sbrennan@psu.edu
 % 2019_11_24 - fixed issues with NaNs, replaced with maxSigma values
+% 2023_06_14 - use timetables methods? (see:
+% https://www.mathworks.com/help/matlab/matlab_prog/clean-timetable-with-missing-duplicate-or-irregular-times.html)
+
 
 flag_do_debug = 1;
 flag_verbose_slip = 0;

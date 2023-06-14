@@ -47,8 +47,8 @@ function dataStructure = fcn_DataClean_initializeDataByType(dataType)
 % TO DO
 % 
 
-flag_do_debug = 0; % Flag to show the results for debugging
-flag_do_plots = 0; % % Flag to plot the final results
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_do_debug
@@ -92,98 +92,100 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+default_value = NaN;
+
 switch lower(dataType)
     case 'trigger'
         % Xinyu - fill this in
-        dataStructure.GPS_Time           = 0; % This is the GPS time, UTC, as reported by the unit
-        dataStructure.Trigger_Time       = 0; % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = 0; % This is the ROS time that the data arrived into the bag
-        dataStructure.centiSeconds       = 0; % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        dataStructure.Npoints            = 0; % This is the number of data points in the array
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
 
     case 'gps'
-        dataStructure.GPS_Time           = 0; % This is the GPS time, UTC, as reported by the unit
-        dataStructure.Trigger_Time       = 0; % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = 0; % This is the ROS time that the data arrived into the bag
-        dataStructure.centiSeconds       = 0; % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        dataStructure.Npoints            = 0; % This is the number of data points in the array
-        dataStructure.Latitude           = 0; % The latitude [deg]
-        dataStructure.Longitude          = 0; % The longitude [deg]
-        dataStructure.Altitude           = 0; % The altitude above sea level [m]
-        dataStructure.xEast              = 0; % The xEast value (ENU) [m]
-        dataStructure.xEast_Sigma        = 0; % Sigma in xEast [m]
-        dataStructure.yNorth             = 0; % The yNorth value (ENU) [m]
-        dataStructure.yNorth_Sigma       = 0; % Sigma in yNorth [m]
-        dataStructure.zUp                = 0; % The zUp value (ENU) [m]
-        dataStructure.zUp_Sigma          = 0; % Sigma in zUp [m]
-        dataStructure.velNorth           = 0; % Velocity in north direction (ENU) [m/s]
-        dataStructure.velNorth_Sigma     = 0; % Sigma in velNorth [m/s]
-        dataStructure.velEast            = 0; % Velocity in east direction (ENU) [m/s]
-        dataStructure.velEast_Sigma      = 0; % Sigma in velEast [m/s]
-        dataStructure.velUp              = 0; % Velocity in up direction (ENU) [m/s]
-        dataStructure.velUp_Sigma        = 0; % Velocity in up direction (ENU) [m/s]
-        dataStructure.velMagnitude       = 0; % Velocity magnitude (ENU) [m/s] 
-        dataStructure.velMagnitude_Sigma = 0; % Sigma in velMagnitude [m/s]
-        dataStructure.numSatellites      = 0; % Number of satelites visible 
-        dataStructure.DGPS_mode          = 0; % Mode indicating DGPS status (for example, navmode 6;
-        dataStructure.Roll_deg           = 0; % Roll (angle about X) in degrees, ISO coordinates
-        dataStructure.Roll_deg_Sigma     = 0; % Sigma in Roll
-        dataStructure.Pitch_deg          = 0; % Pitch (angle about y) in degrees, ISO coordinates
-        dataStructure.Pitch_deg_Sigma    = 0; % Sigma in Pitch
-        dataStructure.Yaw_deg            = 0; % Yaw (angle about z) in degrees, ISO coordinates
-        dataStructure.Yaw_deg_Sigma      = 0; % Sigma in Yaw
-        dataStructure.OneSigmaPos        = 0; % Sigma in position 
-        dataStructure.DOP                = 0; % DOP in position (ratio, usually close to 1)
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.Latitude           = default_value;  % The latitude [deg]
+        dataStructure.Longitude          = default_value;  % The longitude [deg]
+        dataStructure.Altitude           = default_value;  % The altitude above sea level [m]
+        dataStructure.xEast              = default_value;  % The xEast value (ENU) [m]
+        dataStructure.xEast_Sigma        = default_value;  % Sigma in xEast [m]
+        dataStructure.yNorth             = default_value;  % The yNorth value (ENU) [m]
+        dataStructure.yNorth_Sigma       = default_value;  % Sigma in yNorth [m]
+        dataStructure.zUp                = default_value;  % The zUp value (ENU) [m]
+        dataStructure.zUp_Sigma          = default_value;  % Sigma in zUp [m]
+        dataStructure.velNorth           = default_value;  % Velocity in north direction (ENU) [m/s]
+        dataStructure.velNorth_Sigma     = default_value;  % Sigma in velNorth [m/s]
+        dataStructure.velEast            = default_value;  % Velocity in east direction (ENU) [m/s]
+        dataStructure.velEast_Sigma      = default_value;  % Sigma in velEast [m/s]
+        dataStructure.velUp              = default_value;  % Velocity in up direction (ENU) [m/s]
+        dataStructure.velUp_Sigma        = default_value;  % Velocity in up direction (ENU) [m/s]
+        dataStructure.velMagnitude       = default_value;  % Velocity magnitude (ENU) [m/s] 
+        dataStructure.velMagnitude_Sigma = default_value;  % Sigma in velMagnitude [m/s]
+        dataStructure.numSatellites      = default_value;  % Number of satelites visible 
+        dataStructure.DGPS_mode          = default_value;  % Mode indicating DGPS status (for example, navmode 6;
+        dataStructure.Roll_deg           = default_value;  % Roll (angle about X) in degrees, ISO coordinates
+        dataStructure.Roll_deg_Sigma     = default_value;  % Sigma in Roll
+        dataStructure.Pitch_deg          = default_value;  % Pitch (angle about y) in degrees, ISO coordinates
+        dataStructure.Pitch_deg_Sigma    = default_value;  % Sigma in Pitch
+        dataStructure.Yaw_deg            = default_value;  % Yaw (angle about z) in degrees, ISO coordinates
+        dataStructure.Yaw_deg_Sigma      = default_value;  % Sigma in Yaw
+        dataStructure.OneSigmaPos        = default_value;  % Sigma in position 
+        dataStructure.DOP                = default_value;  % DOP in position (ratio, usually close to 1)
         
     case 'ins'
-        dataStructure.GPS_Time           = 0; % This is the GPS time, UTC, as reported by the unit
-        dataStructure.Trigger_Time       = 0; % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = 0; % This is the ROS time that the data arrived into the bag
-        dataStructure.centiSeconds       = 0; % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        dataStructure.Npoints            = 0; % This is the number of data points in the array
-        dataStructure.IMUStatus          = 0; 
-        dataStructure.XAccel             = 0;
-        dataStructure.XAccel_Sigma       = 0;
-        dataStructure.YAccel             = 0;
-        dataStructure.YAccel_Sigma       = 0;
-        dataStructure.ZAccel             = 0;
-        dataStructure.ZAccel_Sigma       = 0;
-        dataStructure.XGyro              = 0;
-        dataStructure.XGyro_Sigma        = 0;
-        dataStructure.YGyro              = 0;
-        dataStructure.YGyro_Sigma        = 0;
-        dataStructure.ZGyro              = 0;
-        dataStructure.ZGyro_Sigma        = 0;
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.IMUStatus          = default_value;  
+        dataStructure.XAccel             = default_value; 
+        dataStructure.XAccel_Sigma       = default_value; 
+        dataStructure.YAccel             = default_value; 
+        dataStructure.YAccel_Sigma       = default_value; 
+        dataStructure.ZAccel             = default_value; 
+        dataStructure.ZAccel_Sigma       = default_value; 
+        dataStructure.XGyro              = default_value; 
+        dataStructure.XGyro_Sigma        = default_value; 
+        dataStructure.YGyro              = default_value; 
+        dataStructure.YGyro_Sigma        = default_value; 
+        dataStructure.ZGyro              = default_value; 
+        dataStructure.ZGyro_Sigma        = default_value; 
 
     case 'encoder'
-        dataStructure.GPS_Time           = 0; % This is the GPS time, UTC, as reported by the unit
-        dataStructure.Trigger_Time       = 0; % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = 0; % This is the ROS time that the data arrived into the bag
-        dataStructure.centiSeconds       = 0; % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        dataStructure.Npoints            = 0; % This is the number of data points in the array
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
 
-        dataStructure.CountsPerRev       = 0; % How many counts are in each revolution of the encoder (with quadrature)
-        dataStructure.Counts             = 0; % A vector of the counts measured by the encoder, Npoints long
-        dataStructure.DeltaCounts        = 0; % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
-        dataStructure.LastIndexCount     = 0; % Count at which last index pulse was detected, Npoints long
-        dataStructure.AngularVelocity    = 0; % Angular velocity of the encoder
-        dataStructure.AngularVelocity_Sigma    = 0;
+        dataStructure.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
+        dataStructure.Counts             = default_value;  % A vector of the counts measured by the encoder, Npoints long
+        dataStructure.DeltaCounts        = default_value;  % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
+        dataStructure.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
+        dataStructure.AngularVelocity    = default_value;  % Angular velocity of the encoder
+        dataStructure.AngularVelocity_Sigma    = default_value; 
    
     case 'lidar2d'
         % Xinyu - fill this in
-        dataStructure.GPS_Time           = 0; % This is the GPS time, UTC, as reported by the unit
-        dataStructure.Trigger_Time       = 0; % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = 0; % This is the ROS time that the data arrived into the bag
-        dataStructure.centiSeconds       = 0; % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        dataStructure.Npoints            = 0; % This is the number of data points in the array
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
 
     case 'lidar3d'
         % Xinyu - fill this in
-        dataStructure.GPS_Time           = 0; % This is the GPS time, UTC, as reported by the unit
-        dataStructure.Trigger_Time       = 0; % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = 0; % This is the ROS time that the data arrived into the bag
-        dataStructure.centiSeconds       = 0; % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        dataStructure.Npoints            = 0; % This is the number of data points in the array
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
 
     otherwise
         error('Unrecognized data type requested: %s',dataType)
