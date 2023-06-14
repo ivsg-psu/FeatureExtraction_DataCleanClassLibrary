@@ -369,8 +369,8 @@ catch
         base_station.altitude= 337.665496826;
         
          flag_do_debug = 1;
-        [rawData,Hemisphere_GPSWeek] = fcn_DataClean_loadRawDataFromFile(flag_do_debug,filename,variable_names);
-        %[rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+        % [rawData,Hemisphere_GPSWeek] = fcn_DataClean_loadRawDataFromFile(flag_do_debug,filename,variable_names);
+        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
 
         % test three
         % load('TestTrack_rawData.mat');  % Loads TestTrack data and creates 'rawData' variable directly

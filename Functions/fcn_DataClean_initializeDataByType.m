@@ -97,11 +97,26 @@ default_value = NaN;
 switch lower(dataType)
     case 'trigger'
         % Xinyu - fill this in
-        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
-        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
-        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.GPS_Time                          = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time                          = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds                      = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints                           = default_value;  % This is the number of data points in the array
+        dataStructure.mode                              = default_value;  % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
+        dataStructure.adjone                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
+        dataStructure.adjtwo                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
+        dataStructure.adjthree                          = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
+        % Data below are error monitoring messages
+        dataStructure.err_failed_mode_count             = default_value; 
+        dataStructure.err_failed_checkInformation       = default_value;  
+        dataStructure.err_failed_XI_format              = default_value; 
+        dataStructure.err_trigger_unknown_error_occured = default_value; 
+        dataStructure.err_bad_uppercase_character       = default_value; 
+        dataStructure.err_bad_lowercase_character       = default_value; 
+        dataStructure.err_bad_three_adj_element         = default_value; 
+        dataStructure.err_bad_first_element             = default_value; 
+        dataStructure.err_bad_character                 = default_value; 
+        dataStructure.err_wrong_element_length          = default_value; 
 
     case 'gps'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -135,7 +150,7 @@ switch lower(dataType)
         dataStructure.Yaw_deg            = default_value;  % Yaw (angle about z) in degrees, ISO coordinates
         dataStructure.Yaw_deg_Sigma      = default_value;  % Sigma in Yaw
         dataStructure.OneSigmaPos        = default_value;  % Sigma in position 
-        dataStructure.DOP                = default_value;  % DOP in position (ratio, usually close to 1)
+        dataStructure.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
         
     case 'ins'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -178,7 +193,15 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-
+        dataStructure.angle_min          = default_value;  % This is the start angle of scan [rad]
+        dataStructure.angle_max          = default_value;  % This is the end angle of scan [rad]
+        dataStructure.angle_increment    = default_value;  % This is the angle increment between each measurements [rad]
+        dataStructure.time_increment     = default_value;  % This is the time increment between each measurements [s]
+        dataStructure.scan_time          = default_value;  % This is the time between scans [s]
+        dataStructure.range_min          = default_value;  % This is the minimum range value [m]
+        dataStructure.range_max          = default_value;  % This is the maximum range value [m]
+        dataStructure.ranges             = default_value;  % This is the range data of scans [m]
+        dataStructure.intensities        = default_value;  % This is the intensities data of scans (Ranging from 0 to 255)
     case 'lidar3d'
         % Xinyu - fill this in
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
