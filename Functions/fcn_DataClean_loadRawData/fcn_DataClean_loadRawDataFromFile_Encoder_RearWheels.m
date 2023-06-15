@@ -1,4 +1,4 @@
-function Encoder_RearWheels = fcn_DataClean_loadRawDataFromFile_Encoder_RearWheels(d,GPS_Novatel,data_source,flag_do_debug)
+function Encoder_RearWheels = fcn_DataClean_loadRawDataFromFile_Encoder_RearWheels(data_structure,GPS_Novatel,data_source,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the Encoder_RearWheels data
@@ -27,20 +27,21 @@ function Encoder_RearWheels = fcn_DataClean_loadRawDataFromFile_Encoder_RearWhee
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 if strcmp(data_source,'mat_file')
-    Encoder_RearWheels.ROS_Time             = d.Time';
-    Encoder_RearWheels.centiSeconds         = 1; % This is sampled every 1 ms
-    Encoder_RearWheels.Npoints              = length(Encoder_RearWheels.ROS_Time(:,1));
-    Encoder_RearWheels.EmptyVector          = fcn_DataClean_fillEmptyStructureVector(Encoder_RearWheels); % Fill in empty vector (this is useful later)
-    %Encoder_RearWheels.GPS_Time             = Encoder_RearWheels.EmptyVector;
-    Encoder_RearWheels.deltaT_ROS           = mean(diff(Encoder_RearWheels.ROS_Time));
-    %Encoder_RearWheels.deltaT_GPS           = mean(diff(Encoder_RearWheels.GPS_Time));
-    Encoder_RearWheels.CountsL              =  d.CountsL';
-    Encoder_RearWheels.CountsR              = d.CountsR';
-    Encoder_RearWheels.AngularVelocityL     = d.AngularVelocityL';
-    Encoder_RearWheels.AngularVelocityR     = d.AngularVelocityR';
-    Encoder_RearWheels.DeltaCountsL         = d.DeltaCountsL';
-    Encoder_RearWheels.DeltaCountsR         = d.DeltaCountsR';
-    %Encoder_RearWheels.DeltaCountsR        = [0; diff(Encoder_RearWheels.CountsR)];
+    
+    Encoder_RearWheels.GPS_Time           = data_structure.GPS_time;  % This is the GPS time, UTC, as reported by the unit
+    Encoder_RearWheels.Trigger_Time       = data_structure.Trigger_Time;  % This is the Trigger time, UTC, as calculated by sample
+    Encoder_RearWheels.ROS_Time           = data_structure.ROS_Time;  % This is the ROS time that the data arrived into the bag
+    Encoder_RearWheels.centiSeconds       = data_structure.centiSeconds;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    Encoder_RearWheels.Npoints            = data_structure.Npoints;  % This is the number of data points in the array
+
+    Encoder_RearWheels.CountsPerRev       = data_structure.CountsPerRev;  % How many counts are in each revolution of the encoder (with quadrature)
+    Encoder_RearWheels.Counts             = data_structure.Counts;  % A vector of the counts measured by the encoder, Npoints long
+    Encoder_RearWheels.DeltaCounts        = data_structure.DeltaCounts;  % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
+    Encoder_RearWheels.LastIndexCount     = data_structure.LastIndexCount;  % Count at which last index pulse was detected, Npoints long
+    Encoder_RearWheels.AngularVelocity    = data_structure.AngularVelocity;  % Angular velocity of the encoder
+    Encoder_RearWheels.AngularVelocity_Sigma    = default_value.AngularVelocity_Sigma;
+    % Event functions
+    Encoder_RearWheels.EventFunctions = {}; % These are the functions to determine if something went wrong
     
 else
     error('Please indicate the data source')
@@ -66,7 +67,7 @@ Encoder_RearWheels.VelocityR_Sigma      = std(error);
 Encoder_RearWheels.velMagnitude         = Encoder_RearWheels.VelocityR;
 Encoder_RearWheels.velMagnitude_Sigma   = Encoder_RearWheels.VelocityR_Sigma;
 
-clear d; %clear temp variable
+clear data_structure; %clear temp variable
 
 % Close out the loading process
 if flag_do_debug
