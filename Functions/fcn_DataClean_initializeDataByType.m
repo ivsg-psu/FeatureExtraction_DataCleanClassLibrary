@@ -153,6 +153,7 @@ switch lower(dataType)
         dataStructure.Yaw_deg_Sigma      = default_value;  % Sigma in Yaw
         dataStructure.OneSigmaPos        = default_value;  % Sigma in position 
         dataStructure.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
+        dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
         % Event functions
         dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
 

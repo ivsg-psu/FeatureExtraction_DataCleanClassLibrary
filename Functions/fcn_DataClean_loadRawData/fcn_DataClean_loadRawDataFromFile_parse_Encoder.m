@@ -1,4 +1,4 @@
-function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(d,data_source,flag_do_debug)
+function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(data_structure,data_source,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the GPS_Novatel data
@@ -26,46 +26,29 @@ function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(d,data_s
 %%
 
 if strcmp(data_source,'mat_file')
-    % % Note: the Novatel and Hemisphere are almost perfectly time aligned, if
-    % % dropping the first data point in Novatel (uncomment the following to
-    % % see)
-    % Hemisphere.GPS_Time(1,1)
-    % % ans =
-    % %           242007.249999977
-    % d.Seconds(1,2)
-    % % ans =
-    % %              242007.248687
-    % % This is why all the vectors below start at 2, not 1
-    parseEncoder.ROS_Time                       = d.rosbagTimestamp;
-    parseEncoder.header                         = d.header;
-    parseEncoder.seq                            = d.seq;
-    parseEncoder.Stamp                          = d.stamp;
-    parseEncoder.sec                            = d.secs;
-    parseEncoder.nsec                           = d.nsecs;
-    parseEncoder.Frame_id                       = d.frame_id;
-    parseEncoder.note_current_output            = d.note_current_output;
-    parseEncoder.mode                           = d.mode;
-    parseEncoder.time                           = d.time;
-    parseEncoder.C1                             = d.C1;
-    parseEncoder.C2                             = d.C2;
-    parseEncoder.C3                             = d.C3;
-    parseEncoder.C4                             = d.C4;
-    parseEncoder.P1                             = d.P1;
-    parseEncoder.E1                             = d.E1;
-    parseEncoder.note_accumulated_error_counts  = d.note_accumulated_error_counts;
-    parseEncoder.err_wrong_element_length       = d.err_wrong_element_length;
-    parseEncoder.err_bad_element_structure      = d.err_bad_element_structure;
-    parseEncoder.err_failed_time                = d.err_failed_time;
-    parseEncoder.err_bad_uppercase_character    = d.err_bad_uppercase_character;
-    parseEncoder.err_bad_lowercase_character    = d.err_bad_lowercase_character;
-    parseEncoder.err_bad_character              = d.err_bad_character;
+    
+    parseEncoder.GPS_Time           = data_structure.GPS_time;  % This is the GPS time, UTC, as reported by the unit
+    parseEncoder.Trigger_Time       = data_structure.Trigger_Time;  % This is the Trigger time, UTC, as calculated by sample
+    parseEncoder.ROS_Time           = data_structure.ROS_Time;  % This is the ROS time that the data arrived into the bag
+    parseEncoder.centiSeconds       = data_structure.centiSeconds;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    parseEncoder.Npoints            = data_structure.Npoints;  % This is the number of data points in the array
+
+    parseEncoder.CountsPerRev       = data_structure.CountsPerRev;  % How many counts are in each revolution of the encoder (with quadrature)
+    parseEncoder.Counts             = data_structure.Counts;  % A vector of the counts measured by the encoder, Npoints long
+    parseEncoder.DeltaCounts        = data_structure.DeltaCounts;  % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
+    parseEncoder.LastIndexCount     = data_structure.LastIndexCount;  % Count at which last index pulse was detected, Npoints long
+    parseEncoder.AngularVelocity    = data_structure.AngularVelocity;  % Angular velocity of the encoder
+    parseEncoder.AngularVelocity_Sigma    = default_value.AngularVelocity_Sigma;
+    % Event functions
+    parseEncoder.EventFunctions = {}; % These are the functions to determine if something went wrong
+    
 
 else
     error('Please indicate the data source')
 end
 
 
-clear d %clear temp variable
+clear data_structure %clear temp variable
 
 
 % Close out the loading process
