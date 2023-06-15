@@ -207,9 +207,9 @@
 % close all
 %
 % % % Make sure we can see the utilities folder
-% % addpath '../Utilities';
-% % addpath '../data'; % add the data path
-% % addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
+addpath '../Utilities';
+addpath '../data'; % add the data path
+addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 %
 % %% Dependencies and Setup of the Code
 % % The code requires several other libraries to work, namely the following
