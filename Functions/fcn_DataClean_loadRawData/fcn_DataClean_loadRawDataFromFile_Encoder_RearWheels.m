@@ -12,6 +12,11 @@ function Encoder_RearWheels = fcn_DataClean_loadRawDataFromFile_Encoder_RearWhee
 % Author: Liming Gao
 % Created Date: 2020_12_07
 %
+% Modified by Aneesh Batchu and Mariam Abdellatief on 2023_06_13
+%
+% This function is modified to load the raw data (from file) collected with
+% the Penn State Mapping Van.
+%
 %
 % Updates:
 %

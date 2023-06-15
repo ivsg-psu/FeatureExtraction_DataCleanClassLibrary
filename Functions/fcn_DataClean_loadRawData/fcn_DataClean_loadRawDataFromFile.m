@@ -1,6 +1,6 @@
 function [rawData,varargout] = fcn_DataClean_loadRawDataFromFile(flag_do_debug,varargin)
 
-% Purpose: This function is used to load and preprocess the raw data collected with the Penn State Mapping Van.
+% Purpose: This function is used to load the raw data collected with the Penn State Mapping Van.
 %
 % Input Variables:
 %      varargin(1) = filename(format:string) if load data from file, result(format:struct) if process
@@ -12,6 +12,12 @@ function [rawData,varargout] = fcn_DataClean_loadRawDataFromFile(flag_do_debug,v
 % Sean Brennan, Liming Gao
 % Created Date: 2019_10_03
 % modify Date: 2023_06_12
+% 
+% Modified by Aneesh Batchu and Mariam Abdellatief on 2023_06_13
+%
+% This function is modified to load the raw data (from file) collected with
+% the Penn State Mapping Van.
+%
 %
 % Updates:
 %  2019_10_03 - Dr. Brennan revised from Liming Gao's prior version to

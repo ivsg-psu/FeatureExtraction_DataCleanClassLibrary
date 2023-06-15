@@ -11,6 +11,11 @@ function Hemisphere = fcn_DataClean_loadRawDataFromFile_Hemisphere(data_structur
 % Created Date: 2020_11_15
 % Modify Date: 2019_11_22
 %
+% Modified by Aneesh Batchu and Mariam Abdellatief on 2023_06_13
+%
+% This function is modified to load the raw data (from file) collected with
+% the Penn State Mapping Van.
+%
 % Updates:
 %
 % To do lists:

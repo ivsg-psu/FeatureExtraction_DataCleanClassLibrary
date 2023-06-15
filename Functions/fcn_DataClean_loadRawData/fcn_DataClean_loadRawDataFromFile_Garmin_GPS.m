@@ -10,6 +10,10 @@ function GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(d,data_source
 % Author: Liming Gao
 % Created Date: 2020_12_07
 %
+% Modified by Aneesh Batchu and Mariam Abdellatief on 2023_06_13
+%
+% This function is modified to load the raw data (from file) collected with
+% the Penn State Mapping Van.
 %
 % Updates:
 %
