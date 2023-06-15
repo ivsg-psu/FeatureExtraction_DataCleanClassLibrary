@@ -117,6 +117,8 @@ switch lower(dataType)
         dataStructure.err_bad_first_element             = default_value; 
         dataStructure.err_bad_character                 = default_value; 
         dataStructure.err_wrong_element_length          = default_value; 
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'gps'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -151,7 +153,9 @@ switch lower(dataType)
         dataStructure.Yaw_deg_Sigma      = default_value;  % Sigma in Yaw
         dataStructure.OneSigmaPos        = default_value;  % Sigma in position 
         dataStructure.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
-        
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+
     case 'ins'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
@@ -171,6 +175,8 @@ switch lower(dataType)
         dataStructure.YGyro_Sigma        = default_value; 
         dataStructure.ZGyro              = default_value; 
         dataStructure.ZGyro_Sigma        = default_value; 
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'encoder'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -185,7 +191,9 @@ switch lower(dataType)
         dataStructure.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
         dataStructure.AngularVelocity    = default_value;  % Angular velocity of the encoder
         dataStructure.AngularVelocity_Sigma    = default_value; 
-   
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+
     case 'lidar2d'
         % Xinyu - fill this in
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -202,6 +210,9 @@ switch lower(dataType)
         dataStructure.range_max          = default_value;  % This is the maximum range value [m]
         dataStructure.ranges             = default_value;  % This is the range data of scans [m]
         dataStructure.intensities        = default_value;  % This is the intensities data of scans (Ranging from 0 to 255)
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        
     case 'lidar3d'
         % Xinyu - fill this in
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -209,6 +220,8 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
     otherwise
         error('Unrecognized data type requested: %s',dataType)
