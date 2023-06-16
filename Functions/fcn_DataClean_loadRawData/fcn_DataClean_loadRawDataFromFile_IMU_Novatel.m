@@ -1,4 +1,4 @@
-function IMU_Novatel = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(data_structure,data_source,flag_do_debug)
+function IMU_Novatel_structure = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(file_path,datatype,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the GPS_Novatel data
@@ -25,34 +25,38 @@ function IMU_Novatel = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(data_struct
 
 %%
 
-if strcmp(data_source,'mat_file')
+if strcmp(datatype,'ins')
+    opts = detectImportOptions(file_path);
+    opts.PreserveVariableNames = true;
+    datatable = readtable(file_path,opts);
+    IMU_Novatel_structure = fcn_DataClean_initializeDataByType(datatype);
     
-    IMU_Novatel.GPS_Time           = data_structure.GPS_Time;  % This is the GPS time, UTC, as reported by the unit
-    IMU_Novatel.Trigger_Time       = data_structure.Trigger_Time;  % This is the Trigger time, UTC, as calculated by sample
-    IMU_Novatel.ROS_Time           = data_structure.ROS_Time;  % This is the ROS time that the data arrived into the bag
-    IMU_Novatel.centiSeconds       = data_structure.centiSeconds;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    IMU_Novatel.Npoints            = data_structure.Npoints;  % This is the number of data points in the array
-    IMU_Novatel.IMUStatus          = data_structure.IMUStatus;  
-    IMU_Novatel.XAccel             = data_structure.XAccel; 
-    IMU_Novatel.XAccel_Sigma       = data_structure.XAccel_Sigma; 
-    IMU_Novatel.YAccel             = data_structure.YAccel; 
-    IMU_Novatel.YAccel_Sigma       = data_structure.YAccel_Sigma; 
-    IMU_Novatel.ZAccel             = data_structure.ZAccel; 
-    IMU_Novatel.ZAccel_Sigma       = data_structure.ZAccel_Sigma; 
-    IMU_Novatel.XGyro              = data_structure.XGyro; 
-    IMU_Novatel.XGyro_Sigma        = data_structure.XGyro_Sigma; 
-    IMU_Novatel.YGyro              = data_structure.YGyro; 
-    IMU_Novatel.YGyro_Sigma        = data_structure.YGyro_Sigma; 
-    IMU_Novatel.ZGyro              = data_structure.ZGyro; 
-    IMU_Novatel.ZGyro_Sigma        = data_structure.ZGyro_Sigma; 
+    IMU_Novatel_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
+    % IMU_Novatel_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+    IMU_Novatel_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+    % IMU_Novatel_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    IMU_Novatel_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+    % IMU_Novatel_structure.IMUStatus          = default_value;
+    IMU_Novatel_structure.XAccel             = datatable.x_2;
+    % IMU_Novatel_structure.XAccel_Sigma       = default_value;
+    IMU_Novatel_structure.YAccel             = datatable.y_2;
+    % IMU_Novatel_structure.YAccel_Sigma       = default_value;
+    IMU_Novatel_structure.ZAccel             = datatable.z_2;
+    % IMU_Novatel_structure.ZAccel_Sigma       = default_value;
+    IMU_Novatel_structure.XGyro              = datatable.x_1;
+    % IMU_Novatel_structure.XGyro_Sigma        = default_value;
+    IMU_Novatel_structure.YGyro              = datatable.y_1;
+    % IMU_Novatel_structure.YGyro_Sigma        = default_value;
+    IMU_Novatel_structure.ZGyro              = datatable.z_1;
+    % IMU_data_structure.ZGyro_Sigma        = default_value;
     % Event functions
-    IMU_Novatel.EventFunctions = {}; % These are the functions to determine if something went wrong
+    IMU_Novatel_structure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
 else
-    error('Please indicate the data source')
+    error('Wrong data type requested: %s',dataType)
 end
 
-clear data_structure %clear temp variable
+clear datatable %clear temp variable
 
 
 % Close out the loading process

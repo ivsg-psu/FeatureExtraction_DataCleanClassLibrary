@@ -1,4 +1,4 @@
-function IMU_ADIS = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(data_structure,data_source,flag_do_debug)
+function IMU_data_structure = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(file_path,datatype,flag_do_debug,topic_name)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the IMU_ADIS data
@@ -25,53 +25,90 @@ function IMU_ADIS = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(data_structure,da
 %
 
 %%
+if strcmp(datatype, 'ins')
+    IMU_data_structure = fcn_DataClean_initializeDataByType(datatype);
+    opts = detectImportOptions(file_path);
+    opts.PreserveVariableNames = true;
+    datatable = readtable(file_path,opts);
+    switch topic_name
+        case '/imu/data_raw'
+            secs = datatable.secs;
+            nsecs = datatable.nsecs;
+            IMU_data_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
+            % IMU_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+            IMU_data_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+            % IMU_data_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+            IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % IMU_data_structure.IMUStatus          = default_value;  
+            IMU_data_structure.XAccel             = datatable.x_2; 
+            % IMU_data_structure.XAccel_Sigma       = default_value; 
+            IMU_data_structure.YAccel             = datatable.y_2; 
+            % IMU_data_structure.YAccel_Sigma       = default_value; 
+            IMU_data_structure.ZAccel             = datatable.z_2; 
+            % IMU_data_structure.ZAccel_Sigma       = default_value; 
+            IMU_data_structure.XGyro              = datatable.x_1; 
+            % IMU_data_structure.XGyro_Sigma        = default_value; 
+            IMU_data_structure.YGyro              = datatable.y_1; 
+            % IMU_data_structure.YGyro_Sigma        = default_value; 
+            IMU_data_structure.ZGyro              = datatable.z_1; 
+            % IMU_data_structure.ZGyro_Sigma        = default_value; 
+       
+        case '/imu/data'
+            secs = datatable.secs;
+            nsecs = datatable.nsecs;
+            IMU_data_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
+            % IMU_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+            IMU_data_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+            % IMU_data_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+            IMU_data_structure.Npoints            = height(datatable);;  % This is the number of data points in the array
+            % IMU_data_structure.IMUStatus          = default_value;  
+            IMU_data_structure.XAccel             = datatable.x_2; 
+            % IMU_data_structure.XAccel_Sigma       = default_value; 
+            IMU_data_structure.YAccel             = datatable.y_2; 
+            % IMU_data_structure.YAccel_Sigma       = default_value; 
+            IMU_data_structure.ZAccel             = datatable.z_2; 
+            % IMU_data_structure.ZAccel_Sigma       = default_value; 
+            IMU_data_structure.XGyro              = datatable.x_1; 
+            % IMU_data_structure.XGyro_Sigma        = default_value; 
+            IMU_data_structure.YGyro              = datatable.y_1; 
+            % IMU_data_structure.YGyro_Sigma        = default_value; 
+            IMU_data_structure.ZGyro              = datatable.z_1; 
+            % IMU_data_structure.ZGyro_Sigma        = default_value; 
 
-if strcmp(data_source,'mat_file')
 
- 
-    % IMU_ADIS.ROS_Time      = d.Time';
-    % IMU_ADIS.centiSeconds  = 1; % This is sampled every 1 ms
-    % IMU_ADIS.Npoints       = length(IMU_ADIS.ROS_Time(:,1));
-    % IMU_ADIS.EmptyVector   = fcn_DataClean_fillEmptyStructureVector(IMU_ADIS); % Fill in empty vector (this is useful later)
-    % %IMU_ADIS.GPS_Time      = IMU_ADIS.EmptyVector;
-    % IMU_ADIS.deltaT_ROS    = mean(diff(IMU_ADIS.ROS_Time));
-    % %IMU_ADIS.deltaT_GPS    = mean(diff(IMU_ADIS.GPS_Time));
-    % %IMU_ADIS.IMUStatus     = IMU_ADIS.EmptyVector;
-    % IMU_ADIS.XAccel        = d.LinearAccelerationY';
-    % IMU_ADIS.YAccel        = d.LinearAccelerationX';
-    % IMU_ADIS.ZAccel        = d.LinearAccelerationZ';
-    % IMU_ADIS.XGyro         = d.AngularVelocityY';  % note - these seem to be swapped!?! (if enter them swapped, they seem to agree)
-    % IMU_ADIS.YGyro         = d.AngularVelocityX';
-    % IMU_ADIS.ZGyro         = d.AngularVelocityZ';
-    adis_IMU_data = fcn_DataClean_initializeDataByType(datatype);
+        case '/imu/rpy/filtered'
+            secs = datatable.secs;
+            nsecs = datatable.nsecs;
             
-    secs = table.secs;
-    nsecs = table.nsecs;
-    adis_IMU_data.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
-    % adis_IMU_data.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-    adis_IMU_data.ROS_Time           = table.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
-    % adis_IMU_data.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    % adis_IMU_data.Npoints            = default_value;  % This is the number of data points in the array
-    % adis_IMU_data.IMUStatus          = default_value;
-    adis_IMU_data.XAccel             = table.x_2;
-    % adis_IMU_data.XAccel_Sigma       = default_value;
-    adis_IMU_data.YAccel             = table.y_2;
-    % adis_IMU_data.YAccel_Sigma       = default_value;
-    adis_IMU_data.ZAccel             = table.z_2;
-    % adis_IMU_data.ZAccel_Sigma       = default_value;
-    adis_IMU_data.XGyro              = table.x_1;
-    % adis_IMU_data.XGyro_Sigma        = default_value;
-    adis_IMU_data.YGyro              = table.y_1;
-    % adis_IMU_data.YGyro_Sigma        = default_value;
-    adis_IMU_data.ZGyro              = table.z_1;
-    % adis_IMU_data.ZGyro_Sigma        = default_value;
-    rawdata.adis_IMU_data = adis_IMU_data;
+            IMU_data_structure.GPS_Time           = secs+nsecs*10^-9;;  % This is the GPS time, UTC, as reported by the unit
+            % IMU_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+            IMU_data_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+            % IMU_data_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+            IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % IMU_data_structure.IMUStatus          = default_value;  
+            IMU_data_structure.XAccel             = datatable.x; 
+            % adis_IMU_filtered_rpy.XAccel_Sigma       = default_value; 
+            IMU_data_structure.YAccel             = datatable.y; 
+            % adis_IMU_filtered_rpy.YAccel_Sigma       = default_value; 
+            IMU_data_structure.ZAccel             = datatable.z; 
+            % IMU_data_structure.ZAccel_Sigma       = default_value; 
+            % IMU_data_structure.XGyro              = default_value; 
+            % IMU_data_structure.XGyro_Sigma        = default_value; 
+            % IMU_data_structure.YGyro              = default_value; 
+            % IMU_data_structure.YGyro_Sigma        = default_value; 
+            % IMU_data_structure.ZGyro              = default_value; 
+            % IMU_data_structure.ZGyro_Sigma        = default_value; 
+
+        otherwise
+            error('Unrecognized topic requested: %s',topic_name)
+    end
 
 else
-    error('Please indicate the data source')
+    error('Wrong data type requested: %s',dataType)
+
 end
 
-clear data_structure %clear temp variable
+clear datatable %clear temp variable
 
 % Close out the loading process
 if flag_do_debug
