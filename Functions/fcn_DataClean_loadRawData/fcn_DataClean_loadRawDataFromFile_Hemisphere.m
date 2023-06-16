@@ -1,32 +1,36 @@
 
 function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_path,datatype,flag_do_debug)
 
-
 % This function is used to load the raw data collected with the Penn State Mapping Van.
-% This is the Hemisphere data
+% This is the Hemisphere GPS data, whose data type is gps
+
 % Input Variables:
-%      data_structure = raw data from Hemisphere DGPS(format:struct)
-%      data_source = the data source of the raw data, can be 'mat_file' or 'database'(format:struct)
+%      file_path = file path of the Sick Lidar data (format txt)
+%      datatype  = the datatype should be lidar2d
 % Returned Results:
-%      Hemisphere
+%      Hemisphere_DGPS
 % Author: Liming Gao
+
 % Created Date: 2020_11_15
-% Modify Date: 2019_11_22
+% Modify Date: 2023_06_16
 %
-% Modified by Aneesh Batchu and Mariam Abdellatief on 2023_06_13
-%
+% Modified by Xinyu Cao, Aneesh Batchu and Mariam Abdellatief on 2023_06_16
+% 
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
 %
 % Updates:
 %
 % To do lists:
-% 1. check if it is reasonable for the calcualtion of Hemisphere.velMagnitude_Sigma
 % 
+% Reference:
+% To be added
+
 %%
 
 % the field name from mat_file is different from database, so we process
 % them seperately
+% Unknown value are remained as default_value = NaN
 
 
 if strcmp(datatype,'gps')

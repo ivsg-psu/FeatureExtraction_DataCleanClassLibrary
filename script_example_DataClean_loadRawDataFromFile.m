@@ -57,7 +57,7 @@ library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_
 % change the data_folder variable and bagname variable to corresponding path and bag
 % name.
 data_folder = "D:\OneDrive - The Pennsylvania State University\IVSG\GitHubMirror\MappingVanDataCollection\ParsedData\2023-06-05\";
-bagname = "mapping_van_2023-06-05-1Lap";
+bagname = "mapping_van_2023-06-05-SCR2TestTrack";
 
 %% Add path
 addpath(genpath('Functions')); % add the function path
