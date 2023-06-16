@@ -1,4 +1,4 @@
-function GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(table,data_source,flag_do_debug)
+function GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(file_path,datatype,table,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the GPS_Novatel data
@@ -24,7 +24,7 @@ function GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(table,data_so
 
 %%
 
-if strcmp(data_source,'mat_file')
+if contains(file_path,'Garmin_GPS')
 %     GPS_Garmin.ROS_Time       = d.Time';
 %     GPS_Garmin.centiSeconds  = 4; % This is sampled every 4 ms
 % 
@@ -88,7 +88,6 @@ if strcmp(data_source,'mat_file')
             % Garmin_GPS.OneSigmaPos        = default_value;  % Sigma in position 
             % Garmin_GPS.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
             % Garmin_GPS.AgeOfDiff          = default_value;  % Age of correction data [s]
-            rawdata.Garmin_GPS = Garmin_GPS;
 
 else
     error('Please indicate the data source')

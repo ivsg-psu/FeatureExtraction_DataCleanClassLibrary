@@ -1,4 +1,4 @@
-function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(table,data_source,flag_do_debug)
+function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_path,datatype,table,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the Hemisphere data
@@ -25,7 +25,7 @@ function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(table,da
 
 % the field name from mat_file is different from database, so we process
 % them seperately
-if strcmp(data_source,'mat_file')
+if contains(file_path,'Bin1')
 %     Hemisphere.ROS_Time         = data_structure.Time';
 %     Hemisphere.GPS_Time         = data_structure.GPSTimeOfWeek';
 %     Hemisphere.centiSeconds     = 5; % This is sampled every 5 ms
@@ -97,7 +97,6 @@ Hemisphere_DGPS = fcn_DataClean_initializeDataByType(datatype);
             % Hemisphere_DGPS.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
             Hemisphere_DGPS.AgeOfDiff          = table.AgeOfDiff;
 
-            rawdata.Hemisphere_DGPS = Hemisphere_DGPS;
 else
     error('Please indicate the data source')
 end

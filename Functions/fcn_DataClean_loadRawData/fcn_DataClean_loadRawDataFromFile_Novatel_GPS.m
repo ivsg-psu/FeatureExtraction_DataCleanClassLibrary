@@ -1,5 +1,4 @@
-function GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(table,data_source,flag_do_debug)
-
+function GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(file_path,datatype,table,flag_do_debug)
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the GPS_Novatel data
 % Input Variables:
@@ -25,7 +24,7 @@ function GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(table,data_
 % 3. Hemisphere = d_out;  %%update the interpolated values to raw data?
 %%
 
-if strcmp(data_source,'mat_file')
+if contains(file_path,'GPS_Novatel')
     % % Note: the Novatel and Hemisphere are almost perfectly time aligned, if
     % % dropping the first data point in Novatel (uncomment the following to
     % % see)
@@ -135,7 +134,7 @@ secs = table.secs;
             % GPS_Novatel.OneSigmaPos        = default_value;  % Sigma in position 
             % GPS_Novatel.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
             % GPS_Novatel.AgeOfDiff          = default_value;  % Age of correction data [s]
-            rawdata.GPS_Novatel = GPS_Novatel;
+            
             
 else
     error('Please indicate the data source')

@@ -10,9 +10,9 @@
 % Returned Results:
 %      Sparkfun_rear_left
 
-function SparkFun_GPS_RearLeft = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS_rear_left(table,data_source)
+function SparkFun_GPS_RearLeft = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS_rear_left(file_path,datatype,table,flag_do_debug)
 
-if strcmp(data_source,'mat_file')
+if contains(file_path,'sparkfun_gps_rear_left')
 %     Sparkfun_rear_left.rosbagTimestamp  = data_structure.Time';
 %     Sparkfun_rear_left.nsecs            = data_structure.nanoSeconds; 
 %     Sparkfun_rear_left.frame_id         = data_structure.id';
@@ -80,7 +80,6 @@ if strcmp(data_source,'mat_file')
             SparkFun_GPS_RearLeft.HDOP               = table.HDOP; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
             SparkFun_GPS_RearLeft.AgeOfDiff          = table.AgeOfDiff;  % Age of correction data [s]
 
-            %rawdata.SparkFun_GPS_RearLeft = SparkFun_GPS_RearLeft;
 
 else
     error('Please upload data structure in ".mat" format or speify data source')

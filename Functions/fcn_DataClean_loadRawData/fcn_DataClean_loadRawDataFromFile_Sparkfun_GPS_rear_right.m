@@ -10,9 +10,9 @@ Created by Mariam Abdellatief and Aneesh Batchu on 6/14/2023
 % Returned Results:
 %      SparkFun_GPS_RearRight
 
-function SparkFun_GPS_RearRight = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS_rear_right(table,data_source)
+function SparkFun_GPS_RearRight = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS_rear_right(file_path,datatype,table,flag_do_debug)
 
-if strcmp(data_source,'mat_file')
+if contains(file_path,'sparkfun_gps_rear_right')
 %     Sparkfun_rear_right.rosbagTimestamp  = data_structure.Time';
 %     Sparkfun_rear_right.nsecs            = data_structure.nanoSeconds; 
 %     Sparkfun_rear_right.frame_id         = data_structure.id';
@@ -109,7 +109,6 @@ if strcmp(data_source,'mat_file')
             % SparkFun_GPS_RearRight.OneSigmaPos        = default_value;  % Sigma in position 
             SparkFun_GPS_RearRight.HDOP               = table.HDOP; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
             SparkFun_GPS_RearRight.AgeOfDiff          = table.AgeOfDiff;  % Age of correction data [s]
-            rawdata.SparkFun_GPS_RearRight = SparkFun_GPS_RearRight;
 
 else
     error('Please upload data structure in ".mat" format or speify data source')
