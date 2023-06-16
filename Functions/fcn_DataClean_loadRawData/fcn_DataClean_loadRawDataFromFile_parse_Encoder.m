@@ -1,4 +1,4 @@
-function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(data_structure,data_source,flag_do_debug)
+function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(file_path,datatype,table,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the GPS_Novatel data
@@ -25,22 +25,24 @@ function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(data_str
 % 3. Hemisphere = d_out;  %%update the interpolated values to raw data?
 %%
 
-if strcmp(data_source,'mat_file')
+if contains(file_path,'encoder')
     
-    parseEncoder.GPS_Time           = data_structure.GPS_time;  % This is the GPS time, UTC, as reported by the unit
-    parseEncoder.Trigger_Time       = data_structure.Trigger_Time;  % This is the Trigger time, UTC, as calculated by sample
-    parseEncoder.ROS_Time           = data_structure.ROS_Time;  % This is the ROS time that the data arrived into the bag
-    parseEncoder.centiSeconds       = data_structure.centiSeconds;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    parseEncoder.Npoints            = data_structure.Npoints;  % This is the number of data points in the array
+    secs = table.secs;
+    nsecs = table.secs;
 
-    parseEncoder.CountsPerRev       = data_structure.CountsPerRev;  % How many counts are in each revolution of the encoder (with quadrature)
-    parseEncoder.Counts             = data_structure.Counts;  % A vector of the counts measured by the encoder, Npoints long
-    parseEncoder.DeltaCounts        = data_structure.DeltaCounts;  % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
-    parseEncoder.LastIndexCount     = data_structure.LastIndexCount;  % Count at which last index pulse was detected, Npoints long
-    parseEncoder.AngularVelocity    = data_structure.AngularVelocity;  % Angular velocity of the encoder
-    parseEncoder.AngularVelocity_Sigma    = default_value.AngularVelocity_Sigma;
-    % Event functions
-    parseEncoder.EventFunctions = {}; % These are the functions to determine if something went wrong
+    parseEncoder = fcn_DataClean_initializeDataByType(datatype);
+    parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
+    % Raw_Encoder.Trigger_Time         = default_value;  % This is the Trigger time, UTC, as calculated by sample
+    parseEncoder.ROS_Time           = table.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+    % Raw_Encoder.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    parseEncoder.Npoints            = height(table);  % This is the number of data points in the array
+    % 
+    % Raw_Encoder.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
+    % Raw_Encoder.Counts             = default_value;  % A vector of the counts measured by the encoder, Npoints long
+    % Raw_Encoder.DeltaCounts        = default_value;  % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
+    % Raw_Encoder.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
+    % Raw_Encoder.AngularVelocity    = default_value;  % Angular velocity of the encoder
+    % Raw_Encoder.AngularVelocity_Sigma    = default_value; 
     
 
 else
@@ -48,7 +50,7 @@ else
 end
 
 
-clear data_structure %clear temp variable
+%clear data_structure %clear temp variable
 
 
 % Close out the loading process
