@@ -1,3 +1,4 @@
+
 function GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(file_path,datatype,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
@@ -23,6 +24,7 @@ function GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(file_path,dat
 %
 
 %%
+
 
 if strcmp(datatype,'gps')
 

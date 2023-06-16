@@ -10,8 +10,7 @@
 % Returned Results:
 %      Sparkfun_rear_diag_left
 
-function SparkFun_GPS_RearRight = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS_rear_diag_right(table,data_source)
-
+function SparkFun_GPS_RearRight = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS_rear_diag_right(file_path,datatype,table,flag_do_debug)
 if strcmp(data_source,'mat_file')
 %     Sparkfun_rear_right.rosbagTimestamp  = data_structure.Time';
 %     Sparkfun_rear_right.GPS_Time         = data_structure.GPSTimeOfWeek';
@@ -99,7 +98,6 @@ SparkFun_GPS_RearRight = fcn_DataClean_initializeDataByType(datatype);
             % SparkFun_GPS_RearRight.OneSigmaPos        = default_value;  % Sigma in position 
             SparkFun_GPS_RearRight.HDOP               = table.HDOP; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
             SparkFun_GPS_RearRight.AgeOfDiff          = table.AgeOfDiff;  % Age of correction data [s]
-            rawdata.SparkFun_GPS_RearRight = SparkFun_GPS_RearRight;
 else
     error('Please upload data structure in ".mat" format')
 end

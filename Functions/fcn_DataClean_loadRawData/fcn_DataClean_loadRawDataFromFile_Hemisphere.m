@@ -1,4 +1,6 @@
+
 function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_path,datatype,flag_do_debug)
+
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the Hemisphere data
@@ -73,7 +75,6 @@ if strcmp(datatype,'gps')
     % Hemisphere_DGPS.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
     Hemisphere_DGPS.AgeOfDiff          = datatable.AgeOfDiff;
 
-      
 else
     error('Wrong data type requested: %s',dataType)
 end

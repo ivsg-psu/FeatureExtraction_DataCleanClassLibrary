@@ -1,4 +1,6 @@
+
 function GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(file_path,datatype,flag_do_debug)
+
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the GPS_Novatel data
@@ -79,7 +81,7 @@ if strcmp(datatype,'gps')
     % Event functions
     % GPS_Novatel.EventFunctions = {}; % These are the functions to determine if something went wrong
 
-            
+   
 else
     error('Wrong data type requested: %s',dataType)
 end
