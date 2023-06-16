@@ -4,9 +4,9 @@ clc
 clear all
 
 %%
-addpath '.'/Data/;
-addpath '.'/Functions/fcn_DataClran_loadRawData; % add the data path
-addpath '.'/Utilities/
+addpath(genpath('Data')); % add the data path
+addpath(genpath('Functions')); % add the function path
+addpath '.'/Utilities/ % add the Utilities path
 %% Dependencies and Setup of the Code
 % The code requires several other libraries to work, namely the following
 % * DebugTools - the repo can be found at: https://github.com/ivsg-psu/Errata_Tutorials_DebugTools
@@ -114,13 +114,13 @@ for file_idx = 3:num_files
             Hemisphere_DGPS.Latitude           = table.Latitude;  % The latitude [deg]
             Hemisphere_DGPS.Longitude          = table.Longitude;  % The longitude [deg]
             Hemisphere_DGPS.Altitude           = table.Height;  % The altitude above sea level [m]
-            Hemisphere_DGPS_LLA = [Hemisphere_DGPS.Latitude, Hemisphere_DGPS.Longitude, Hemisphere_DGPS.Altitude];
-            Hemisphere_DGPS_xyz = lla2enu(Hemisphere_DGPS_LLA,TestTrack_base_lla, 'ellipsoid');
-            Hemisphere_DGPS.xEast              = Hemisphere_DGPS_xyz(:,1);  % The xEast value (ENU) [m]
+            % Hemisphere_DGPS_LLA = [Hemisphere_DGPS.Latitude, Hemisphere_DGPS.Longitude, Hemisphere_DGPS.Altitude];
+            % Hemisphere_DGPS_xyz = lla2enu(Hemisphere_DGPS_LLA,TestTrack_base_lla, 'ellipsoid');
+            % Hemisphere_DGPS.xEast              = default_value;  % The xEast value (ENU) [m]
             % Hemisphere_DGPS.xEast_Sigma        = default_value;  % Sigma in xEast [m]
-            Hemisphere_DGPS.yNorth             = Hemisphere_DGPS_xyz(:,2);  % The yNorth value (ENU) [m]
+            % Hemisphere_DGPS.yNorth             = default_value;  % The yNorth value (ENU) [m]
             % Hemisphere_DGPS.yNorth_Sigma       = default_value;  % Sigma in yNorth [m]
-            Hemisphere_DGPS.zUp                = Hemisphere_DGPS_xyz(:,3);  % The zUp value (ENU) [m]
+            % Hemisphere_DGPS.zUp                = default_value;  % The zUp value (ENU) [m]
             % Hemisphere_DGPS.zUp_Sigma          = default_value;  % Sigma in zUp [m]
             Hemisphere_DGPS.velNorth           = table.VNorth;  % Velocity in north direction (ENU) [m/s]
             % Hemisphere_DGPS.velNorth_Sigma     = default_value;  % Sigma in velNorth [m/s]
@@ -244,11 +244,11 @@ for file_idx = 3:num_files
             secs = table.secs;
             nsecs = table.secs;
             Raw_Encoder = fcn_DataClean_initializeDataByType(datatype);
-            % Raw_Encoder.GPS_Time         = default_value;  % This is the GPS time, UTC, as reported by the unit
+            Raw_Encoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
             % Raw_Encoder.Trigger_Time         = default_value;  % This is the Trigger time, UTC, as calculated by sample
-            % Raw_Encoder.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+            Raw_Encoder.ROS_Time           = table.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             % Raw_Encoder.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            % Raw_Encoder.Npoints            = default_value;  % This is the number of data points in the array
+            Raw_Encoder.Npoints            = height(table);  % This is the number of data points in the array
             % 
             % Raw_Encoder.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
             % Raw_Encoder.Counts             = default_value;  % A vector of the counts measured by the encoder, Npoints long
@@ -256,13 +256,6 @@ for file_idx = 3:num_files
             % Raw_Encoder.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
             % Raw_Encoder.AngularVelocity    = default_value;  % Angular velocity of the encoder
             % Raw_Encoder.AngularVelocity_Sigma    = default_value; 
-            % Raw_Encoder.Time = secs+nsecs*10^-9;
-            % Raw_Encoder.CountsL = table.CountsL;
-            % Raw_Encoder.CountsR = table.CountsR;
-            % Raw_Encoder.AngularVelocityL = table.AngularVelocityL;
-            % Raw_Encoder.AngularVelocityR = table.AngularVelocityR;
-            % Raw_Encoder.DeltaCountsL = table.DeltaCountsL;
-            % Raw_Encoder.DeltaCountsR = table.DeltaCountsR;
             rawdata.Raw_Encoder = Raw_Encoder;
         % 
         % elseif contains(topic_name, 'tire_radius_rear_left')
@@ -401,14 +394,14 @@ for file_idx = 3:num_files
             SparkFun_GPS_RearLeft.Latitude           = table.Latitude;  % The latitude [deg]
             SparkFun_GPS_RearLeft.Longitude          = table.Longitude;  % The longitude [deg]
             SparkFun_GPS_RearLeft.Altitude           = table.Altitude;  % The altitude above sea level [m]
-            SparkFun_GPS_RearLeft_LLA = [SparkFun_GPS_RearLeft.Latitude, SparkFun_GPS_RearLeft.Longitude, SparkFun_GPS_RearLeft.Altitude];
-            SparkFun_GPS_RearLeft_xyz = lla2enu(SparkFun_GPS_RearLeft_LLA, TestTrack_base_lla,'ellipsoid');
+            % SparkFun_GPS_RearLeft_LLA = [SparkFun_GPS_RearLeft.Latitude, SparkFun_GPS_RearLeft.Longitude, SparkFun_GPS_RearLeft.Altitude];
+            % SparkFun_GPS_RearLeft_xyz = lla2enu(SparkFun_GPS_RearLeft_LLA, TestTrack_base_lla,'ellipsoid');
              
-            SparkFun_GPS_RearLeft.xEast = SparkFun_GPS_RearLeft_xyz(:,1);
+            % SparkFun_GPS_RearLeft.xEast = default_value;
             % SparkFun_GPS_RearLeft.xEast_Sigma        = default_value;  % Sigma in xEast [m]
-            SparkFun_GPS_RearLeft.yNorth = SparkFun_GPS_RearLeft_xyz(:,2);
+            % SparkFun_GPS_RearLeft.yNorth = default_value;
             % SparkFun_GPS_RearLeft.yNorth_Sigma       = default_value;  % Sigma in yNorth [m]
-            SparkFun_GPS_RearLeft.zUp = SparkFun_GPS_RearLeft_xyz(:,3);
+            % SparkFun_GPS_RearLeft.zUp = default_value;
             % SparkFun_GPS_RearLeft.zUp_Sigma          = default_value;  % Sigma in zUp [m]
 
             % SparkFun_GPS_RearLeft.velNorth           = default_value;  % Velocity in north direction (ENU) [m/s]
@@ -446,13 +439,13 @@ for file_idx = 3:num_files
             SparkFun_GPS_RearRight.Latitude           = table.Latitude;  % The latitude [deg]
             SparkFun_GPS_RearRight.Longitude          = table.Longitude;  % The longitude [deg]
             SparkFun_GPS_RearRight.Altitude           = table.Altitude;  % The altitude above sea level [m]
-            SparkFun_GPS_RearRight_LLA = [SparkFun_GPS_RearRight.Latitude, SparkFun_GPS_RearRight.Longitude, SparkFun_GPS_RearRight.Altitude];
-            SparkFun_GPS_RearRight_xyz = lla2enu(SparkFun_GPS_RearRight_LLA, TestTrack_base_lla,'ellipsoid');
-            SparkFun_GPS_RearRight.xEast = SparkFun_GPS_RearRight_xyz(:,1);
+            % SparkFun_GPS_RearRight_LLA = [SparkFun_GPS_RearRight.Latitude, SparkFun_GPS_RearRight.Longitude, SparkFun_GPS_RearRight.Altitude];
+            % SparkFun_GPS_RearRight_xyz = lla2enu(SparkFun_GPS_RearRight_LLA, TestTrack_base_lla,'ellipsoid');
+            % SparkFun_GPS_RearRight.xEast = default_value;
             % SparkFun_GPS_RearRight.xEast_Sigma        = default_value;  % Sigma in xEast [m]
-            SparkFun_GPS_RearRight.yNorth = SparkFun_GPS_RearRight_xyz(:,2);
+            % SparkFun_GPS_RearRight.yNorth = default_value;
             % SparkFun_GPS_RearRight.yNorth_Sigma       = default_value;  % Sigma in yNorth [m]
-            SparkFun_GPS_RearRight.zUp = SparkFun_GPS_RearRight_xyz(:,3);
+            % SparkFun_GPS_RearRight.zUp = default_value;
             % SparkFun_GPS_RearRight.zUp_Sigma          = default_value;  % Sigma in zUp [m]
             % 
             % SparkFun_GPS_RearRight.velNorth           = default_value;  % Velocity in north direction (ENU) [m/s]
@@ -479,7 +472,5 @@ for file_idx = 3:num_files
             topic_notused(count_notused,1) = string(topic_name);
             count_notused = count_notused + 1;
         end
-         
-    
     end
 end

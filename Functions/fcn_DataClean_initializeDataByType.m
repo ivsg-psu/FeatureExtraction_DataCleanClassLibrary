@@ -223,7 +223,8 @@ switch lower(dataType)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         % Event functions
         dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
-
+    case 'other'
+        fprintf(topic_name + "is not processed")
     otherwise
         error('Unrecognized data type requested: %s',dataType)
 end

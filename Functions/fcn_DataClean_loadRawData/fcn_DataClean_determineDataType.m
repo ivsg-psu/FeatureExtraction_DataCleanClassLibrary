@@ -1,9 +1,7 @@
-function datatype = fcn_DataClean_determineDataType(file_name)
+function datatype = fcn_DataClean_determineDataType(topic_name)
 
 
 
-file_name_noext = extractBefore(file_name,'.'); 
-topic_name = strrep(file_name_noext,'_slash_','/');
 topic_name_lower = lower(topic_name);
 if any([contains(topic_name_lower,'gps'), contains(topic_name_lower,'bin1')])
     datatype = 'gps';
