@@ -1,3 +1,4 @@
+
 function SickLiDAR = fcn_DataClean_loadRawDataFromFile_SickLidar(file_path,datatype,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
@@ -22,6 +23,7 @@ function SickLiDAR = fcn_DataClean_loadRawDataFromFile_SickLidar(file_path,datat
 % 1. check if it is reasonable for the calcualtion of Hemisphere.velMagnitude_Sigma
 % 
 %%
+
 
 if contains(file_path,'sick')
     opts = detectImportOptions(file_path);
@@ -58,6 +60,8 @@ if contains(file_path,'sick')
     % sickLIDAR.ranges           = data_structure.ranges;
     % sickLIDAR.intensities      = data_structure.intensities;
 
+if strcmp(data_source,'mat_file')
+    
 else
     error('Pleasec use the correct file')
 end
