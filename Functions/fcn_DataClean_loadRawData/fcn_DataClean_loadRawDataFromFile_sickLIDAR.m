@@ -7,6 +7,7 @@ function Sick_Lidar_structure = fcn_DataClean_loadRawDataFromFile_SickLidar(file
 %      datatype  = the datatype should be lidar2d
 % Returned Results:
 %      Sick_Lidar_structure
+
 % Author: Liming Gao
 % Created Date: 2020_11_15
 % Modify Date: 2023_06_16

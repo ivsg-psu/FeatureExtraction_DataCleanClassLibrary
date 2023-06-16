@@ -1,4 +1,3 @@
-
 function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_path,datatype,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
