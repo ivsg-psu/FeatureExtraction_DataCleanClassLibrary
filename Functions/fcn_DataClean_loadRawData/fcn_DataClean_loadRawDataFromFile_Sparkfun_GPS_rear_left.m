@@ -36,41 +36,9 @@ if strcmp(data_source,'mat_file')
 %     Sparkfun_rear_left.StdLon           = data_structure.StdLon';
 %     Sparkfun_rear_left.StdAlt           = data_structure.StdAlt';
 %     dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
-%         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-%         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
-%         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-%         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-%         dataStructure.Latitude           = default_value;  % The latitude [deg]
-%         dataStructure.Longitude          = default_value;  % The longitude [deg]
-%         dataStructure.Altitude           = default_value;  % The altitude above sea level [m]
-%         dataStructure.xEast              = default_value;  % The xEast value (ENU) [m]
-%         dataStructure.xEast_Sigma        = default_value;  % Sigma in xEast [m]
-%         dataStructure.yNorth             = default_value;  % The yNorth value (ENU) [m]
-%         dataStructure.yNorth_Sigma       = default_value;  % Sigma in yNorth [m]
-%         dataStructure.zUp                = default_value;  % The zUp value (ENU) [m]
-%         dataStructure.zUp_Sigma          = default_value;  % Sigma in zUp [m]
-%         dataStructure.velNorth           = default_value;  % Velocity in north direction (ENU) [m/s]
-%         dataStructure.velNorth_Sigma     = default_value;  % Sigma in velNorth [m/s]
-%         dataStructure.velEast            = default_value;  % Velocity in east direction (ENU) [m/s]
-%         dataStructure.velEast_Sigma      = default_value;  % Sigma in velEast [m/s]
-%         dataStructure.velUp              = default_value;  % Velocity in up direction (ENU) [m/s]
-%         dataStructure.velUp_Sigma        = default_value;  % Velocity in up direction (ENU) [m/s]
-%         dataStructure.velMagnitude       = default_value;  % Velocity magnitude (ENU) [m/s] 
-%         dataStructure.velMagnitude_Sigma = default_value;  % Sigma in velMagnitude [m/s]
-%         dataStructure.numSatellites      = default_value;  % Number of satelites visible 
-%         dataStructure.DGPS_mode          = default_value;  % Mode indicating DGPS status (for example, navmode 6;
-%         dataStructure.Roll_deg           = default_value;  % Roll (angle about X) in degrees, ISO coordinates
-%         dataStructure.Roll_deg_Sigma     = default_value;  % Sigma in Roll
-%         dataStructure.Pitch_deg          = default_value;  % Pitch (angle about y) in degrees, ISO coordinates
-%         dataStructure.Pitch_deg_Sigma    = default_value;  % Sigma in Pitch
-%         dataStructure.Yaw_deg            = default_value;  % Yaw (angle about z) in degrees, ISO coordinates
-%         dataStructure.Yaw_deg_Sigma      = default_value;  % Sigma in Yaw
-%         dataStructure.OneSigmaPos        = default_value;  % Sigma in position 
-%         dataStructure.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
-%         % Event functions
-%         dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
-SparkFun_GPS_RearLeft = fcn_DataClean_initializeDataByType(datatype);
+
+            SparkFun_GPS_RearLeft = fcn_DataClean_initializeDataByType(datatype);
             secs = table.secs;
             nsecs = table.nsecs;
 

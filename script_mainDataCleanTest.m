@@ -3,10 +3,13 @@ close all
 clc
 clear all
 
+
 %%
+
 addpath(genpath('Data')); % add the data path
 addpath(genpath('Functions')); % add the function path
 addpath '.'/Utilities/ % add the Utilities path
+
 %% Dependencies and Setup of the Code
 % The code requires several other libraries to work, namely the following
 % * DebugTools - the repo can be found at: https://github.com/ivsg-psu/Errata_Tutorials_DebugTools
@@ -57,25 +60,34 @@ library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_
 %%
 data_folder = "D:\GIT Files\FeatureExtraction_DataCleanClassLibrary\Data\";
 bagname = "mapping_van_2023-06-05-1Lap";
-folder_path = data_folder + bagname + "\"
+folder_path = data_folder + bagname + "\";
 addpath(folder_path)
 file_list = dir(folder_path);
 num_files = length(file_list);
 TestTrack_base_lla = [40.86368573, -77.83592832, 344.189];
+
 flag_do_debug = 0;
+
+
 count_notused = 1;
 rawdata = struct;
 for file_idx = 3:num_files
     file_name = file_list(file_idx).name;
     file_name_noext = extractBefore(file_name,'.'); 
-    topic_name = strrep(file_name_noext,'_slash_','/')
+
+    topic_name = strrep(file_name_noext,'_slash_','/');
+
+    file_name_noslash = extractAfter(file_name_noext,'_slash_');
+    topic_name = strrep(file_name_noext,'_slash_','/');
+
     datatype = fcn_DataClean_determineDataType(topic_name);
     
     topic_name_noslash = extractAfter(topic_name,'/');
     file_path = folder_path + file_name;
     opts = detectImportOptions(file_path);
     if contains(topic_name,'sick_lms500/scan')
-        % 
+
+
         sick_lidar_data = readmatrix(file_path, opts);
         SickLiDAR = fcn_DataClean_initializeDataByType(datatype);
         secs = sick_lidar_data(:,2);
@@ -94,7 +106,9 @@ for file_idx = 3:num_files
         SickLiDAR.range_max          = sick_lidar_data(:,10);  % This is the maximum range value [m]
         SickLiDAR.ranges             = sick_lidar_data(:,11:1151);  % This is the range data of scans [m]
         SickLiDAR.intensities        = sick_lidar_data(:,1152:2292);  % This is the intensities data of scans (Ranging from 0 to 255)
-        SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(file_path,datatype,flag_do_debug);
+
+        % SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(file_path,datatype,flag_do_debug);
+
         rawdata.SickLiDAR = SickLiDAR;
 
     else
@@ -106,7 +120,7 @@ for file_idx = 3:num_files
             secs = table.secs;
             nsecs = table.secs;
             % Hemisphere_DGPS.StdDevResid = table.StdDevResid;
-            Hemisphere_DGPS.GPS_Time           = secs+nsecs*10^-9;;  % This is the GPS time, UTC, as reported by the unit
+            Hemisphere_DGPS.GPS_Time           = secs+nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % Hemisphere_DGPS.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             Hemisphere_DGPS.ROS_Time           = table.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             Hemisphere_DGPS.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
@@ -147,7 +161,9 @@ for file_idx = 3:num_files
             secs = table.secs;
             nsecs = table.secs;
             
+
             GPS_Novatel = fcn_DataClean_initializeDataByType(datatype);
+
             % GPS_Novatel.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
             % GPS_Novatel.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             % GPS_Novatel.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
@@ -273,6 +289,7 @@ for file_idx = 3:num_files
         %     Tire_radius_rear_right_wheel.Time = secs+nsecs*10^-9;
         %     Tire_radius_rear_right_wheel.Counts = table.Counts;
         %     Tire_radius_rear_right_wheel.AngularVelocity = table.AngularVelocity;
+
         elseif contains(topic_name, 'imu/data_raw')
             secs = table.secs;
             nsecs = table.nsecs;
@@ -296,6 +313,7 @@ for file_idx = 3:num_files
             adis_IMU_dataraw.ZGyro              = table.z_1; 
             % adis_IMU_dataraw.ZGyro_Sigma        = default_value; 
             rawdata.adis_IMU_dataraw = adis_IMU_dataraw;
+
 
         elseif contains(topic_name, 'imu/rpy/filtered')
             adis_IMU_filtered_rpy = fcn_DataClean_initializeDataByType(datatype);
@@ -348,9 +366,8 @@ for file_idx = 3:num_files
             adis_IMU_data.ZGyro              = table.z_1; 
             % adis_IMU_data.ZGyro_Sigma        = default_value; 
             rawdata.adis_IMU_data = adis_IMU_data;
-        
-        
 
+       
         elseif contains(topic_name,'parseTrigger')
             secs = table.secs;
             nsecs = table.nsecs;
@@ -472,5 +489,6 @@ for file_idx = 3:num_files
             topic_notused(count_notused,1) = string(topic_name);
             count_notused = count_notused + 1;
         end
+
     end
 end

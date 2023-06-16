@@ -71,7 +71,9 @@ elseif isstruct(varargin{1}) % input is a struct type data queried from DB
     fprintf(1,'\n The data source is database. \n');
     data_source = 'database';
     data_struct = varargin{1};
-    
+elseif istable(varargin{1}) % input is a table type data parsed from csv and txt files
+    fprintf(1,'\n The data source is . \n');
+
 else
     msg = 'the data source format is not recognized.';
     error(msg);

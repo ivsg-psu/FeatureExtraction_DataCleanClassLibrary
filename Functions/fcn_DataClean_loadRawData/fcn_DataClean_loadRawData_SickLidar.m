@@ -1,4 +1,4 @@
-function Lidar = fcn_DataClean_loadRawData_Lidar(d,data_source,flag_do_debug)
+function Lidar = fcn_DataClean_loadRawData_SickLidar(d,data_source,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the SICK Lidar data
