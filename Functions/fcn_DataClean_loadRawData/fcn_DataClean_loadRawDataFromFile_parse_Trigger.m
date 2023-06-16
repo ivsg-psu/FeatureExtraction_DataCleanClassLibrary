@@ -1,28 +1,28 @@
 function parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(file_path,datatype,flag_do_debug)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
-% This is the GPS_Novatel data
+% This is the parse Encoder data, whose data type is imu
 % Input Variables:
-%      d = raw data from GPS_Novatel(format:struct)
-%      Hemisphere = the data from Hemisphere GPS, used to estimate the
-%                   GPS_Novatel sigma (format:struct)
-%      data_source = the data source of the raw data, can be 'mat_file' or 'database'(format:struct)
+%      file_path = file path of the parseTrigger data
+%      datatype  = the datatype should be trigger
 % Returned Results:
-%      GPS_Novatel
+%      parseTrigger
+
 % Author: Liming Gao
-% Created Date: 2020_12_07
+% Created Date: 2020_11_15
+% Modify Date: 2023_06_16
 %
-% Modified by Aneesh Batchu on 2023_06_15
-%
+% Modified by Xinyu Cao, Aneesh Batchu and Mariam Abdellatief on 2023_06_16
+% 
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
 %
 % Updates:
 %
 % To do lists:
-% 1. check if it is reasonable to select data from the second d.Time(2:end)';
-% 2. check the Yaw_deg between matfile and database
-% 3. Hemisphere = d_out;  %%update the interpolated values to raw data?
+% 
+% Reference:
+% 
 %%
 
 if strcmp(datatype,'trigger')

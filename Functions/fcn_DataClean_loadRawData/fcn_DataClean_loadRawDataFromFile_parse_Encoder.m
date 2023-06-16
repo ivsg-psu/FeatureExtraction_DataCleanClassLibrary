@@ -3,16 +3,16 @@ function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(file_pat
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the parse Encoder data, whose data type is encoder
 % Input Variables:
-%      file_path = file path of the parse encoder 
+%      file_path = file path of the parse encoder data
 %      datatype  = the datatype should be encoder
 % Returned Results:
-%      Sick_Lidar_structure
+%      parseEncoder
 
 % Author: Liming Gao
 % Created Date: 2020_11_15
 % Modify Date: 2023_06_16
 %
-% Modified by Xinyu Cao and Aneesh Batchu on 2023_06_16
+% Modified by Xinyu Cao, Aneesh Batchu and Mariam Abdellatief on 2023_06_16
 % 
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.

@@ -1,29 +1,28 @@
 function IMU_data_structure = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(file_path,datatype,flag_do_debug,topic_name)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
-% This is the IMU_ADIS data
+% This is the parse Encoder data, whose data type is imu
 % Input Variables:
-%      d = raw data from IMU_ADIS(format:struct)
-%      data_source = the data source of the raw data, can be 'mat_file' or 'database'(format:struct)
-%
+%      file_path = file path of the IMU data
+%      datatype  = the datatype should be imu
 % Returned Results:
-%      IMU_ADIS
+%      IMU_data_structure
+
 % Author: Liming Gao
-% Created Date: 2020_12_07
+% Created Date: 2020_11_15
+% Modify Date: 2023_06_16
 %
-% Modified by Aneesh Batchu and Mariam Abdellatief on 2023_06_13
-%
+% Modified by Xinyu Cao, Aneesh Batchu and Mariam Abdellatief on 2023_06_16
+% 
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
-%
 %
 % Updates:
 %
 % To do lists:
-% 1.
-%
-%
-
+% 
+% Reference:
+% 
 %%
 if strcmp(datatype, 'ins')
     IMU_data_structure = fcn_DataClean_initializeDataByType(datatype);
