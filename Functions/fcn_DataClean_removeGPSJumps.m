@@ -1,27 +1,100 @@
-function mergedData = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData,base_station)
+function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_station)
+
+% fcn_DataClean_removeGPSJumps
+% This function removes jumps from merged data caused by GPS outages
+%
+% FORMAT:
+%
+%      mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_station)
+%
+% INPUTS:
+%
+%      mergedData - This is the filtered data via Baysian averaging across 
+%                   same state
+%
+%      rawData - This is the raw data. The original data
+%
+%      base_station - These are the coordinates of the base station
+%
+%      (OPTIONAL INPUTS)
+%
+%      (none)
+%
+% OUTPUTS:
+%
+%      mergedData: This data have no jumps caused by GPS outages
+%      
+%      
+%
+% DEPENDENCIES:
+%
+%      fcn_DebugTools_checkInputsToFunctions
+%
+% EXAMPLES:
+%
+%     See the script: script_test_fcn_DataClean_removeGPSJumps
+%     for a full test suite.
+%
+% This function was written on 2019_12_01 by S. Brennan
+% Questions or comments? sbrennan@psu.edu 
 
 % Revision history:
-% 2019_12_01 - first write of the function by sbrennan@psu.edu
+%     
+% 2019_12_01 - sbrennan@psu.edu
+% -- wrote the code originally 
 
-flag_do_debug = 1;
+% TO DO
+% 
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
+% %% Let the user know what we are doing --  This was used in the initial
+% code
+% if flag_do_debug
+%     % Grab function name
+%     st = dbstack;
+%     namestr = st.name;
+% 
+%     % Show what we are doing
+%     fprintf(1,'\nWithin function: %s\n',namestr);
+%     fprintf(1,'Correct differntial jumps in xEast and yNorth, in merged data.\n');   
+%     fprintf(1,'Length of data vector going in: %d\n',length(mergedData.MergedGPS.xEast));
+% end
+
+%% check input arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____                   _
+%  |_   _|                 | |
+%    | |  _ __  _ __  _   _| |_ ___
+%    | | | '_ \| '_ \| | | | __/ __|
+%   _| |_| | | | |_) | |_| | |_\__ \
+%  |_____|_| |_| .__/ \__,_|\__|___/
+%              | |
+%              |_|
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if flag_check_inputs
+    % Are there the right number of inputs?
+    if nargin < 1 || nargin > 1
+        error('Incorrect number of input arguments')
+    end
+        
+    % NOTE: zone types are checked below
+
+end
 
 
 data_to_fit = rawData.GPS_Hemisphere;
 xEast_pred_increments  = mergedData.MergedGPS.velMagnitude*0.05 .* cos(mergedData.MergedGPS.Yaw_deg*pi/180);
 yNorth_pred_increments = mergedData.MergedGPS.velMagnitude*0.05 .* sin(mergedData.MergedGPS.Yaw_deg*pi/180);
-
-
-%% Let the user know what we are doing
-if flag_do_debug
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-
-    % Show what we are doing
-    fprintf(1,'\nWithin function: %s\n',namestr);
-    fprintf(1,'Correct differntial jumps in xEast and yNorth, in merged data.\n');   
-    fprintf(1,'Length of data vector going in: %d\n',length(mergedData.MergedGPS.xEast));
-end
 
 
 %% Find valid intervals where DGPS is active
@@ -69,13 +142,51 @@ end
 
 
 
-if flag_do_debug
-    % Show what we are doing
-    fprintf(1,'Exiting function: %s\n',namestr);
-    fprintf(1,'Length of data vector going out: %d\n',length(mergedData.MergedGPS.xEast));
+% if flag_do_debug   -   This was used in the
+% initial code
+%     % Show what we are doing
+%     fprintf(1,'Exiting function: %s\n',namestr);
+%     fprintf(1,'Length of data vector going out: %d\n',length(mergedData.MergedGPS.xEast));
+% end
+
+%% Plot the results (for debugging)?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____       _
+%  |  __ \     | |
+%  | |  | | ___| |__  _   _  __ _
+%  | |  | |/ _ \ '_ \| | | |/ _` |
+%  | |__| |  __/ |_) | |_| | (_| |
+%  |_____/ \___|_.__/ \__,_|\__, |
+%                            __/ |
+%                           |___/
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if flag_do_plots
+    
+    % Nothing to plot        
+    
 end
 
-return
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+end
+
+
+return % Ends main function
+
+%% Functions follow
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   ______                _   _
+%  |  ____|              | | (_)
+%  | |__ _   _ _ __   ___| |_ _  ___  _ __  ___
+%  |  __| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+%  | |  | |_| | | | | (__| |_| | (_) | | | \__ \
+%  |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+%
+% See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
+
+
+
 
 function pairings = fcn_DataClean_findStartEndPairsWhereDGPSDrops(DGPS_is_active)
 %%
