@@ -9,12 +9,10 @@ function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_stati
 %
 % INPUTS:
 %
-%      mergedData - This is the filtered data via Baysian averaging across 
-%                   same state
-%
-%      rawData - This is the raw data. The original data
-%
-%      base_station - These are the coordinates of the base station
+%      mergedData:   This is the filtered data via Baysian averaging 
+%                     across same state
+%      rawData: This is the raw data. The original data
+%      base_station: These are the coordinates of the base station
 %
 %      (OPTIONAL INPUTS)
 %
@@ -23,8 +21,6 @@ function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_stati
 % OUTPUTS:
 %
 %      mergedData: This data have no jumps caused by GPS outages
-%      
-%      
 %
 % DEPENDENCIES:
 %
@@ -42,6 +38,9 @@ function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_stati
 %     
 % 2019_12_01 - sbrennan@psu.edu
 % -- wrote the code originally 
+% 2023_06_19 -- Updated the function description according to the IVSG
+% format and renamed the function to "fcn_DataClean_removeGPSJumps" from 
+% "fcn_DataClean_removeDGPSJumpsFromMergedData"
 
 % TO DO
 % 
