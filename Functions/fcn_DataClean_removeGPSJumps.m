@@ -91,6 +91,16 @@ if flag_check_inputs
 
 end
 
+%% Main code starts here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   __  __       _
+%  |  \/  |     (_)
+%  | \  / | __ _ _ _ __
+%  | |\/| |/ _` | | '_ \
+%  | |  | | (_| | | | | |
+%  |_|  |_|\__,_|_|_| |_|
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 data_to_fit = rawData.GPS_Hemisphere;
 xEast_pred_increments  = mergedData.MergedGPS.velMagnitude*0.05 .* cos(mergedData.MergedGPS.Yaw_deg*pi/180);
