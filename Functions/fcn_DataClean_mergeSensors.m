@@ -1,14 +1,47 @@
-function mergedData = fcn_DataClean_mergeTimeAlignedData(timeFilteredData)
-% fcn_DataClean_mergeTimeAlignedData - merges data by field using Baysian averaging.
-% 
+function mergedData = fcn_DataClean_mergeSensors(timeFilteredData)
+% fcn_DataClean_mergeSensors - merges data by field using Baysian
+% averaging.
+%
 % For each of the core fields within the input data, this function
 % produces two new sensors: MergedGPS and MergedIMU, each representing the
 % merging of either GPS readings or IMU readings.
-
+%
+% FORMAT:
+%
+%      mergedData = fcn_DataClean_mergeSensors(timeFilteredData)
+%
+% INPUTS:
+%
+%      timeFilteredData: Data structure from either GPS or IMU. 
+%
+%      (OPTIONAL INPUTS)
+%
+%      (none)
+%
+% OUTPUTS:
+%
+%      mergedData: this function produces two new sensors, MergedGPS and 
+%                  MergedIMU, each representing the merging of either GPS
+%                  readings or IMU readings.
+%
+% DEPENDENCIES:
+%
+%      fcn_DataClean_mergeByTakingBayesianAverageOfSignals
+%
+% EXAMPLES:
+%
+%    See the script: script_test_fcn_DataClean_mergeSensors for full test
+%    suite. 
+%
 % Revision history:
 %
-%     2019_11_27 - first write of function, moving material out of main code area.
-%     2020_11_10 - changed function names in prep for DataClean class
+% 2019_11_27 - first write of function, moving material out of main code area
+% 2020_11_10 - changed function names in prep for DataClean class
+% 2023_19_6  - changed function name and added function description 
+%
+% TO DO (as of 6/19/2023):
+% 
+% Create test script for the function
 
 flag_do_debug = 1;
 
