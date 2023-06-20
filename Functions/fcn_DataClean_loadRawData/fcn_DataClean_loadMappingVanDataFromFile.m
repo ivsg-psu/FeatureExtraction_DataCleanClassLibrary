@@ -133,6 +133,7 @@ for file_idx = 1:num_files
         datatype = fcn_DataClean_determineDataType(topic_name);
         full_file_path = fullfile(dataFolder,file_name);
         % topic name is used to decide the sensor
+%         topic sicm_,ms500/sick_time 
         if contains(topic_name,'sick_lms500/scan')
 
             SickLiDAR = fcn_DataClean_loadRawDataFromFile_SickLidar(full_file_path,datatype,flag_do_debug);
@@ -238,7 +239,15 @@ for file_idx = 1:num_files
             elseif contains(topic_name,'ntrip_info')
                 ntrip_info = fcn_DataClean_loadRawDataFromFile_NTRIP(full_file_path,datatype,flag_do_debug);
                 rawdata.ntrip_info = ntrip_info;
+%           Comment out due to format error with detectImportOptions
+%             elseif (contains(topic_name,'rosout') && ~contains(topic_name,'agg'))
+% 
+%                 ROSOut = fcn_DataClean_loadRawDataFromFile_ROSOut(full_file_path,datatype,flag_do_debug);
+%                 rawdata.ROSOut = ROSOut;
 
+            elseif contains(topic_name,'tf')
+                transform_struct = fcn_DataClean_loadRawDataFromFile_Transform(full_file_path,datatype,flag_do_debug);
+                rawdata.transform = transform_struct;
 
             else
                 fprintf(1,'WARNING: Topic not processed: %s\n',topic_name)
