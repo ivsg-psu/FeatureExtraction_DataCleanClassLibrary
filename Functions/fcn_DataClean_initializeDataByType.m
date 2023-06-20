@@ -176,13 +176,18 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-       
+        dataStructure.IMUStatus          = default_value;
+
         dataStructure.XOrientation       = default_value; 
         dataStructure.XOrientation_Sigma = default_value; 
         dataStructure.YOrientation       = default_value;
         dataStructure.YOrientation_Sigma = default_value; 
         dataStructure.ZOrientation       = default_value;
         dataStructure.ZOrientation_Sigma = default_value; 
+        dataStructure.WOrientation       = default_value;
+        dataStructure.WOrientation_Sigma = default_value;
+        dataStructure.Orientation_Sigma  = default_value;
+        
         dataStructure.YAccel_Sigma       = default_value; 
         dataStructure.ZAccel             = default_value; 
         dataStructure.ZAccel_Sigma       = default_value;
@@ -191,13 +196,15 @@ switch lower(dataType)
         dataStructure.YAccel             = default_value; 
         dataStructure.YAccel_Sigma       = default_value; 
         dataStructure.ZAccel             = default_value; 
-        dataStructure.ZAccel_Sigma       = default_value; 
+        dataStructure.ZAccel_Sigma       = default_value;
+        dataStructure.Accel_Sigma        = default_value;
         dataStructure.XGyro              = default_value; 
         dataStructure.XGyro_Sigma        = default_value; 
         dataStructure.YGyro              = default_value; 
         dataStructure.YGyro_Sigma        = default_value; 
         dataStructure.ZGyro              = default_value; 
         dataStructure.ZGyro_Sigma        = default_value;
+        dataStructure.Gyro_Sigma         = default_value;
        
         dataStructure.XMagnetic          = default_value;
         dataStructure.XMagnetic_Sigma    = default_value;
@@ -205,6 +212,8 @@ switch lower(dataType)
         dataStructure.YMagnetic_Sigma    = default_value;
         dataStructure.ZMagnetic          = default_value;
         dataStructure.ZMagnetic_Sigma    = default_value;
+        dataStructure.Magnetic_Sigma     = default_value;
+        
         dataStructure.Pressure           = default_value;
         dataStructure.Pressure_Sigma     = default_value;
         dataStructure.Temperature        = default_value;
@@ -312,6 +321,7 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.Sick_Time          = default_value;  % This is the Sick Lidar time
         dataStructure.angle_min          = default_value;  % This is the start angle of scan [rad]
         dataStructure.angle_max          = default_value;  % This is the end angle of scan [rad]
         dataStructure.angle_increment    = default_value;  % This is the angle increment between each measurements [rad]

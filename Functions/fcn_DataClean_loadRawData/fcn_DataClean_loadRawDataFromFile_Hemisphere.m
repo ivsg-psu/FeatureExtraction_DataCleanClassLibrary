@@ -36,11 +36,11 @@ if strcmp(datatype,'gps')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
-
+    Npoints = height(datatable);
     Hemisphere_DGPS = fcn_DataClean_initializeDataByType(datatype,Npoints);
     
     secs = datatable.secs;
-    nsecs = datatable.secs;
+    nsecs = datatable.nsecs;
     Hemisphere_DGPS.StdDevResid = datatable.StdDevResid;
     Hemisphere_DGPS.GPS_Time           = secs+nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample

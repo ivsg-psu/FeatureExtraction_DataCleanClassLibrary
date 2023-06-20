@@ -130,7 +130,7 @@ for file_idx = 1:num_files
         topic_name = strrep(file_name_noext,'_slash_','/');
 
 
-        datatype = fcn_DataClean_determineDataType(topic_name,);
+        datatype = fcn_DataClean_determineDataType(topic_name);
         full_file_path = fullfile(dataFolder,file_name);
         % topic name is used to decide the sensor
         if contains(topic_name,'sick_lms500/scan')
@@ -181,7 +181,28 @@ for file_idx = 1:num_files
 
                 adis_IMU_data = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
                 rawdata.adis_IMU_data = adis_IMU_data;
+            
+            elseif contains(topic_name, 'imu/mag')
 
+                adis_IMU_mag = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.adis_IMU_mag = adis_IMU_mag;
+
+            elseif contains(topic_name, 'adis_msg')
+
+                adis_msg = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.adis_msg = adis_msg;
+
+
+            elseif contains(topic_name, 'adis_temp')
+
+                adis_temp = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.adis_temp = adis_temp;
+
+            elseif contains(topic_name, 'adis_press')
+
+                adis_press = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.adis_press = adis_press;
+           
 
             elseif contains(topic_name,'parseTrigger')
 
@@ -196,6 +217,29 @@ for file_idx = 1:num_files
             elseif contains(topic_name, 'sparkfun_gps_rear_right')
                 SparkFun_GPS_RearRight = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug);
                 rawdata.SparkFun_GPS_RearRight = SparkFun_GPS_RearRight;
+
+            elseif contains(topic_name, 'diagnostic_trigger')
+                diagnostic_trigger = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.diagnostic_trigger = diagnostic_trigger;
+    
+            elseif contains(topic_name, 'diagnostic_encoder')
+                diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.diagnostic_encoder = diagnostic_encoder;
+            
+            elseif contains(topic_name, 'sparkfun_gps_diag_rear_left')
+                sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.sparkfun_gps_diag_rear_left = sparkfun_gps_diag_rear_left;
+    
+            elseif contains(topic_name, 'sparkfun_gps_diag_rear_right')
+                sparkfun_gps_diag_rear_right = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.sparkfun_gps_diag_rear_right = sparkfun_gps_diag_rear_right;
+
+
+            elseif contains(topic_name,'ntrip_info')
+                ntrip_info = fcn_DataClean_loadRawDataFromFile_NTRIP(full_file_path,datatype,flag_do_debug);
+                rawdata.ntrip_info = ntrip_info;
+
+
             else
                 fprintf(1,'WARNING: Topic not processed: %s\n',topic_name)
             end

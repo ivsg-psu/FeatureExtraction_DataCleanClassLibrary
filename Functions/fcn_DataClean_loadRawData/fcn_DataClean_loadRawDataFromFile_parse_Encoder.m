@@ -29,7 +29,8 @@ if strcmp(datatype,'encoder')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
-    parseEncoder = fcn_DataClean_initializeDataByType(datatype);
+    Npoints = height(datatable);
+    parseEncoder = fcn_DataClean_initializeDataByType(datatype,Npoints);
     secs = datatable.secs;
     nsecs = datatable.nsecs;
     parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
