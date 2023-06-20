@@ -209,55 +209,11 @@
 % % * Map - this is a zip of a single file containing the Map class
 % % * MapDatabase - this is a zip of a single file containing the MapDatabase class
 % %
-% % Each should be installed in a folder called "Utilities" under the root
-% % folder, namely ./Utilities/DebugTools/ , ./Utilities/PathClassLibrary/ .
+% % Each is automatically installed in a folder called "Utilities" under the root
+% % folder, namely ./Utilities/DebugTools/ , ./Utilities/PathClassLibrary/, etc.
 % % If you wish to put these codes in different directories, the function
 % % below can be easily modified with strings specifying the different
 % % location.
-% %
-% % For ease of transfer, zip files of the directories used - without the
-% % .git repo information, to keep them small - are included in this repo.
-% %
-% % The following code checks to see if the folders flag has been
-% % initialized, and if not, it calls the DebugTools function that loads the
-% % path variables. It then loads the PathClassLibrary functions as well.
-% % Note that the PathClass Library also has sub-utilities that are included.
-% if ~exist('flag_DataClean_Folders_Initialized','var')
-%
-%     % add necessary directories for function creation utility
-%     %(special case because folders not added yet)
-%     debug_utility_folder = fullfile(pwd, 'Utilities', 'DebugTools');
-%     debug_utility_function_folder = fullfile(pwd, 'Utilities', 'DebugTools','Functions');
-%     debug_utility_folder_inclusion_script = fullfile(pwd, 'Utilities', 'DebugTools','Functions','fcn_DebugTools_addSubdirectoriesToPath.m');
-%     if(exist(debug_utility_folder_inclusion_script,'file'))
-%         current_location = pwd;
-%         cd(debug_utility_function_folder);
-%         fcn_DebugTools_addSubdirectoriesToPath(debug_utility_folder,{'Functions','Data'});
-%         cd(current_location);
-%     else % Throw an error?
-%         error('The necessary utilities are not found. Please add them (see README.md) and run again.');
-%     end
-%
-%     % Now can add the Path Class Library automatically
-%     utility_folder_PathClassLibrary = fullfile(pwd, 'Utilities', 'PathClassLibrary');
-%     fcn_DebugTools_addSubdirectoriesToPath(utility_folder_PathClassLibrary,{'Functions','Utilities'});
-%
-%     % utility_folder_GetUserInputPath = fullfile(pwd, 'Utilities', 'GetUserInputPath');
-%     % fcn_DebugTools_addSubdirectoriesToPath(utility_folder_GetUserInputPath,{'Functions','Utilities'});
-%
-%     % Now can add all the other utilities automatically
-%     folder_DataCleanClassLibrary = fullfile(pwd);
-%     fcn_DebugTools_addSubdirectoriesToPath(folder_DataCleanClassLibrary,{'Functions'});
-%
-%     % Now can add all the other utilities automatically
-%     folder_DataCleanClassLibrary = fullfile(pwd);
-%     fcn_DebugTools_addSubdirectoriesToPath(folder_DataCleanClassLibrary,{'Data'});
-%
-%     % set a flag so we do not have to do this again
-%     flag_DataClean_Folders_Initialized = 1;
-% end
-
-
 
 %% Prep the workspace
 close all
@@ -320,48 +276,18 @@ end
 % raw data. It can be loaded either from a database or a file - details are
 % in the function below.
 
-%flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
-%flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
+flag.DBquery = false; %true; %set to true to query raw data from database 
+flag.DBinsert = false; %set to true to insert cleaned data to cleaned data database
+flag.SaveQueriedData = true; % 
 
-flag.DBquery = false; %true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
-flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
-% flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
-flag.SaveQueriedData = true;
-
-try
-    fprintf('Starting the code using variable rawData of length: %d\n', length(rawData));
-catch
-
+if ~exist('rawData','var')
     if flag.DBquery == true
-        %       database_name = 'mapping_van_raw';
+        % Load the raw data from the database
         queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
-        [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
-        if flag.SaveQueriedData && (trip_id_cleaned==2)
-            save('../data/TestTrack_rawData_2019_10_18.mat','rawData','trip_name','trip_id_cleaned','base_station','Hemisphere_gps_week');
-        end
-
+        [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
-
         % Load the raw data from file
-        % test one
-        %filename  = 'MappingVan_DecisionMaking_03132020.mat';
-        %variable_names = 'MappingVan_DecisionMaking_03132020';
-        %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
-
-        % test two
-        filename  = 'Route_Wahba.mat'; %'TestTrackOneLap-2023-06-05.mat';
-        variable_names = 'Route_WahbaLoop'; %'TestTrackOneLap-2023-06-05'; 
-        base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
-        base_station.latitude= 40.8068919389;
-        base_station.longitude= -77.8497968306;
-        base_station.altitude= 337.665496826;
-        
-         flag_do_debug = 1;
-       % [rawData,Hemisphere_GPSWeek] = fcn_DataClean_loadRawDataFromFile(flag_do_debug,filename,variable_names);
-        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_queryRawData(flag.DBquery,filename,variable_names); % more query condition can be set in the function
-        % test three
-        % load('TestTrack_rawData.mat');  % Loads TestTrack data and creates 'rawData' variable directly
-
+        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_loadRawDataFromFile(flag.DBquery,filename,variable_names); % more query condition can be set in the function
     end
 end
 
