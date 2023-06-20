@@ -349,9 +349,11 @@ catch
         %base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
 
         % test two
-        filename  = 'Route_Wahba.mat'; %'TestTrackOneLap-2023-06-05.mat';
-        variable_names = 'Route_WahbaLoop'; %'TestTrackOneLap-2023-06-05'; 
-        base_station.id = 2;%1:test track, 2: LTI, Larson  Transportation Institute
+        bagFolderName = "mapping_van_2023-06-05-1Lap";
+        rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+        % filename  = 'Route_Wahba.mat'; %'TestTrackOneLap-2023-06-05.mat';
+        % variable_names = 'Route_WahbaLoop'; %'TestTrackOneLap-2023-06-05'; 
+        base_station.id = 1;%1:test track, 2: LTI, Larson  Transportation Institute
         base_station.latitude= 40.8068919389;
         base_station.longitude= -77.8497968306;
         base_station.altitude= 337.665496826;

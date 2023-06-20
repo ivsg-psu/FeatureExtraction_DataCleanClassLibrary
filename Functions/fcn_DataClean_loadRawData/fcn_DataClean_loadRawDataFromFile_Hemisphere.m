@@ -37,7 +37,7 @@ if strcmp(datatype,'gps')
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
 
-    Hemisphere_DGPS = fcn_DataClean_initializeDataByType(datatype);
+    Hemisphere_DGPS = fcn_DataClean_initializeDataByType(datatype,Npoints);
     
     secs = datatable.secs;
     nsecs = datatable.secs;

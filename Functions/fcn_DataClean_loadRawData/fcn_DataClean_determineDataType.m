@@ -98,6 +98,14 @@ elseif contains(topic_name_lower,'sick_lms500/scan')
     datatype = 'lidar2d';
 elseif contains(topic_name_lower,'velodyne')
     datatype = 'lidar3d';
+elseif contains(topic_name_lower,'diag')
+    datatype = 'diagnostic';
+elseif contains(topic_name_lower,'ntrip')
+    datatype = 'ntrip';
+elseif contains(topic_name_lower,'rosout')
+    datatype = 'rosout';
+elseif contains(topic_name_lower,'tf')
+    datatype = 'transform';
 else
     datatype = 'other';
 end

@@ -1,4 +1,4 @@
-% script_example_DataClean_loadRawDataFromFile.m
+    % script_example_DataClean_loadRawDataFromFile.m
 
 
 % Revision history

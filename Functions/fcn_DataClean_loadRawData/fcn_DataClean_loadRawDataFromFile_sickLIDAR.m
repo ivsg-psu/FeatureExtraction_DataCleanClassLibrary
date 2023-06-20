@@ -29,7 +29,7 @@ function Sick_Lidar_structure = fcn_DataClean_loadRawDataFromFile_SickLidar(file
 if strcmp(datatype,'lidar2d')
     opts = detectImportOptions(file_path);
     sick_lidar_data = readmatrix(file_path, opts);
-    Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
+    Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
 
     secs = sick_lidar_data(:,2);
     nsecs = sick_lidar_data(:,3);

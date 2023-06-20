@@ -130,12 +130,12 @@ for file_idx = 1:num_files
         topic_name = strrep(file_name_noext,'_slash_','/');
 
 
-        datatype = fcn_DataClean_determineDataType(topic_name);
+        datatype = fcn_DataClean_determineDataType(topic_name,);
         full_file_path = fullfile(dataFolder,file_name);
         % topic name is used to decide the sensor
         if contains(topic_name,'sick_lms500/scan')
 
-            SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,flag_do_debug);
+            SickLiDAR = fcn_DataClean_loadRawDataFromFile_SickLidar(full_file_path,datatype,flag_do_debug);
             rawdata.SickLiDAR = SickLiDAR;
 
         else
