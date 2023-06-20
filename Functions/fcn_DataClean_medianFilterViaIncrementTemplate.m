@@ -1,9 +1,10 @@
-function [x_clean,x_increments_clean] = fcn_medianFilterViaIncrementTemplate(x,x_increment_pred,DGPS_is_active)
-%fcn_medianFilterViaIncrementTemplate - smooths the state values by
-% using a predicted trajectory in state space, provided by an
-% increment_prediction, to that of the state, matching the average offsets
-% in the locations at start and end of the trajectory where DGPS is active.
-% 
+function [x_clean,x_increments_clean] = fcn_DataClean_medianFilterViaIncrementTemplate(x,x_increment_pred,DGPS_is_active)
+% fcn_DataClean_medianFilterViaIncrementTemplate
+% This function smooths the state values by using a predicted trajectory 
+% in state space, provided by an increment_prediction, to that of the 
+% state, matching the average offsets in the locations at start and end of
+% the trajectory where DGPS is active.
+%
 % Step 1: using the data in vector DGPS_is_active, mark the data where DGPS
 % corrections should be trusted. Split these into 3 sections: start,
 % middle, end, where the start and end are good data, e.g. locked in, but
@@ -24,46 +25,131 @@ function [x_clean,x_increments_clean] = fcn_medianFilterViaIncrementTemplate(x,x
 % Step 5: apply jump bias offsets to the state vector, which should now be
 % smooth even in cases where no DGPS, and with near zero error in matching
 % start/end of DGPS-active regions.
+%
+% FORMAT:
+%
+%      [x_clean,x_increments_clean] = fcn_DataClean_medianFilterViaIncrementTemplate(x,x_increment_pred,DGPS_is_active)
+%
+% INPUTS:
+%
+%      x: 
+%                     
+%      x_increment_pred:     
+%      DGPS_is_active: 
+%
+%      (OPTIONAL INPUTS)
+%
+%      (none)
+%
+% OUTPUTS:
+%
+%      x_clean: 
+%      x_increments_clean:
+%
+% DEPENDENCIES:
+%
+%      fcn_DebugTools_checkInputsToFunctions
+%
+% EXAMPLES:
+%
+%     See the script: script_test_fcn_DataClean_removeGPSJumps
+%     for a full test suite.
+%
+% This function was written on 2019_12_01 by S. Brennan
+% Questions or comments? sbrennan@psu.edu 
 
 % Revision history:
-% 2019_11_27 - first write of function, moving material out of main code
+%     
+%  
+% 2019_11_27 - sbrennan@psu.edu
+%
+% -- First write of function, moving material out of main code
 % area.
-% 2019_12_01 - finished editing. Functionalized the code.
+% 2019_12_01 -- finished editing. Functionalized the code.
+% 2023_06_19 -- Updated the function description according to the IVSG
+% format and renamed the function to "fcn_DataClean_removeGPSJumps" from 
+% "fcn_DataClean_removeDGPSJumpsFromMergedData" 
 
-flag_plot_results = 0;
-flag_do_debug = 1;
+% TO DO
+% 
 
-%% Let the user know what we are doing
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
 if flag_do_debug
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-
-    % Show what we are doing
-    fprintf(1,'\n\t\tWithin subfunction: %s\n',namestr);
-    fprintf(1,'\t\t\tUsing templating and median filtering to correct differntial jumps.\n');   
-    fprintf(1,'\t\t\tLength of X: %d\n',length(x(:,1)));
-    fprintf(1,'\t\t\tLength of predicted X increments: %d\n',length(x_increment_pred(:,1)));  
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
 
-%% Check input data
-if any(isnan(x)) || any(isnan(x_increment_pred)) || any(isnan(DGPS_is_active))
-    error('NaN values detected on input data - unable to continue.');
+
+% flag_plot_results = 0;
+% flag_do_debug = 1;
+
+%% check input arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____                   _
+%  |_   _|                 | |
+%    | |  _ __  _ __  _   _| |_ ___
+%    | | | '_ \| '_ \| | | | __/ __|
+%   _| |_| | | | |_) | |_| | |_\__ \
+%  |_____|_| |_| .__/ \__,_|\__|___/
+%              | |
+%              |_|
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if flag_check_inputs
+    % Are there the right number of inputs?
+    if nargin < 1 || nargin > 1
+        error('Incorrect number of input arguments')
+    end
+        
+    % NOTE: zone types are checked below
+
 end
 
-if length(x(:,1))~=length(x_increment_pred(:,1))
-   
-    error('X and predicted X_increments need to have the same length');
-end
 
-if any(DGPS_is_active(1:50,1)==0)
-    error('DGPS data must exist at start of this time slice for at least 50 samples');
-end
+% %% Let the user know what we are doing
+% if flag_do_debug
+%     % Grab function name
+%     st = dbstack;
+%     namestr = st.name;
+% 
+%     % Show what we are doing
+%     fprintf(1,'\n\t\tWithin subfunction: %s\n',namestr);
+%     fprintf(1,'\t\t\tUsing templating and median filtering to correct differntial jumps.\n');   
+%     fprintf(1,'\t\t\tLength of X: %d\n',length(x(:,1)));
+%     fprintf(1,'\t\t\tLength of predicted X increments: %d\n',length(x_increment_pred(:,1)));  
+% end
 
-if any(DGPS_is_active(end-50:end,1)==0)
-    error('DGPS data must exist at end of this time slice for at least 50 samples');
-end
-
+% %% Check input data
+% if any(isnan(x)) || any(isnan(x_increment_pred)) || any(isnan(DGPS_is_active))
+%     error('NaN values detected on input data - unable to continue.');
+% end
+% 
+% if length(x(:,1))~=length(x_increment_pred(:,1))
+% 
+%     error('X and predicted X_increments need to have the same length');
+% end
+% 
+% if any(DGPS_is_active(1:50,1)==0)
+%     error('DGPS data must exist at start of this time slice for at least 50 samples');
+% end
+% 
+% if any(DGPS_is_active(end-50:end,1)==0)
+%     error('DGPS data must exist at end of this time slice for at least 50 samples');
+% end
+%% Main code starts here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   __  __       _
+%  |  \/  |     (_)
+%  | \  / | __ _ _ _ __
+%  | |\/| |/ _` | | '_ \
+%  | |  | | (_| | | | | |
+%  |_|  |_|\__,_|_|_| |_|
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate the increment vector (useful later)
 x_increment = diff(x);
 x_increment = [x_increment_pred(1,1); x_increment];
@@ -226,13 +312,45 @@ if flag_plot_results
     
     fcn_plotAxesLinkedTogetherByField;
 end
-%% Tell user we are leaving
-if flag_do_debug
-    % Show what we are doing
-    fprintf(1,'\t\tExiting subfunction: %s\n',namestr);    
+% %% Tell user we are leaving
+% if flag_do_debug
+%     % Show what we are doing
+%     fprintf(1,'\t\tExiting subfunction: %s\n',namestr);    
+% end
+%% Plot the results (for debugging)?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____       _
+%  |  __ \     | |
+%  | |  | | ___| |__  _   _  __ _
+%  | |  | |/ _ \ '_ \| | | |/ _` |
+%  | |__| |  __/ |_) | |_| | (_| |
+%  |_____/ \___|_.__/ \__,_|\__, |
+%                            __/ |
+%                           |___/
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if flag_do_plots
+
+    % Nothing to plot
+
 end
 
-return
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+end
+
+return % Ends main function
+%% Functions follow
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   ______                _   _
+%  |  ____|              | | (_)
+%  | |__ _   _ _ __   ___| |_ _  ___  _ __  ___
+%  |  __| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+%  | |  | |_| | | | | (__| |_| | (_) | | | \__ \
+%  |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+%
+% See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
+
 
 function [index_jump_locations,jump_mag] = fcn_calculateJumpLocations(x,x_increment_predicted)
 flag_make_plots = 0;

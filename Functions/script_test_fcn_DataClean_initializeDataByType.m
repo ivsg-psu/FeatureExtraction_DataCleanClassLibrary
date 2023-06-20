@@ -9,7 +9,6 @@
 close all
 clc
 
-
 %% Check assertions for basic path operations and function testing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              _   _                 
@@ -22,7 +21,7 @@ clc
 %                                                    
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Assertions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%      The fillowing data types are expected:
+%      The following data types are expected:
 %      'Trigger' - This is the data type for the trigger box data
 %      'GPS' - This is the data type for GPS data
 %      'INS' - This is the data type for INS data
