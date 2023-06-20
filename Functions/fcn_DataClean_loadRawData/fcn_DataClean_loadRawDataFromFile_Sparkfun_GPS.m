@@ -18,7 +18,8 @@ if strcmp(datatype,'gps')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
-    SparkFun_GPS_data_structure = fcn_DataClean_initializeDataByType(datatype);
+    Npoints = height(datatable);
+    SparkFun_GPS_data_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
     secs = datatable.secs;
     nsecs = datatable.nsecs;
 

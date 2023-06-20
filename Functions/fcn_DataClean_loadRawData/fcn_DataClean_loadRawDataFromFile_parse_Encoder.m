@@ -29,9 +29,10 @@ if strcmp(datatype,'encoder')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
-    parseEncoder = fcn_DataClean_initializeDataByType(datatype);
+    Npoints = height(datatable);
+    parseEncoder = fcn_DataClean_initializeDataByType(datatype,Npoints);
     secs = datatable.secs;
-    nsecs = datatable.secs;
+    nsecs = datatable.nsecs;
     parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
     % parseEncoder.Trigger_Time         = default_value;  % This is the Trigger time, UTC, as calculated by sample
     parseEncoder.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag

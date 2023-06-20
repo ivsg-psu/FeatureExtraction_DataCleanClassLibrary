@@ -288,6 +288,7 @@ if ~exist('rawData','var')
     else
         % Load the raw data from file
         [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_loadRawDataFromFile(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+
     end
 end
 

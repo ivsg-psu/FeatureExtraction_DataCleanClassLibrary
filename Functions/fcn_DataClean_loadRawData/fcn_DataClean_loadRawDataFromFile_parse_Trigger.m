@@ -29,9 +29,10 @@ if strcmp(datatype,'trigger')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
-    parseTrigger = fcn_DataClean_initializeDataByType(datatype);
+    Npoints = height(datatable);
+    parseTrigger = fcn_DataClean_initializeDataByType(datatype,Npoints);
     secs = datatable.secs;
-    nsecs = datatable.secs;
+    nsecs = datatable.nsecs;
     parseTrigger.mode = datatable.mode;
     parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit
     % parseTrigger.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample

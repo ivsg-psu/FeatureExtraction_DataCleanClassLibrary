@@ -1,4 +1,4 @@
-function dataStructure = fcn_DataClean_initializeDataByType(dataType)
+function dataStructure = fcn_DataClean_initializeDataByType(dataType,varargin)
 % fcn_DataClean_initializeDataByType
 % Creates an empty data structure that corresponds to a particular type of
 % sensor. 
@@ -11,16 +11,20 @@ function dataStructure = fcn_DataClean_initializeDataByType(dataType)
 %
 %      dataType: a string denoting the type of dataStructure to be filled.
 %      The fillowing data types are expected:
-%      'Trigger' - This is the data type for the trigger box data
-%      'GPS' - This is the data type for GPS data
-%      'INS' - This is the data type for INS data
-%      'Encoder' - This is the data type for Encoder data
-%      'LIDAR2D' - This is the data type for 2D Lidar data
-%      'LIDAR3D' - This is the data type for 3D Lidar data
+%      'trigger' - This is the data type for the trigger box data
+%      'gps' - This is the data type for GPS data
+%      'ins' - This is the data type for INS data
+%      'encoder' - This is the data type for Encoder data
+%      'diagnostic' - This is the data type for diagnostic data
+%      'ntrip'      - This is the data type for NTRIP system data
+%      'rosout'     - This is the data type for ROS log message
+%      'transform'  - This is the data type for tranformation message
+%      'lidar2d' - This is the data type for 2D Lidar data
+%      'lidar3d' - This is the data type for 3D Lidar data
 %
 %      (OPTIONAL INPUTS)
-%
-%      (none)
+%       
+%      varargin{1} = Npoints, format: integer
 %
 % OUTPUTS:
 %
@@ -43,7 +47,9 @@ function dataStructure = fcn_DataClean_initializeDataByType(dataType)
 %     
 % 2023_06_12: sbrennan@psu.edu
 % -- wrote the code originally 
-
+% Modify Date: 2023_06_16
+% -- update ins datatype
+% -- add new datatype diagnostic, ntrip, rosout,and tf
 % TO DO
 % 
 
@@ -72,7 +78,7 @@ end
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    if nargin < 1 || nargin > 1
+    if nargin < 1 || nargin > 2
         error('Incorrect number of input arguments')
     end
         
@@ -92,7 +98,12 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-default_value = NaN;
+if nargin == 2
+    Npoints = varargin{1};
+    default_value = NaN(Npoints,1);
+else
+    default_value = NaN;
+end
 
 switch lower(dataType)
     case 'trigger'
@@ -154,10 +165,9 @@ switch lower(dataType)
         dataStructure.OneSigmaPos        = default_value;  % Sigma in position 
         dataStructure.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
         dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
-
+        dataStructure.StdDevResid        = default_value;  % Standard deviation of residuals [m[
         % Event functions
         dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
-
 
 
     case 'ins'
@@ -166,19 +176,48 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-        dataStructure.IMUStatus          = default_value;  
+        dataStructure.IMUStatus          = default_value;
+
+        dataStructure.XOrientation       = default_value; 
+        dataStructure.XOrientation_Sigma = default_value; 
+        dataStructure.YOrientation       = default_value;
+        dataStructure.YOrientation_Sigma = default_value; 
+        dataStructure.ZOrientation       = default_value;
+        dataStructure.ZOrientation_Sigma = default_value; 
+        dataStructure.WOrientation       = default_value;
+        dataStructure.WOrientation_Sigma = default_value;
+        dataStructure.Orientation_Sigma  = default_value;
+        
+        dataStructure.YAccel_Sigma       = default_value; 
+        dataStructure.ZAccel             = default_value; 
+        dataStructure.ZAccel_Sigma       = default_value;
         dataStructure.XAccel             = default_value; 
         dataStructure.XAccel_Sigma       = default_value; 
         dataStructure.YAccel             = default_value; 
         dataStructure.YAccel_Sigma       = default_value; 
         dataStructure.ZAccel             = default_value; 
-        dataStructure.ZAccel_Sigma       = default_value; 
+        dataStructure.ZAccel_Sigma       = default_value;
+        dataStructure.Accel_Sigma        = default_value;
         dataStructure.XGyro              = default_value; 
         dataStructure.XGyro_Sigma        = default_value; 
         dataStructure.YGyro              = default_value; 
         dataStructure.YGyro_Sigma        = default_value; 
         dataStructure.ZGyro              = default_value; 
-        dataStructure.ZGyro_Sigma        = default_value; 
+        dataStructure.ZGyro_Sigma        = default_value;
+        dataStructure.Gyro_Sigma         = default_value;
+       
+        dataStructure.XMagnetic          = default_value;
+        dataStructure.XMagnetic_Sigma    = default_value;
+        dataStructure.YMagnetic          = default_value;
+        dataStructure.YMagnetic_Sigma    = default_value;
+        dataStructure.ZMagnetic          = default_value;
+        dataStructure.ZMagnetic_Sigma    = default_value;
+        dataStructure.Magnetic_Sigma     = default_value;
+        
+        dataStructure.Pressure           = default_value;
+        dataStructure.Pressure_Sigma     = default_value;
+        dataStructure.Temperature        = default_value;
+        dataStructure.Temperature_Sigma  = default_value;
         % Event functions
         dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
@@ -197,6 +236,83 @@ switch lower(dataType)
         dataStructure.AngularVelocity_Sigma    = default_value; 
         % Event functions
         dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+    
+    case 'diagnostic'
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        % Data related to trigger box and encoder box
+        dataStructure.Seq                = default_value;  % This is the sequence of the topic
+        % Data related to SparkFun GPS Diagnostic
+        dataStructure.DGPS_mode          = default_value;  % Mode indicating DGPS status (for example, navmode 6)
+        dataStructure.numSatellites      = default_value;  % Number of satelites visible 
+        dataStructure.BaseStationID      = default_value;  % Base station that was used for correction
+        dataStructure.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
+        dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
+        dataStructure.NTRIP_Status       = default_value;  % The status of NTRIP connection (Ture, conencted, False, disconencted)
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+
+    case 'ntrip'
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.RTCM_Type          = default_value;  % This is the type of the RTCM correction data that was used.
+        dataStructure.BaseStationID      = default_value;  % Base station that was used for correction
+        dataStructure.NTRIP_Status       = default_value;  % The status of NTRIP connection (Ture, conencted, False, disconencted)
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+    case 'rosout'
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.Seq                = default_value;
+        dataStructure.Level              = default_value;
+        dataStructure.msg                = default_value;
+        dataStructure.file               = default_value;
+        dataStructure.function           = default_value;
+        dataStructure.line               = default_value;
+        dataStructure.topics             = default_value;
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+
+
+    % case 'rosout_agg'
+    %     dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+    %     dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+    %     dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+    %     dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    %     dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+    %     dataStructure.Seq                = default_value;
+    %     dataStructure.Level              = default_value;
+    %     dataStructure.name               = default_value;
+    %     dataStructure.text               = default_value;
+    %     dataStructure.function           = default_value;
+    %     dataStructure.line               = default_value;
+    %     dataStructure.topics             = default_value;
+    case 'transform'
+        dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
+        dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+        dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+     
+        dataStructure.XTranslation       = default_value;
+        dataStructure.YTranslation       = default_value;
+        dataStructure.ZTranslation       = default_value;
+        dataStructure.XRotation          = default_value;
+        dataStructure.YRotation          = default_value;
+        dataStructure.ZRotation          = default_value;
+        dataStructure.WRotation          = default_value;
+        % Event functions
+        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+
 
     case 'lidar2d'
         % Xinyu - fill this in
@@ -205,6 +321,7 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.Sick_Time          = default_value;  % This is the Sick Lidar time
         dataStructure.angle_min          = default_value;  % This is the start angle of scan [rad]
         dataStructure.angle_max          = default_value;  % This is the end angle of scan [rad]
         dataStructure.angle_increment    = default_value;  % This is the angle increment between each measurements [rad]
@@ -212,8 +329,8 @@ switch lower(dataType)
         dataStructure.scan_time          = default_value;  % This is the time between scans [s]
         dataStructure.range_min          = default_value;  % This is the minimum range value [m]
         dataStructure.range_max          = default_value;  % This is the maximum range value [m]
-        dataStructure.ranges             = default_value;  % This is the range data of scans [m]
-        dataStructure.intensities        = default_value;  % This is the intensities data of scans (Ranging from 0 to 255)
+        dataStructure.ranges             = NaN;  % This is the range data of scans [m]
+        dataStructure.intensities        = NaN;  % This is the intensities data of scans (Ranging from 0 to 255)
         % Event functions
         dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
         
