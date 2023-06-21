@@ -30,6 +30,38 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataConsistency(dataStruc
 %            missing, exists but is empty, or exists and filled with only
 %            NaN values, the flag is set to zero and the function returns.
 %
+%            flags.centiSeconds_exists - this is set to 1 if all the sensors
+%            have a field called "centiSeconds", which is the core time
+%            sampling interval for a sensor, in hundreths of a second. If
+%            the field is missing, exists but is empty, or exists and
+%            filled with only NaN values, the flag is set to zero and the
+%            function returns.
+%
+%            flags.dataTimeIntervalMatchesIntendedSamplingRate - this is
+%            set to 1 if the average of the time difference as measured in
+%            the GPS_time, multiplied by 100 and rounded to the nearest
+%            integer, matches the centiSeconds value. In other words, it is
+%            1 if the commanded sample time interval in centiSeconds matches
+%            the average observed time sampling interval in the data. If
+%            the values do not match, the flag is set to zero and the
+%            function returns.
+%
+%            flags.Trigger_Time_exist - this is set to 1 if all the sensors
+%            have a field called "Trigger_Time", which is the expected time
+%            assigned to the data from each sensor. If the field is
+%            missing, exists but is empty, or exists and filled with only
+%            NaN values, the flag is set to zero and the function returns.
+%
+%            flags.GPS_Time_strictly_ascends - this is set to 1 if GPS_Time
+%            is strictly ascending, e.g. increases with no repeated times.
+%            If not, the flag is set to zero and the function returns.
+%
+%            flags.ROS_time_exists - this is set to 1 if all the sensors
+%            have a field called "ROS_time", which is the ROS time
+%            assigned to the data from each sensor. If the field is
+%            missing, exists but is empty, or exists and filled with only
+%            NaN values, the flag is set to zero and the function returns.
+%
 %     offending_sensor: this is the string corresponding to the sensor
 %     field in the data structure that caused a flag to become zero. 
 % 
@@ -55,7 +87,7 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataConsistency(dataStruc
 
 % Set default fid (file ID) first:
 fid = 1; % Default case is to print to the console
-flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_debug = 1;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
@@ -128,12 +160,12 @@ for i_data = 1:length(sensor_names)
     sensor_data = dataStructure.(sensor_name);
     
     if flag_do_debug
-        fprintf(fid,'\n Sensor %d of %d: ',i_data,length(sensor_names));
+        fprintf(fid,'\n Sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
     end
 
-    %% Check existence of time data in each sensor
+    %% Check existence of GPS_Time data in each sensor
     if flag_do_debug
-        fprintf(fid,'Checking existence of time data:\n');
+        fprintf(fid,'\tChecking existence of GPS_Time data:\n');
     end
     flags_GPS_Time_exists= 1;
     if ~isfield(sensor_data,'GPS_Time')
@@ -151,33 +183,79 @@ for i_data = 1:length(sensor_names)
 
     %% Check existence of core data elements: centiSeconds
     if flag_do_debug
-        fprintf(fid,'Checking existence of time data:\n');
+        fprintf(fid,'\tChecking existence of centiSeconds data:\n');
     end
-    flags_core_data_fields_exist = 1;
-    if ~isfield(sensor_data,'GPS_Time')
-        flags_core_data_fields_exist = 0;
-    elseif isempty(sensor_data.GPS_Time)
-        flags_core_data_fields_exist = 0;
-    elseif all(isnan(sensor_data.GPS_Time))
-        flags_core_data_fields_exist = 0;        
+    flags_centiSeconds_exist = 1;
+    if ~isfield(sensor_data,'centiSeconds')
+        flags_centiSeconds_exist = 0;
+    elseif isempty(sensor_data.centiSeconds)
+        flags_centiSeconds_exist = 0;
+    elseif all(isnan(sensor_data.centiSeconds))
+        flags_centiSeconds_exist = 0;        
     end
-    flags.GPS_Time_exists = flags_core_data_fields_exist;
-    if 0==flags.GPS_Time_exists
+    flags.centiSeconds_exists = flags_centiSeconds_exist;
+    if 0==flags.centiSeconds_exists
         offending_sensor = sensor_name; % Save the name of the sensor
         return; % Exit the function immediately to avoid more processing
     end
 
-    %% Check consistency of time data
+    %% Check consistency of expected and actual time sampling
     if flag_do_debug
-        fprintf(fid,'Checking existence of time data:\n');
+        fprintf(fid,'\tChecking consistency of expected and actual time sampling rates:\n');
     end
-    centiSeconds = sensor_data.centiSeconds;
 
-    if isfield(d,'GPS_Time')
-        if centiSeconds ~= round(100*mean(diff(d.GPS_Time)))
-            error('For sensor: %s, the centiSeconds does not match the calculated time difference in GPS_Time',sensor_name);
-        end
+    flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
+    centiSeconds = sensor_data.centiSeconds;
+    if centiSeconds ~= round(100*mean(diff(sensor_data.GPS_Time)))
+        flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;     
     end
+    flags.dataTimeIntervalMatchesIntendedSamplingRate = flags_dataTimeIntervalMatchesIntendedSamplingRate;
+    if 0==flags.dataTimeIntervalMatchesIntendedSamplingRate
+        offending_sensor = sensor_name; % Save the name of the sensor
+        return; % Exit the function immediately to avoid more processing
+    end
+
+    %% Check existence of Trigger_Time
+    if flag_do_debug
+        fprintf(fid,'\tChecking existence of Trigger_Time data:\n');
+    end
+    flags_Trigger_Time_exist = 1;
+    if ~isfield(sensor_data,'Trigger_Time')
+        flags_Trigger_Time_exist = 0;
+    elseif isempty(sensor_data.Trigger_Time)
+        flags_Trigger_Time_exist = 0;
+    elseif all(isnan(sensor_data.Trigger_Time))
+        flags_Trigger_Time_exist = 0;        
+    end
+    flags.Trigger_Time_exist = flags_Trigger_Time_exist;
+    if 0==flags.Trigger_Time_exist
+        offending_sensor = sensor_name; % Save the name of the sensor
+        return; % Exit the function immediately to avoid more processing
+    end
+
+    %% Check that GPS_Time data is strictly ascending
+    % This means it is only increasing, and has no repeats
+
+    if flag_do_debug
+        fprintf(fid,'\tChecking that GPS_Time data is strictly ascending:\n');
+    end
+    flags_GPS_Time_strictly_ascends= 1;
+    if ~issorted(sensor_data.GPS_Time,1,"strictascend")
+        flags_GPS_Time_strictly_ascends = 0;    
+    end
+    flags.GPS_Time_strictly_ascends = flags_GPS_Time_strictly_ascends;
+    if 0==flags.GPS_Time_strictly_ascends
+        offending_sensor = sensor_name; % Save the name of the sensor
+        return; % Exit the function immediately to avoid more processing
+    end
+
+    %% Check existence of ROS_Time data in each sensor
+    flags.ROS_Time_exists = fcn_INTERNAL_checkFieldExists(flag_do_debug, fid, sensor_data, 'ROS_Time');
+    if 0==flags.ROS_Time_exists
+        offending_sensor = sensor_name; % Save the name of the sensor
+        return; % Exit the function immediately to avoid more processing
+    end
+
     %
     %
     %     if flag_do_debug
@@ -247,3 +325,19 @@ end % Ends main function
 %
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
+
+%% fcn_INTERNAL_checkFieldExists
+function flag_field_exists = fcn_INTERNAL_checkFieldExists(flag_do_debug, fid, sensor_data, field_name)
+if flag_do_debug
+    fprintf(fid,'\tChecking existence of %s data:\n',field_name);
+end
+flag_field_exists= 1;
+if ~isfield(sensor_data,field_name)
+    flag_field_exists = 0;
+elseif isempty(sensor_data.(field_name))
+    flag_field_exists = 0;
+elseif all(isnan(sensor_data.(field_name)))
+    flag_field_exists = 0;
+end
+
+end % Ends fcn_INTERNAL_checkFieldExists
