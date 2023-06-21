@@ -21,7 +21,6 @@ function dataStructure = fcn_DataClean_fillTestDataStructure(varargin)
 %          1: Typical data for the mapping van. Standard deviations are
 %          representative of the sensors used on the vehicle.
 %
-%          2: 
 %
 % OUTPUTS:
 %
@@ -49,7 +48,7 @@ function dataStructure = fcn_DataClean_fillTestDataStructure(varargin)
 % TO DO
 % 
 
-flag_do_debug = 1;  % Flag to show the results for debugging
+flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
@@ -195,7 +194,12 @@ end
 
 
 % Convert ENU data to LLA
-gps_object = GPS(); % Initiate the class object for GPS
+% Define reference location at test track
+reference_latitude = 40.8623031194444;
+reference_longitude = -77.8362636138889;
+reference_altitude = 333.817;
+
+gps_object = GPS(reference_latitude,reference_longitude,reference_altitude); % Initiate the class object for GPS
 % ENU_full_data = gps_object.WGSLLA2ENU(LLA_full_data(:,1), LLA_full_data(:,2), LLA_full_data(:,3));
 ENU_full_data = [X_data, Y_data, Z_data];
 LLA_full_data  =  gps_object.ENU2WGSLLA(ENU_full_data')';
@@ -366,6 +370,9 @@ for i_data = 1:length(names)
                     sensor_structure.AgeOfDiff = onesSensor;
                 case {'GPS_EventFunctions'}
                     sensor_structure.GPS_EventFunctions = {};
+                case {'StdDevResid'}
+                    sensor_structure.StdDevResid = onesSensor;
+                    
                     
                     % ENCODER fields
                 case {'CountsPerRev'}
@@ -398,6 +405,10 @@ for i_data = 1:length(names)
                     sensor_structure.ZAccel = onesSensor;
                 case {'ZAccel_Sigma'}
                     sensor_structure.ZAccel_Sigma = onesSensor;
+                case {'Accel_Sigma'}
+                    sensor_structure.Accel_Sigma = onesSensor;
+
+
                 case {'XGyro'}
                     sensor_structure.XGyro = onesSensor;
                 case {'XGyro_Sigma'}
@@ -410,10 +421,59 @@ for i_data = 1:length(names)
                     sensor_structure.ZGyro = onesSensor;
                 case {'ZGyro_Sigma'}
                     sensor_structure.ZGyro_Sigma = onesSensor;
+                case {'Gyro_Sigma'}
+                    sensor_structure.Gyro_Sigma = onesSensor;
+                    
+
+                case {'XOrientation'}
+                    sensor_structure.XOrientation = onesSensor;
+                case {'YOrientation'}
+                    sensor_structure.YOrientation = onesSensor;
+                case {'ZOrientation'}
+                    sensor_structure.ZOrientation = onesSensor;
+                case {'XOrientation_Sigma'}
+                    sensor_structure.XOrientation_Sigma = onesSensor;
+                case {'YOrientation_Sigma'}
+                    sensor_structure.YOrientation_Sigma = onesSensor;
+                case {'ZOrientation_Sigma'}
+                    sensor_structure.ZOrientation_Sigma = onesSensor;
+                case {'WOrientation'}
+                    sensor_structure.WOrientation = onesSensor;
+                case {'WOrientation_Sigma'}
+                    sensor_structure.WOrientation_Sigma = onesSensor;
+                case {'Orientation_Sigma'}
+                    sensor_structure.Orientation_Sigma = onesSensor;
+
+                case {'XMagnetic'}
+                    sensor_structure.XMagnetic = onesSensor;
+                case {'XMagnetic_Sigma'}
+                    sensor_structure.XMagnetic_Sigma = onesSensor;
+                case {'YMagnetic'}
+                    sensor_structure.YMagnetic = onesSensor;
+                case {'YMagnetic_Sigma'}
+                    sensor_structure.YMagnetic_Sigma = onesSensor;
+                case {'ZMagnetic'}
+                    sensor_structure.ZMagnetic = onesSensor;
+                case {'ZMagnetic_Sigma'}
+                    sensor_structure.ZMagnetic_Sigma = onesSensor;
+                case {'Magnetic_Sigma'}
+                    sensor_structure.Magnetic_Sigma = onesSensor;
+
+                case {'Pressure'}
+                    sensor_structure.Pressure = onesSensor;
+                case {'Pressure_Sigma'}
+                    sensor_structure.Pressure_Sigma = onesSensor;
+                case {'Temperature'}
+                    sensor_structure.Temperature = onesSensor;
+                case {'Temperature_Sigma'}
+                    sensor_structure.Temperature_Sigma = onesSensor;
+                    
                 case {'IMU_EventFunctions'}
                     sensor_structure.IMU_EventFunctions = {};
                     
                     % LIDAR2D fields
+                case {'Sick_Time'}
+                    sensor_structure.Sick_Time = onesSensor;                    
                 case {'angle_min'}
                     sensor_structure.angle_min = onesSensor;
                 case {'angle_max'}
@@ -437,7 +497,16 @@ for i_data = 1:length(names)
                     sensor_structure.LIDAR2D_EventFunctions = {};
                     
                 otherwise
-                    error('Unknown field found!\n\t sensor: %s\n subfield: %s\n',sensor_name, subFieldName)
+                    try
+                        callStack = dbstack('-completenames');
+                        errorStruct.message = sprintf('Error in file: %s \n\t Line: %d \n\t Unknown field found! \n\t Sensor: %s \n\t Subfield: %s\n',callStack(1).file, callStack(1).line, sensor_name, subFieldName);
+                        errorStruct.identifier = 'DataClean:fillTestDataStructure:BadSensorField';
+                        errorStruct.stack = callStack(1);
+                        error(errorStruct);
+                    catch ME
+                        throw(ME);
+                    end
+
             end % Ends switch statement
         end % Ends check whether to fill time or other subfields
         

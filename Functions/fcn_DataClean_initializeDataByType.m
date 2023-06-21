@@ -40,26 +40,34 @@ function dataStructure = fcn_DataClean_initializeDataByType(dataType,varargin)
 %     See the script: script_test_fcn_DataClean_initializeDataByType
 %     for a full test suite.
 %
-% This function was written on 2023_06_12 by S. Brennan
+% This function was first written on 2023_06_12 by S. Brennan
 % Questions or comments? sbrennan@psu.edu 
 
 % Revision history:
 %     
 % 2023_06_12: sbrennan@psu.edu
 % -- wrote the code originally 
-% Modify Date: 2023_06_16
+% 2023_06_16: xinyu cao
 % -- update ins datatype
 % -- add new datatype diagnostic, ntrip, rosout,and tf
+% 2023_06_21: sbrennan@psu.edu
+% -- renamed INS to IMU (since INS includes GPS, typically)
+% -- renamed event functions to sensor type, to disambiguate them, for
+%    example: TRIGGER_EventFunctions. Otherwise, searching for
+%    eventFunctions can cause different sensor types to become confused.
+
+
 % TO DO
 % 
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
+fid = 1; % The default file ID destination for fprintf messages
 
 if flag_do_debug
     st = dbstack; %#ok<*UNRCH>
-    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
 
 
@@ -107,7 +115,6 @@ end
 
 switch lower(dataType)
     case 'trigger'
-        % Xinyu - fill this in
         dataStructure.GPS_Time                          = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample
         dataStructure.ROS_Time                          = default_value;  % This is the ROS time that the data arrived into the bag
@@ -129,7 +136,7 @@ switch lower(dataType)
         dataStructure.err_bad_character                 = default_value; 
         dataStructure.err_wrong_element_length          = default_value; 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.TRIGGER_EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'gps'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -167,10 +174,10 @@ switch lower(dataType)
         dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
         dataStructure.StdDevResid        = default_value;  % Standard deviation of residuals [m[
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.GPS_EventFunctions = {}; % These are the functions to determine if something went wrong
 
 
-    case 'ins'
+    case 'imu'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
@@ -219,7 +226,7 @@ switch lower(dataType)
         dataStructure.Temperature        = default_value;
         dataStructure.Temperature_Sigma  = default_value;
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.IMU_EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'encoder'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -235,7 +242,7 @@ switch lower(dataType)
         dataStructure.AngularVelocity    = default_value;  % Angular velocity of the encoder
         dataStructure.AngularVelocity_Sigma    = default_value; 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.ENCODER_EventFunctions = {}; % These are the functions to determine if something went wrong
     
     case 'diagnostic'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -253,7 +260,7 @@ switch lower(dataType)
         dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
         dataStructure.NTRIP_Status       = default_value;  % The status of NTRIP connection (Ture, conencted, False, disconencted)
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.DIAGNOSTIC_EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'ntrip'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -265,7 +272,7 @@ switch lower(dataType)
         dataStructure.BaseStationID      = default_value;  % Base station that was used for correction
         dataStructure.NTRIP_Status       = default_value;  % The status of NTRIP connection (Ture, conencted, False, disconencted)
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.NTRIP_EventFunctions = {}; % These are the functions to determine if something went wrong
     case 'rosout'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
@@ -280,7 +287,7 @@ switch lower(dataType)
         dataStructure.line               = default_value;
         dataStructure.topics             = default_value;
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.ROSOUT_EventFunctions = {}; % These are the functions to determine if something went wrong
 
 
     % case 'rosout_agg'
@@ -311,7 +318,7 @@ switch lower(dataType)
         dataStructure.ZRotation          = default_value;
         dataStructure.WRotation          = default_value;
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.TRANSFORM_EventFunctions = {}; % These are the functions to determine if something went wrong
 
 
     case 'lidar2d'
@@ -332,7 +339,7 @@ switch lower(dataType)
         dataStructure.ranges             = NaN;  % This is the range data of scans [m]
         dataStructure.intensities        = NaN;  % This is the intensities data of scans (Ranging from 0 to 255)
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.LIDAR2D_EventFunctions = {}; % These are the functions to determine if something went wrong
         
     case 'lidar3d'
         % Xinyu - fill this in
@@ -343,9 +350,9 @@ switch lower(dataType)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.LIDAR3D_EventFunctions = {}; % These are the functions to determine if something went wrong
     case 'other'
-        fprintf(topic_name + "is not processed")
+        fprintf(fid, "The 'other' sensor type is not yet defined, and therefore processed.\n");
     otherwise
         error('Unrecognized data type requested: %s',dataType)
 end
@@ -369,7 +376,7 @@ if flag_do_plots
 end
 
 if flag_do_debug
-    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

@@ -1,11 +1,13 @@
-function flags = fcn_DataClean_checkDataConsistency(dataStructure,varargin)
+function [flags,offending_sensor] = fcn_DataClean_checkDataConsistency(dataStructure,varargin)
 
 % fcn_DataClean_checkDataConsistency
-% Checks a given dataset to verify whether data meets key requirements. 
+% Checks a given dataset to verify whether data meets key requirements. If
+% any flags fail, the flag is set to zero and the offending sensor causing
+% the failure is returned.
 %
 % FORMAT:
 %
-%      flags = fcn_DataClean_checkDataConsistency(dataStructure,(fid),(fig_num))
+%      [flags,offending_sensor] = fcn_DataClean_checkDataConsistency(dataStructure,(fid),(fig_num))
 %
 % INPUTS:
 %
@@ -21,16 +23,23 @@ function flags = fcn_DataClean_checkDataConsistency(dataStructure,varargin)
 %
 %      flags: a data structure containing subfields that define the results
 %      of each verification check. These include:
-% 
-% 
 %
+%            flags.GPS_time_exists - this is set to 1 if all the sensors
+%            have a field called "GPS_Time", which is the core time
+%            assigned to the data from each sensor. If the field is
+%            missing, exists but is empty, or exists and filled with only
+%            NaN values, the flag is set to zero and the function returns.
+%
+%     offending_sensor: this is the string corresponding to the sensor
+%     field in the data structure that caused a flag to become zero. 
+% 
 % DEPENDENCIES:
 %
 %      fcn_DebugTools_checkInputsToFunctions
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_initializeDataByType
+%     See the script: script_test_fcn_DataClean_checkDataConsistency
 %     for a full test suite.
 %
 % This function was written on 2023_06_19 by S. Brennan
@@ -91,7 +100,7 @@ if 1 <= nargin
             fid = temp;
         catch ME
             warning('User-specified FID does not correspond to a file. Unable to continue.');
-            rethrow(ME);
+            throwAsCaller(ME);
         end
     end
 end
@@ -108,57 +117,95 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Initialize offending_sensor
+offending_sensor = '';
 
+%% Loop thorough all the sensors (each is a field in the structure)
 sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
-
 for i_data = 1:length(sensor_names)
-    % Grab the data subfield name
+    % Grab the sensor subfield name
     sensor_name = sensor_names{i_data};
-    d = dataStructure.(sensor_name);
+    sensor_data = dataStructure.(sensor_name);
     
     if flag_do_debug
         fprintf(fid,'\n Sensor %d of %d: ',i_data,length(sensor_names));
     end
-    
-    % Check consistency of time data
+
+    %% Check existence of time data in each sensor
     if flag_do_debug
-        fprintf(fid,'Checking time consistency:\n');
+        fprintf(fid,'Checking existence of time data:\n');
     end
-    centiSeconds = d.centiSeconds;
-    
+    flags_GPS_Time_exists= 1;
+    if ~isfield(sensor_data,'GPS_Time')
+        flags_GPS_Time_exists = 0;
+    elseif isempty(sensor_data.GPS_Time)
+        flags_GPS_Time_exists = 0;
+    elseif all(isnan(sensor_data.GPS_Time))
+        flags_GPS_Time_exists = 0;        
+    end
+    flags.GPS_Time_exists = flags_GPS_Time_exists;
+    if 0==flags.GPS_Time_exists
+        offending_sensor = sensor_name; % Save the name of the sensor
+        return; % Exit the function immediately to avoid more processing
+    end
+
+    %% Check existence of core data elements: centiSeconds
+    if flag_do_debug
+        fprintf(fid,'Checking existence of time data:\n');
+    end
+    flags_core_data_fields_exist = 1;
+    if ~isfield(sensor_data,'GPS_Time')
+        flags_core_data_fields_exist = 0;
+    elseif isempty(sensor_data.GPS_Time)
+        flags_core_data_fields_exist = 0;
+    elseif all(isnan(sensor_data.GPS_Time))
+        flags_core_data_fields_exist = 0;        
+    end
+    flags.GPS_Time_exists = flags_core_data_fields_exist;
+    if 0==flags.GPS_Time_exists
+        offending_sensor = sensor_name; % Save the name of the sensor
+        return; % Exit the function immediately to avoid more processing
+    end
+
+    %% Check consistency of time data
+    if flag_do_debug
+        fprintf(fid,'Checking existence of time data:\n');
+    end
+    centiSeconds = sensor_data.centiSeconds;
+
     if isfield(d,'GPS_Time')
         if centiSeconds ~= round(100*mean(diff(d.GPS_Time)))
             error('For sensor: %s, the centiSeconds does not match the calculated time difference in GPS_Time',sensor_name);
         end
     end
-    
-    
-    if flag_do_debug
-        fprintf(fid,'Searching NaN within fields for sensor: %s\n',sensor_name);
-    end
-    subfieldNames = fieldnames(d); % Grab all the subfields
-    for i_subField = 1:length(subfieldNames)
-        % Grab the name of the ith subfield
-        subFieldName = subfieldNames{i_subField};
-        
-        if flag_do_debug
-            fprintf(fid,'\tProcessing subfield: %s ',subFieldName);
-        end
-        
-        % Check to see if this subField has any NaN
-        if ~iscell(d.(subFieldName))
-            if any(isnan(d.(subFieldName)))
-                if flag_do_debug
-                    fprintf(fid,' <-- contains an NaN value\n');
-                end
-            else % No NaNs found
-                if flag_do_debug
-                    fprintf(fid,'\n');
-                end
-                
-            end % Ends the if statement to check if subfield is on list
-        end  % Ends if to check if the fiel is a call
-    end % Ends for loop through the subfields
+    %
+    %
+    %     if flag_do_debug
+    %         fprintf(fid,'Searching NaN within fields for sensor: %s\n',sensor_name);
+    %     end
+    %     subfieldNames = fieldnames(d); % Grab all the subfields
+    %     for i_subField = 1:length(subfieldNames)
+    %         % Grab the name of the ith subfield
+    %         subFieldName = subfieldNames{i_subField};
+    %
+    %         if flag_do_debug
+    %             fprintf(fid,'\tProcessing subfield: %s ',subFieldName);
+    %         end
+    %
+    %         % Check to see if this subField has any NaN
+    %         if ~iscell(d.(subFieldName))
+    %             if any(isnan(d.(subFieldName)))
+    %                 if flag_do_debug
+    %                     fprintf(fid,' <-- contains an NaN value\n');
+    %                 end
+    %             else % No NaNs found
+    %                 if flag_do_debug
+    %                     fprintf(fid,'\n');
+    %                 end
+    %
+    %             end % Ends the if statement to check if subfield is on list
+    %         end  % Ends if to check if the fiel is a call
+    %     end % Ends for loop through the subfields
     
 end  % Ends for loop through all sensor names in dataStructure
 

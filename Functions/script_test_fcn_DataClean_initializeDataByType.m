@@ -21,15 +21,20 @@ clc
 %                                                    
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Assertions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%      The following data types are expected:
-%      'Trigger' - This is the data type for the trigger box data
-%      'GPS' - This is the data type for GPS data
-%      'IMU' - This is the data type for IMU data
-%      'Encoder' - This is the data type for Encoder data
-%      'LIDAR2D' - This is the data type for 2D Lidar data
-%      'LIDAR3D' - This is the data type for 3D Lidar data
+%      dataType: a string denoting the type of dataStructure to be filled.
+%      The fillowing data types are expected:
+%      'trigger' - This is the data type for the trigger box data
+%      'gps' - This is the data type for GPS data
+%      'ins' - This is the data type for INS data
+%      'encoder' - This is the data type for Encoder data
+%      'diagnostic' - This is the data type for diagnostic data
+%      'ntrip'      - This is the data type for NTRIP system data
+%      'rosout'     - This is the data type for ROS log message
+%      'transform'  - This is the data type for tranformation message
+%      'lidar2d' - This is the data type for 2D Lidar data
+%      'lidar3d' - This is the data type for 3D Lidar data
 
-types = {'Trigger','GPS','IMU','Encoder','LIDAR2D','LIDAR3d'};
+types = {'Trigger','GPS','IMU','Encoder','Diagnostic','NTrip','ROSOut','Transform','LIDAR2D','LIDAR3d'};
 
 %% Test each of the standard calls
 for ith_type = 1:length(types)
