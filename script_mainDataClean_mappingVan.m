@@ -268,9 +268,11 @@ if ~exist('flag_DataClean_Folders_Initialized','var')
 end
 
 
-%%
+%% Specify the data to use
+bagFolderName = "mapping_van_2023-06-05-1Lap";
 
-%% ======================= Load the raw data=========================
+
+%% ======================= Load the raw data =========================
 % This data will have outliers, be unevenly sampled, have multiple and
 % inconsistent measurements of the same variable. In other words, it is the
 % raw data. It can be loaded either from a database or a file - details are
@@ -287,7 +289,7 @@ if ~exist('rawData','var')
         [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
         % Load the raw data from file
-        [rawData,trip_name,trip_id_cleaned,~,Hemisphere_gps_week] = fcn_DataClean_loadRawDataFromFile(flag.DBquery,filename,variable_names); % more query condition can be set in the function
+        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
     end
 end
 

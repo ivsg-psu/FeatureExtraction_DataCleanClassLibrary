@@ -13,7 +13,7 @@ function dataStructure = fcn_DataClean_initializeDataByType(dataType)
 %      The fillowing data types are expected:
 %      'Trigger' - This is the data type for the trigger box data
 %      'GPS' - This is the data type for GPS data
-%      'INS' - This is the data type for INS data
+%      'IMU' - This is the data type for IMU data
 %      'Encoder' - This is the data type for Encoder data
 %      'LIDAR2D' - This is the data type for 2D Lidar data
 %      'LIDAR3D' - This is the data type for 3D Lidar data
@@ -118,7 +118,7 @@ switch lower(dataType)
         dataStructure.err_bad_character                 = default_value; 
         dataStructure.err_wrong_element_length          = default_value; 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.TRIGGER_EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'gps'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -156,11 +156,11 @@ switch lower(dataType)
         dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.GPS_EventFunctions = {}; % These are the functions to determine if something went wrong
 
 
 
-    case 'ins'
+    case 'imu'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
@@ -180,7 +180,7 @@ switch lower(dataType)
         dataStructure.ZGyro              = default_value; 
         dataStructure.ZGyro_Sigma        = default_value; 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.IMU_EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'encoder'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
@@ -196,7 +196,7 @@ switch lower(dataType)
         dataStructure.AngularVelocity    = default_value;  % Angular velocity of the encoder
         dataStructure.AngularVelocity_Sigma    = default_value; 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.ENCODER_EventFunctions = {}; % These are the functions to determine if something went wrong
 
     case 'lidar2d'
         % Xinyu - fill this in
@@ -215,7 +215,7 @@ switch lower(dataType)
         dataStructure.ranges             = default_value;  % This is the range data of scans [m]
         dataStructure.intensities        = default_value;  % This is the intensities data of scans (Ranging from 0 to 255)
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.LIDAR2D_EventFunctions = {}; % These are the functions to determine if something went wrong
         
     case 'lidar3d'
         % Xinyu - fill this in
@@ -226,7 +226,7 @@ switch lower(dataType)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
 
         % Event functions
-        dataStructure.EventFunctions = {}; % These are the functions to determine if something went wrong
+        dataStructure.LIDAR3D_EventFunctions = {}; % These are the functions to determine if something went wrong
     case 'other'
         fprintf(topic_name + "is not processed")
     otherwise

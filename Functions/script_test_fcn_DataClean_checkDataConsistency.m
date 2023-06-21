@@ -1,47 +1,22 @@
-% script_test_fcn_DataClean_initializeDataByType.m
-% tests fcn_DataClean_initializeDataByType.m
+% script_test_fcn_DataClean_checkDataConsistency.m
+% tests fcn_DataClean_checkDataConsistency.m
 
 % Revision history
-% 2023_06_12 - sbrennan@psu.edu
-% -- wrote the code originally, using Laps_checkZoneType as starter
+% 2023_06_19 - sbrennan@psu.edu
+% -- wrote the code originally
 
 %% Set up the workspace
 close all
 clc
 
-%% Check assertions for basic path operations and function testing
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                              _   _                 
-%      /\                     | | (_)                
-%     /  \   ___ ___  ___ _ __| |_ _  ___  _ __  ___ 
-%    / /\ \ / __/ __|/ _ \ '__| __| |/ _ \| '_ \/ __|
-%   / ____ \\__ \__ \  __/ |  | |_| | (_) | | | \__ \
-%  /_/    \_\___/___/\___|_|   \__|_|\___/|_| |_|___/
-%                                                    
-%                                                    
-% See: https://patorjk.com/software/taag/#p=display&f=Big&t=Assertions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%      The following data types are expected:
-%      'Trigger' - This is the data type for the trigger box data
-%      'GPS' - This is the data type for GPS data
-%      'IMU' - This is the data type for IMU data
-%      'Encoder' - This is the data type for Encoder data
-%      'LIDAR2D' - This is the data type for 2D Lidar data
-%      'LIDAR3D' - This is the data type for 3D Lidar data
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
 
-types = {'Trigger','GPS','IMU','Encoder','LIDAR2D','LIDAR3d'};
+% Basic call
+fid = 1;
+flags = fcn_DataClean_checkDataConsistency(dataStructure,fid);
 
-%% Test each of the standard calls
-for ith_type = 1:length(types)
-    dataType = types{ith_type};
-    dataStructure = fcn_DataClean_initializeDataByType(dataType);
 
-    % Make sure its type is correct
-    assert(isstruct(dataStructure));
-
-    fprintf(1,'The data structure for: %s\n',dataType)
-    disp(dataStructure)
-end
 
 %% Fail conditions
 if 1==0
