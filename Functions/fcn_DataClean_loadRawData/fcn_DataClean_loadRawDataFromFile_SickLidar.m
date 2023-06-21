@@ -29,8 +29,9 @@ function Sick_Lidar_structure = fcn_DataClean_loadRawDataFromFile_SickLidar(file
 if strcmp(datatype,'lidar2d')
     opts = detectImportOptions(file_path);
     sick_lidar_data = readmatrix(file_path, opts);
-    Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
-
+    Npoints = size(sick_lidar_data,1);
+    Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
+    
     secs = sick_lidar_data(:,2);
     nsecs = sick_lidar_data(:,3);
     Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
@@ -48,6 +49,20 @@ if strcmp(datatype,'lidar2d')
     Sick_Lidar_structure.ranges             = sick_lidar_data(:,11:1151);  % This is the range data of scans [m]
     Sick_Lidar_structure.intensities        = sick_lidar_data(:,1152:2292);  % This is the intensities data of scans (Ranging from 0 to 255)
     
+
+    % Process Sick Time topics
+    dataFolder = fileparts(file_path);
+    sick_time_file_name = '_slash_sick_lms500_slash_sicktime.csv';
+    sick_time_file_path = fullfile(dataFolder,sick_time_file_name);
+    sick_time_opts = detectImportOptions(sick_time_file_path);
+    sick_time_opts.PreserveVariableNames = true;
+    sick_time_table = readtable(sick_time_file_path,sick_time_opts);
+
+    sick_time_secs = sick_time_table.secs_1;
+    sick_time_nsecs = sick_time_table.nsecs_1;
+    Sick_Lidar_structure.Sick_Time = sick_time_secs + sick_time_nsecs*10^-9;
+    
+
 else
     error('Wrong data type requested: %s',dataType)
 end

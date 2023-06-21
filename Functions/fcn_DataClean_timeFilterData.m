@@ -1,28 +1,103 @@
 function timeFilteredData = fcn_DataClean_timeFilterData(cleanAndTimeAlignedData)
-%
+% fcn_DataClean_timeFilterData
 % This function performs time-based filtering on the selected data. The
 % time filtering is intended to force the data to follow vehicle dynamic
 % frequencies. For now, it is just limited to 1 Hz.
 %
-% Revision History:
-%     2019_11_20 - first write of the code by sbrennan@psu.edu
-%     2019_11_27 - fixed comments, and added sigma filtering to smooth this
-%     out.
-%     2020_11_10 - changed function names in prep for DataClean class
+% FORMAT:
+%
+%      timeFilteredData = fcn_DataClean_timeFilterData(cleanAndTimeAlignedData)
+%
+% INPUTS:
+%
+%      cleanAndTimeAlignedData: 
+%
+%      (OPTIONAL INPUTS)
+%
+%      (none)
+%
+% OUTPUTS:
+%
+%      timeFilteredData: 
+%
+% DEPENDENCIES:
+%
+%      fcn_DebugTools_checkInputsToFunctions
+%
+% EXAMPLES:
+%
+%     See the script: script_test_fcn_DataClean_timeFilterData
+%     for a full test suite.
+%
+% This function was written on 2019_11_20 by S. Brennan
+% Questions or comments? sbrennan@psu.edu 
 
-flag_do_debug = 1;
+% Revision history:
+%     
+% 2019_11_20 - first write of the code by sbrennan@psu.edu
+% 2019_11_27 - fixed comments, and added sigma filtering to smooth this
+%              out.
+% 2020_11_10 - changed function names in prep for DataClean class
+% 2023_06_19 - Updated the function description according to the IVSG
+% format and renamed the function to "fcn_DataClean_removeGPSJumps" from 
+% "fcn_DataClean_removeDGPSJumpsFromMergedData"
+
+% TO DO
+% 
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_do_debug
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-
-    % Show what we are doing
-    fprintf(1,'\nWithin function: %s\n',namestr);
-    fprintf(1,'Starting iterations through rawData structure to calculate sigma values.\n');    
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
 
+% flag_do_debug = 1;
+% 
+% if flag_do_debug
+%     % Grab function name
+%     st = dbstack;
+%     namestr = st.name;
+% 
+%     % Show what we are doing
+%     fprintf(1,'\nWithin function: %s\n',namestr);
+%     fprintf(1,'Starting iterations through rawData structure to calculate sigma values.\n');    
+% end
 
+%% check input arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____                   _
+%  |_   _|                 | |
+%    | |  _ __  _ __  _   _| |_ ___
+%    | | | '_ \| '_ \| | | | __/ __|
+%   _| |_| | | | |_) | |_| | |_\__ \
+%  |_____|_| |_| .__/ \__,_|\__|___/
+%              | |
+%              |_|
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if flag_check_inputs
+    % Are there the right number of inputs?
+    if nargin < 1 || nargin > 1
+        error('Incorrect number of input arguments')
+    end
+        
+    % NOTE: zone types are checked below
+
+end
+%% Main code starts here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   __  __       _
+%  |  \/  |     (_)
+%  | \  / | __ _ _ _ __
+%  | |\/| |/ _` | | '_ \
+%  | |  | | (_| | | | | |
+%  |_|  |_|\__,_|_|_| |_|
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Define which fields to filter
 fields_to_calculate_filtered_signals = [...
@@ -163,7 +238,40 @@ for i_data = 1:length(sensorStrings)
     timeFilteredData.(thisSensorString) = dout; % Save results to main structure
     
 end  % Ends for loop through all sensor names in rawData
+
+%% Plot the results (for debugging)?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____       _
+%  |  __ \     | |
+%  | |  | | ___| |__  _   _  __ _
+%  | |  | |/ _ \ '_ \| | | |/ _` |
+%  | |__| |  __/ |_) | |_| | (_| |
+%  |_____/ \___|_.__/ \__,_|\__, |
+%                            __/ |
+%                           |___/
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if flag_do_plots
+    
+    % Nothing to plot        
+    
+end
+
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+end
+
+
 end % Ends the function
 
-
+%% Functions follow
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   ______                _   _
+%  |  ____|              | | (_)
+%  | |__ _   _ _ __   ___| |_ _  ___  _ __  ___
+%  |  __| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+%  | |  | |_| | | | | (__| |_| | (_) | | | \__ \
+%  |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+%
+% See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 

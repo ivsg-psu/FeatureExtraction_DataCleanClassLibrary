@@ -1,5 +1,4 @@
 function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_station)
-
 % fcn_DataClean_removeGPSJumps
 % This function removes jumps from merged data caused by GPS outages
 %
@@ -9,12 +8,10 @@ function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_stati
 %
 % INPUTS:
 %
-%      mergedData - This is the filtered data via Baysian averaging across 
-%                   same state
-%
-%      rawData - This is the raw data. The original data
-%
-%      base_station - These are the coordinates of the base station
+%      mergedData: This is the filtered data via Baysian averaging 
+%                     across same state
+%      rawData: This is the raw data. The original data
+%      base_station: These are the coordinates of the base station
 %
 %      (OPTIONAL INPUTS)
 %
@@ -23,8 +20,6 @@ function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_stati
 % OUTPUTS:
 %
 %      mergedData: This data have no jumps caused by GPS outages
-%      
-%      
 %
 % DEPENDENCIES:
 %
@@ -42,6 +37,9 @@ function mergedData = fcn_DataClean_removeGPSJumps(mergedData,rawData,base_stati
 %     
 % 2019_12_01 - sbrennan@psu.edu
 % -- wrote the code originally 
+% 2023_06_19 -- Updated the function description according to the IVSG
+% format and renamed the function to "fcn_DataClean_removeGPSJumps" from 
+% "fcn_DataClean_removeDGPSJumpsFromMergedData"
 
 % TO DO
 % 
@@ -182,7 +180,6 @@ end
 
 
 return % Ends main function
-
 %% Functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   ______                _   _
@@ -194,8 +191,6 @@ return % Ends main function
 %
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
-
-
 
 
 function pairings = fcn_DataClean_findStartEndPairsWhereDGPSDrops(DGPS_is_active)
