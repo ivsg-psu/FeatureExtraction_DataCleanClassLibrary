@@ -124,7 +124,8 @@ switch lower(dataType)
         dataStructure.adjone                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
         dataStructure.adjtwo                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
         dataStructure.adjthree                          = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
-        % Data below are error monitoring messages
+        % Data below are error monitoring messages, move to parseTrigger
+        % topic later
         dataStructure.err_failed_mode_count             = default_value; 
         dataStructure.err_failed_checkInformation       = default_value;  
         dataStructure.err_failed_XI_format              = default_value; 
@@ -184,47 +185,44 @@ switch lower(dataType)
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         dataStructure.IMUStatus          = default_value;
-
-        dataStructure.XOrientation       = default_value; 
-        dataStructure.XOrientation_Sigma = default_value; 
-        dataStructure.YOrientation       = default_value;
-        dataStructure.YOrientation_Sigma = default_value; 
-        dataStructure.ZOrientation       = default_value;
-        dataStructure.ZOrientation_Sigma = default_value; 
-        dataStructure.WOrientation       = default_value;
-        dataStructure.WOrientation_Sigma = default_value;
-        dataStructure.Orientation_Sigma  = default_value;
+        % Quaternion?
+        dataStructure.XOrientation       = default_value;  % This is the Orientation of x-axis
+        dataStructure.XOrientation_Sigma = default_value;  % Sigma in XOrientation
+        dataStructure.YOrientation       = default_value;  % This is the Orientation of y-axis
+        dataStructure.YOrientation_Sigma = default_value;  % Sigma in YOrientation
+        dataStructure.ZOrientation       = default_value;  % This is the Orientation of z-axis
+        dataStructure.ZOrientation_Sigma = default_value;  % Sigma in ZOrientation
+        dataStructure.WOrientation       = default_value;  % This is the acos of the rotation angle
+        dataStructure.WOrientation_Sigma = default_value;  % Sigma in WOrientation
+        dataStructure.Orientation_Sigma  = default_value;  % Covariance of Orientation
         
-        dataStructure.YAccel_Sigma       = default_value; 
-        dataStructure.ZAccel             = default_value; 
-        dataStructure.ZAccel_Sigma       = default_value;
-        dataStructure.XAccel             = default_value; 
-        dataStructure.XAccel_Sigma       = default_value; 
-        dataStructure.YAccel             = default_value; 
-        dataStructure.YAccel_Sigma       = default_value; 
-        dataStructure.ZAccel             = default_value; 
-        dataStructure.ZAccel_Sigma       = default_value;
-        dataStructure.Accel_Sigma        = default_value;
-        dataStructure.XGyro              = default_value; 
-        dataStructure.XGyro_Sigma        = default_value; 
-        dataStructure.YGyro              = default_value; 
-        dataStructure.YGyro_Sigma        = default_value; 
-        dataStructure.ZGyro              = default_value; 
-        dataStructure.ZGyro_Sigma        = default_value;
-        dataStructure.Gyro_Sigma         = default_value;
+        dataStructure.XAccel             = default_value;  % This is the linear acceleration in x-axis 
+        dataStructure.XAccel_Sigma       = default_value;  % Sigma in XAccel
+        dataStructure.YAccel             = default_value;  % This is the linear acceleration in y-axis
+        dataStructure.YAccel_Sigma       = default_value;  % Sigma in YAccel
+        dataStructure.ZAccel             = default_value;  % This is the L=linear acceleration in z-axis
+        dataStructure.ZAccel_Sigma       = default_value;  % Sigma in ZAccel
+        dataStructure.Accel_Sigma        = default_value;  % Covariance of linear acceleration
+        dataStructure.XGyro              = default_value;  % This is the angular velocity around x-axis
+        dataStructure.XGyro_Sigma        = default_value;  % Sigma in XGyro
+        dataStructure.YGyro              = default_value;  % This is the angular velocity around y-axis
+        dataStructure.YGyro_Sigma        = default_value;  % Sigma in YGyro
+        dataStructure.ZGyro              = default_value;  % This is the angular velocity around z-axis
+        dataStructure.ZGyro_Sigma        = default_value;  % Sigma in ZGyro
+        dataStructure.Gyro_Sigma         = default_value;  % Covariance of Angular velocity
        
-        dataStructure.XMagnetic          = default_value;
-        dataStructure.XMagnetic_Sigma    = default_value;
-        dataStructure.YMagnetic          = default_value;
-        dataStructure.YMagnetic_Sigma    = default_value;
-        dataStructure.ZMagnetic          = default_value;
-        dataStructure.ZMagnetic_Sigma    = default_value;
-        dataStructure.Magnetic_Sigma     = default_value;
+        dataStructure.XMagnetic          = default_value;  % This is the magnetic in x-axis 
+        dataStructure.XMagnetic_Sigma    = default_value;  % Sigma in XMagnetic
+        dataStructure.YMagnetic          = default_value;  % This is the magnetic in y-axis 
+        dataStructure.YMagnetic_Sigma    = default_value;  % Sigma in YMagnetic
+        dataStructure.ZMagnetic          = default_value;  % This is the magnetic in z-axis 
+        dataStructure.ZMagnetic_Sigma    = default_value;  % Sigma in ZMagnetic
+        dataStructure.Magnetic_Sigma     = default_value;  % Covariance of magnetic
         
-        dataStructure.Pressure           = default_value;
-        dataStructure.Pressure_Sigma     = default_value;
-        dataStructure.Temperature        = default_value;
-        dataStructure.Temperature_Sigma  = default_value;
+        dataStructure.Pressure           = default_value;  % This is fulid pressure
+        dataStructure.Pressure_Sigma     = default_value;  % Sigma in pressure
+        dataStructure.Temperature        = default_value;  % This is temperature [C]
+        dataStructure.Temperature_Sigma  = default_value;  % Sigma in temperature
         % Event functions
         dataStructure.IMU_EventFunctions = {}; % These are the functions to determine if something went wrong
 
@@ -252,6 +250,18 @@ switch lower(dataType)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         % Data related to trigger box and encoder box
         dataStructure.Seq                = default_value;  % This is the sequence of the topic
+        % Moved from parseTrigger, will be added later, commented out
+        % temporarily
+        % dataStructure.err_failed_mode_count             = default_value; 
+        % dataStructure.err_failed_checkInformation       = default_value;  
+        % dataStructure.err_failed_XI_format              = default_value; 
+        % dataStructure.err_trigger_unknown_error_occured = default_value; 
+        % dataStructure.err_bad_uppercase_character       = default_value; 
+        % dataStructure.err_bad_lowercase_character       = default_value; 
+        % dataStructure.err_bad_three_adj_element         = default_value; 
+        % dataStructure.err_bad_first_element             = default_value; 
+        % dataStructure.err_bad_character                 = default_value; 
+        % dataStructure.err_wrong_element_length          = default_value; 
         % Data related to SparkFun GPS Diagnostic
         dataStructure.DGPS_mode          = default_value;  % Mode indicating DGPS status (for example, navmode 6)
         dataStructure.numSatellites      = default_value;  % Number of satelites visible 
@@ -279,30 +289,16 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-        dataStructure.Seq                = default_value;
-        dataStructure.Level              = default_value;
-        dataStructure.msg                = default_value;
-        dataStructure.file               = default_value;
-        dataStructure.function           = default_value;
-        dataStructure.line               = default_value;
-        dataStructure.topics             = default_value;
+        dataStructure.Seq                = default_value;  % This is the sequence of the message
+        dataStructure.Name               = default_value;  % This is the name of the node
+        dataStructure.msg                = default_value;  % This is the log message
+        dataStructure.file               = default_value;  % This is the script file name
+        dataStructure.function           = default_value;  % This is the fucntion called in the script
+        dataStructure.line               = default_value;  % This the line of the function
+        dataStructure.topics             = default_value;  % This is the topic name
         % Event functions
         dataStructure.ROSOUT_EventFunctions = {}; % These are the functions to determine if something went wrong
 
-
-    % case 'rosout_agg'
-    %     dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
-    %     dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-    %     dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
-    %     dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    %     dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-    %     dataStructure.Seq                = default_value;
-    %     dataStructure.Level              = default_value;
-    %     dataStructure.name               = default_value;
-    %     dataStructure.text               = default_value;
-    %     dataStructure.function           = default_value;
-    %     dataStructure.line               = default_value;
-    %     dataStructure.topics             = default_value;
     case 'transform'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
@@ -310,13 +306,13 @@ switch lower(dataType)
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
      
-        dataStructure.XTranslation       = default_value;
-        dataStructure.YTranslation       = default_value;
-        dataStructure.ZTranslation       = default_value;
-        dataStructure.XRotation          = default_value;
-        dataStructure.YRotation          = default_value;
-        dataStructure.ZRotation          = default_value;
-        dataStructure.WRotation          = default_value;
+        dataStructure.XTranslation       = default_value;  % This is the translation in x-axis
+        dataStructure.YTranslation       = default_value;  % This is the translation in y-axis
+        dataStructure.ZTranslation       = default_value;  % This is the translation in z-axis
+        dataStructure.XRotation          = default_value;  % This is the rotation around x-axis
+        dataStructure.YRotation          = default_value;  % This is the rotation around y-axis
+        dataStructure.ZRotation          = default_value;  % This is the rotation around z-axis
+        dataStructure.WRotation          = default_value;  % This is the rotation around w-axis
         % Event functions
         dataStructure.TRANSFORM_EventFunctions = {}; % These are the functions to determine if something went wrong
 

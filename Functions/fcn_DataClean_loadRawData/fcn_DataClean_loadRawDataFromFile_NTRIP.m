@@ -32,7 +32,7 @@ if strcmp(datatype,'ntrip')
     NTRIP_data_structure.BaseStationID      = datatable.BaseStationID;  % Base station that was used for correction
     NTRIP_data_structure.NTRIP_Status       = datatable.NTRIP_Connection;  % The status of NTRIP connection (Ture, conencted, False, disconencted)
     % Event functions
-    NTRIP_data_structure.EventFunctions = {}; % These are the functions to determine if something went wrong
+    % NTRIP_data_structure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
 else
     error('Wrong data type requested: %s',dataType)

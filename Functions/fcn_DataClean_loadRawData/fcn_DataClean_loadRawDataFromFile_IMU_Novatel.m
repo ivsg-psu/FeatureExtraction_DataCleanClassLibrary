@@ -25,7 +25,7 @@ function IMU_Novatel_structure = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(f
 
 %%
 
-if strcmp(datatype,'ins')
+if strcmp(datatype,'imu')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);

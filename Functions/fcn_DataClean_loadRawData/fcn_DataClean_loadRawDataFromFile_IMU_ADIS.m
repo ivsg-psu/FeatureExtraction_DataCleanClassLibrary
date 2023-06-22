@@ -24,7 +24,7 @@ function IMU_data_structure = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(file_pa
 % Reference:
 % 
 %%
-if strcmp(datatype, 'ins')
+if strcmp(datatype, 'imu')
     
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
