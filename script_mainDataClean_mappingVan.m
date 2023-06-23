@@ -219,6 +219,8 @@
 close all
 clc
 
+fid = 0; % The file ID to use for printing messages from the code below
+
 %% Dependencies and Setup of the Code
 % The code requires several other libraries to work, namely the following
 % * DebugTools - the repo can be found at: https://github.com/ivsg-psu/Errata_Tutorials_DebugTools
@@ -282,7 +284,7 @@ flag.DBquery = false; %true; %set to true to query raw data from database
 flag.DBinsert = false; %set to true to insert cleaned data to cleaned data database
 flag.SaveQueriedData = true; % 
 
-if ~exist('rawData','var')
+if ~exist('dataset','var')
     if flag.DBquery == true
         % Load the raw data from the database
         queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
@@ -293,430 +295,479 @@ if ~exist('rawData','var')
     end
 end
 
-%% ======================= Raw Data Clean and Merge =========================
-% Step 1: we check if the time is incrementing uniformly. If it does not,
-% the data around this is set to NaN. In later steps, this is interpolated.
-rawDataTimeFixed = fcn_DataClean_removeTimeGapsFromRawData(rawData);
-%fcn_DataClean_searchAllFieldsForNaN(rawDataTimeFixed)
+%% Fill in test cases?
+% Fill in the initial data - we use this for testing
+dataStructure = fcn_DataClean_fillTestDataStructure;
 
-% Step 2: assign to each data a measured or calculated variance.
-% Fill in the sigma values for key fields. This just calculates the sigma
-% values for key fields (velocities, accelerations, angular rates in
-% particular), useful for doing outlier detection, etc. in steps that
-% follow.
-rawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(rawDataTimeFixed);
-
-% NOTE: the following function changes the yaw angles to wind (correctly)
-% up or down)
-
-% Step 3: Remove outliers on key fields via median filtering
-% This removes outliers by median filtering key values.
-rawDataWithSigmasAndMedianFiltered = fcn_DataClean_medianFilterFromRawAndSigmaData(rawDataWithSigmas);
-
-% PLOTS to show winding up or down:
-% figure(2); plot(mod(rawDataWithSigmas.GPS_Novatel.Yaw_deg,360),'b')
-% figure(3); plot(mod(rawDataWithSigmasAndMedianFiltered.GPS_Novatel.Yaw_deg,360),'k')
-% figure(4); plot(rawDataWithSigmasAndMedianFiltered.GPS_Novatel.Yaw_deg,'r')
-
-% Step 4: Remove additional data artifacts such as yaw angle wrapping. This
-% is the cleanData structure. This has to be done before filtering to avoid
-% smoothing these artificial discontinuities. Clean the raw data
-cleanData = fcn_DataClean_cleanRawDataBeforeTimeAlignment(rawDataWithSigmasAndMedianFiltered);
-
-% Step 5: Time align the data to GPS time. and make time a "sensor" field This step aligns
-% all the time vectors to GPS time, and ensures that the data has an even time sampling.
-cleanAndTimeAlignedData = fcn_DataClean_alignToGPSTimeAllData(cleanData);
-
-% Step 6: Time filter the signals
-timeFilteredData = fcn_DataClean_timeFilterData(cleanAndTimeAlignedData);
-
-% Step 7: Merge each signal by those that are common along the same state.
-% This is in the structure mergedData. Calculate merged data via Baysian
-% averaging across same state
-mergedData = fcn_DataClean_mergeTimeAlignedData(timeFilteredData);
-
-% Step 8: Remove jumps from merged data caused by DGPS outages
-mergedDataNoJumps = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData,base_station);
-
-
-% Step 9: Calculate the KF fusion of single signals
-mergedByKFData = mergedDataNoJumps;  % Initialize the structure with prior data
-
-% KF the yawrate and yaw together
-t_x1 = mergedByKFData.MergedGPS.GPS_Time;
-x1 = mergedByKFData.MergedGPS.Yaw_deg;
-x1_Sigma = mergedByKFData.MergedGPS.Yaw_deg_Sigma;
-t_x1dot = mergedByKFData.MergedIMU.GPS_Time;
-x1dot = mergedByKFData.MergedIMU.ZGyro*180/pi;
-x1dot_Sigma = mergedByKFData.MergedIMU.ZGyro_Sigma*180/pi;
-nameString = 'Yaw_deg';
-[x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
-x_kf_resampled = interp1(t_x1dot,x_kf,t_x1,'linear','extrap');
-sigma_x_resampled = interp1(t_x1dot,sigma_x,t_x1,'linear','extrap');
-mergedByKFData.MergedGPS.Yaw_deg = x_kf_resampled;
-mergedByKFData.MergedGPS.Yaw_deg_Sigma = sigma_x_resampled;
-
-% KF the xEast_increments and xEast together
-t_x1 = mergedByKFData.MergedGPS.GPS_Time;
-x1 = mergedByKFData.MergedGPS.xEast;
-x1_Sigma = mergedByKFData.MergedGPS.xEast_Sigma;
-t_x1dot = mergedByKFData.MergedGPS.GPS_Time;
-x1dot = mergedByKFData.MergedGPS.xEast_increments/0.05;  % The increments are raw changes, not velocities. Have to divide by time step.
-x1dot_Sigma = mergedByKFData.MergedGPS.xEast_increments_Sigma/0.05;
-nameString = 'xEast';
-[x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
-mergedByKFData.MergedGPS.xEast = x_kf;
-mergedByKFData.MergedGPS.xEast_Sigma = sigma_x;
-
-% KF the yNorth_increments and yNorth together
-t_x1 = mergedByKFData.MergedGPS.GPS_Time;
-x1 = mergedByKFData.MergedGPS.yNorth;
-x1_Sigma = mergedByKFData.MergedGPS.yNorth_Sigma;
-t_x1dot = mergedByKFData.MergedGPS.GPS_Time;
-x1dot = mergedByKFData.MergedGPS.yNorth_increments/0.05;  % The increments are raw changes, not velocities. Have to divide by time step.
-x1dot_Sigma = mergedByKFData.MergedGPS.yNorth_increments_Sigma/0.05;
-nameString = 'yNorth';
-[x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
-mergedByKFData.MergedGPS.yNorth = x_kf;
-mergedByKFData.MergedGPS.yNorth_Sigma = sigma_x;
-
-% convert ENU to LLA (used for geoplot)
-[mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,mergedByKFData.MergedGPS.altitude] ...
-    = enu2geodetic(mergedByKFData.MergedGPS.xEast,mergedByKFData.MergedGPS.yNorth,mergedByKFData.MergedGPS.zUp,...
-    base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
-
-%% Step 10: Add interpolation to Lidar data to create field in Lidar that has GPS position in ENU
-% NOTE: as of 2023-06-11
-% The following does NOT work yet, and needs to be corrected via transforms
-% [mergedDataNoJumps,mergedByKFData] = fcn_DataClean_AddLocationToLidar(mergedDataNoJumps,mergedByKFData,base_station);
-
-% Note: mergedDataNoJumps may have better GPS location data than
-% mergedByKFData if the Kalman filter fusion does not work well, for
-% example, the data at test track with trip_id =2.
-
-% add Hemisphere_gps_week to mergedDataNoJumps and mergedByKFData
-if length(Hemisphere_gps_week) >1
-    error('More than one week data was collected in the trip!')
-end
-mergedDataNoJumps.MergedGPS.GPS_week = Hemisphere_gps_week;
-mergedDataNoJumps.Lidar.GPS_week = Hemisphere_gps_week;
-mergedByKFData.MergedGPS.GPS_week = Hemisphere_gps_week;
-mergedByKFData.Lidar.GPS_week = Hemisphere_gps_week;
-
-% Probably can delete the following if statement (VERY old)
-if 1==0
-    % The following shows that we should NOT use yaw angles to calculate yaw rate
-    fcn_plotArtificialYawRateFromYaw(MergedData,timeFilteredData);
-
-    % Now to check to see if raw integration of YawRate can recover the yaw
-    % angle
-    fcn_plotArtificialYawFromYawRate(MergedData,timeFilteredData);
-
-
-    %fcn_plotArtificialVelocityFromXAccel(MergedData,timeFilteredData);
-    fcn_plotArtificialPositionFromIncrementsAndVelocity(MergedData,cleanAndTimeAlignedData)
-end
-
-
-%% Update plotting flags to allow merged data to now appear hereafter
-
-clear plottingFlags
-plottingFlags.fields_to_plot = [...
-    %     {'All_AllSensors_velMagnitude'}...
-    %     {'All_AllSensors_ZGyro'},...
-    %     {'All_AllSensors_yNorth_increments'}...
-    %     {'All_AllSensors_xEast_increments'}...
-    %     {'All_AllSensors_xEast'}...
-    %     {'All_AllSensors_yNorth'}...
-    %     {'xEast'}...
-    %     {'yNorth'}...
-    %     {'xEast_increments'}...
-    %     {'yNorth_increments'}...
-    %     {'All_AllSensors_Yaw_deg'},...
-    %     {'Yaw_deg'},...
-    %     {'ZGyro_merged'},...
-    %     {'All_AllSensors_ZGyro_merged'},...
-    {'XYplot'},...
-    %     {'All_AllSensors_XYplot'},...
-    ];
-% Define what is plotted
-plottingFlags.flag_plot_Garmin = 0;
-
-%
-% % THE TEMPLATE FOR ALL PLOTTING
-% fieldOrdering = [...
-%     {'Yaw_deg'},...                 % Yaw variables
-%     {'Yaw_deg_from_position'},...
-%     {'Yaw_deg_from_velocity'},...
-%     {'All_SingleSensor_Yaw_deg'},...
-%     {'All_AllSensors_Yaw_deg'},...
-%     {'Yaw_deg_merged'},...
-%     {'All_AllSensors_Yaw_deg_merged'},...
-%     {'ZGyro'},...                   % Yawrate (ZGyro) variables
-%     {'All_AllSensors_ZGyro'},...
-%     {'velMagnitude'},...            % velMagnitude variables
-%     {'All_AllSensors_velMagnitude'},...
-%     {'XAccel'},...                  % XAccel variables
-%     {'All_AllSensors_XAccel'},...
-%     {'xEast_increments'},...        % Position increment variables
-%     {'All_AllSensors_xEast_increments'},...
-%     {'yNorth_increments'},...
-%     {'All_AllSensors_yNorth_increments'},...
-%     {'zUp_increments'},...
-%     {'All_AllSensors_zUp_increments'},...
-%     {'XYplot'},...                  % XY plots
-%     {'All_AllSensors_XYplot'},...
-%     {'xEast'},...                   % xEast and yNorth plots
-%     {'All_AllSensors_xEast'},...
-%     {'yNorth'},...
-%     {'All_AllSensors_yNorth'},...
-%     {'zUp'},...
-%     {'All_AllSensors_zUp'},...
-%     {'DGPS_is_active'},...
-%     {'All_AllSensors_DGPS_is_active'},...
-%     %     {'velNorth'},...                % Remaining are not yet plotted - just kept here for now as  placeholders
-%     %     {'velEast'},...
-%     %     {'velUp'},...
-%     %     {'Roll_deg'},...
-%     %     {'Pitch_deg'},...
-%     %     {'xy_increments'}... % Confirmed
-%     %     {'YAccel'},...
-%     %     {'ZAccel'},...
-%     %     {'XGyro'},...
-%     %     {'YGyro'},...
-%     %     {'VelocityR},...
-%     ];
-
-% Define which sensors to plot individually
-plottingFlags.SensorsToPlotIndividually = [...
-    {'GPS_Hemisphere'}...
-    {'GPS_Novatel'}...
-    {'MergedGPS'}...
-    %    {'VelocityProjectedByYaw'}...
-    %     {'GPS_Garmin'}...
-    %     {'IMU_Novatel'}...
-    %     {'IMU_ADIS'}...
-    %     {'Input_Steering'}...
-    %     {'Encoder_RearWheels'}...
-    %     {'MergedIMU'}...
-    ];
-
-% Define zoom points for plotting
-% plottingFlags.XYZoomPoint = [-4426.14413504648 -4215.78947791467 1601.69022519862 1709.39208889317]; % This is the corner after Toftrees, where the DGPS lock is nearly always bad
-% plottingFlags.TimeZoomPoint = [297.977909295872          418.685505549775];
-% plottingFlags.TimeZoomPoint = [1434.33632953011          1441.17612419014];
-% plottingFlags.TimeZoomPoint = [1380   1600];
-% plottingFlags.TimeZoomPoint = [760 840];
-% plottingFlags.TimeZoomPoint = [596 603];  % Shows a glitch in the Yaw_deg_all_sensors plot
-% plottingFlags.TimeZoomPoint = [1360   1430];  % Shows lots of noise in the individual Yaw signals
-% plottingFlags.TimeZoomPoint = [1226 1233]; % This is the point of time discontinuity in the raw dat for Hemisphere
-% plottingFlags.TimeZoomPoint = [580 615];  % Shows a glitch in xEast_increments plot
-% plottingFlags.TimeZoomPoint = [2110 2160]; % This is the point of discontinuity in xEast
-% plottingFlags.TimeZoomPoint = [2119 2129]; % This is the location of a discontinuity produced by a variance change
-% plottingFlags.TimeZoomPoint = [120 150]; % Strange jump in xEast data
-plottingFlags.TimeZoomPoint = [185 185+30]; % Strange jump in xEast data
-
-
-% if isfield(plottingFlags,'TimeZoomPoint')
-%     plottingFlags = rmfield(plottingFlags,'TimeZoomPoint');
-% end
-
-
-% These set common y limits on values
-% plottingFlags.ylim.('xEast') = [-4500 500];
-plottingFlags.ylim.('yNorth') = [500 2500];
-
-plottingFlags.ylim.('xEast_increments') = [-1.5 1.5];
-plottingFlags.ylim.('All_AllSensors_xEast_increments') = [-1.5 1.5];
-plottingFlags.ylim.('yNorth_increments') = [-1.5 1.5];
-plottingFlags.ylim.('All_AllSensors_yNorth_increments') = [-1.5 1.5];
-
-plottingFlags.ylim.('velMagnitude') = [-5 35];
-plottingFlags.ylim.('All_AllSensors_velMagnitude') = [-5 35];
-
-
-plottingFlags.PlotDataDots = 0; % If set to 1, then the data is plotted as dots as well as lines. Useful to see data drops.
-
-%% Plot the results
-fcn_DataClean_plotStructureData(rawData,plottingFlags);
-%fcn_DataClean_plotStructureData(rawDataTimeFixed,plottingFlags);
-%fcn_DataClean_plotStructureData(rawDataWithSigmas,plottingFlags);
-%fcn_DataClean_plotStructureData(rawDataWithSigmasAndMedianFiltered,plottingFlags);
-%fcn_DataClean_plotStructureData(cleanData,plottingFlags);
-%fcn_DataClean_plotStructureData(cleanAndTimeAlignedData,plottingFlags);
-%fcn_DataClean_plotStructureData(timeFilteredData,plottingFlags);
-%fcn_DataClean_plotStructureData(mergedData,plottingFlags);
-fcn_DataClean_plotStructureData(mergedDataNoJumps,plottingFlags);
-fcn_DataClean_plotStructureData(mergedByKFData,plottingFlags);
-
-% The following function allows similar plots, made when there are repeated
-% uncommented versions above, to all scroll/zoom in unison.
-%fcn_plotAxesLinkedTogetherByField;
-
-
-%% geoplot
-figure(123)
-clf
-geoplot(mergedByKFData.GPS_Hemisphere.Latitude,mergedByKFData.GPS_Hemisphere.Longitude,'b', ...
-    mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,'r',...
-    mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,'g', 'LineWidth',2)
-
-% geolimits([45 62],[-149 -123])
-legend('mergedByKFData.GPS\_Hemisphere','mergedByKFData.MergedGPS','mergedDataNoJumps.MergedGPS')
-geobasemap satellite
-%geobasemap street
-%% OLD STUFF
-
-% %% Export results to Google Earth?
-% %fcn_exportXYZ_to_GoogleKML(rawData.GPS_Hemisphere,'rawData_GPS_Hemisphere.kml');
-% %fcn_exportXYZ_to_GoogleKML(mergedData.MergedGPS,'mergedData_MergedGPS.kml');
-% fcn_exportXYZ_to_GoogleKML(mergedDataNoJumps.MergedGPS,[dir.datafiles 'mergedDataNoJumps_MergedGPS.kml']);
-%
-%
-% %% Save cleaned data to .mat file
-% % The following is not used
-% newStr = regexprep(trip_name{1},'\s','_'); % replace whitespace with underscore
-% newStr = strrep(newStr,'-','_');
-% cleaned_fileName = [newStr,'_cleaned'];
-% eval([cleaned_fileName,'=mergedByKFData'])
-% save(strcat(dir.datafiles,cleaned_fileName,'.mat'),cleaned_fileName)
-
-%
-% fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
-% I99_Altoona33_to_StateCollege73 = rmfield(mergedByKFData.MergedGPS,fields);
-% save('I99_Altoona33_to_StateCollege73_20210123.mat','I99_Altoona33_to_StateCollege73')
-% if trip_id_cleaned == 7
-%     fields_rm = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
-%     I99_StateCollege73_to_Altoona33 = rmfield(mergedByKFData.MergedGPS,fields_rm);
-%     save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoona33')
+%% Start the looping process to iteratively clean data
+% The method used below is as follows:
+% -- The data is initialized before the loop by loading (see above)
+% -- The loop is started, and for each version of the loop, the data is
+%    checked to see if there are any errors measured in the data.
+% -- For each error type, a flag is set that is used to initiate a process
+%    that seeks to remove that type of error.
 % 
-%     fields_rm = {'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
-%     I99_StateCollege73_to_Altoona33_mergedDataNoJumps = rmfield(mergedDataNoJumps.MergedGPS,fields_rm);
-%     I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station = [0; cumsum(sqrt(diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast).^2+diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth).^2))];
-%     save('I99_StateCollege73_to_Altoona33_mergedDataNoJumps_20210123.mat','I99_StateCollege73_to_Altoona33_mergedDataNoJumps')
-% end
+% For example: say the data has wrap-around error on yaw angle due to angle
+% roll-over. This is checked and reported, and a function is called if this
+% is detected to fix that error.
 
-% extract TestTrack data
-% fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
-% TestTrack_all = rmfield(mergedByKFData.MergedGPS,fields);
-% TestTrack_all_table = struct2table(TestTrack_all);
-% TestTrack_table = TestTrack_all_table(6000:9398,:);
-% TestTrack = table2struct(TestTrack_table,'ToScalar',true);
-% save('TestTrack.mat','TestTrack')
-%
-% figure(1234)
-% clf
-% geoplot(TestTrack.latitude,TestTrack.longitude,'b', ...
-% TestTrack.latitude(1),TestTrack.longitude(1),'r.',...
-% TestTrack.latitude(end),TestTrack.longitude(end),'g.','LineWidth',2)
-% % geolimits([45 62],[-149 -123])
-% legend('Merged')
-% geobasemap satellite
+flag_stay_in_main_loop = 1;
+N_max_loops = 30;
 
-%%  Yaw Rate and Curvature Comparision
-if 1 ==0
-    [~, ~, ~, ~,R_spiral,UnitNormalV,concavity]=fnc_parallel_curve(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast, I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth, 1, 0,1,100);
-
-    yaw_rate = [0; diff(mergedDataNoJumps.MergedGPS.Yaw_deg)./diff(mergedDataNoJumps.MergedGPS.GPS_Time)];
-
-    figure(23)
-    clf
-    hold on
-    % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
-    plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,mergedDataNoJumps.MergedGPS.Yaw_deg,'b','LineWidth',1)
-    plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,yaw_rate,'r','LineWidth',1)
-
-    grid on
-    box on
-    xlabel('station (m)')
-    ylabel('yaw and yaw rate (deg)')
-    % ylim([0 0.01])
-
-
-    figure(24)
-    clf
-    hold on
-    Ux = mergedDataNoJumps.GPS_Hemisphere.velEast.*cosd(mergedDataNoJumps.MergedGPS.Yaw_deg) + ...
-        mergedDataNoJumps.GPS_Hemisphere.velNorth.*sind(mergedDataNoJumps.MergedGPS.Yaw_deg);
-    plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,Ux,'b','LineWidth',1)
-    plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velNorth,'g')
-    plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velEast,'r','LineWidth',1)
-
-    % plot(mergedDataNoJumps.IMU_Novatel.GPS_Time,mergedDataNoJumps.IMU_Novatel.ZAccel,'b')
-    grid on
-    box on
-    xlabel('time (s)')
-    ylabel('velocity (m/s)')
-    % ylim([0 0.01])
-
-    curvature_ss  = (yaw_rate*pi/180)./Ux;
-
-    figure(22)
-    clf
-    % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
-    hold on
-    % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,curvature_ss,'g','LineWidth',1)
-    plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,abs(concavity).*1./R_spiral,'r','LineWidth',1)
-    grid on
-    box on
-    xlabel('Station (m)')
-    ylabel('Curvature')
-    ylim([-0.01 0.04])
-
-
+main_data_cleaan_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
+while 1==flag_stay_in_main_loop
+    main_data_cleaan_loop_iteration_number = main_data_cleaan_loop_iteration_number+1;
+    
+    %% Check data for errors
+    [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(dataStructure,fid);
+    
+    %% Data cleaning processes to fix the latest error
+    
+    
+    %% Exiting conditions
+    % Check if all the flags work, so we can exit!
+    flag_fields = fieldnames(flags); % Grab all the flags
+    flag_array = zeros(length(flag_fields),1);
+    for ith_field = 1:length(flag_fields)
+        flag_array(ith_field,1) = flags.(flag_fields{ith_field});
+    end
+    if all(flag_array==1)
+        flag_stay_in_main_loop = 0;
+    end
+    
+    % Have we done too many loops?
+    if main_data_cleaan_loop_iteration_number>N_max_loops
+        flag_stay_in_main_loop = 0;
+    end
+          
 end
-%% ======================= Insert Cleaned Data to 'mapping_van_cleaned' database =========================
-% Input trips information
-%
-% tripsInfo.id = trip_id_cleaned;
-% tripsInfo.vehicle_id = 1;
-% tripsInfo.base_stations_id = base_station.id;
-% tripsInfo.name = trip_name;
-% if trip_id_cleaned == 2
-%
-%     tripsInfo.description = {'Test Track MappingVan night middle speed'};
-%     tripsInfo.date = {'2019-10-18 20:39:30'};
-%     tripsInfo.driver = {'Liming Gao'};
-%     tripsInfo.passengers = {'N/A'};
-%     tripsInfo.notes = {'without traffic light, at night. DGPS mode was activated. middle speed. 7 traversals'};
-%     cleanedData  = mergedDataNoJumps;
-%
-%     start_point.start_longitude=-77.833842140800000;  %deg
-%     start_point.start_latitude =40.862636161300000;   %deg
-%     start_point.start_xEast=1345.204537286125; % meters
-%     start_point.start_yNorth=6190.884280063217; % meters
-%
-%     start_point.end_longitude=-77.833842140800000;  %deg
-%     start_point.end_latitude =40.862636161300000;   %deg
-%     start_point.end_xEast=1345.204537286125; % meters
-%     start_point.end_yNorth=6190.884280063217; % meters
-%
-%     start_point.start_yaw_angle = 37.38; %deg
-%     start_point.expectedRouteLength = 1555.5; % meters
-%     start_point.direction = 'CCW'; %
-%     cleanedData.start_point = start_point;
-% elseif trip_id_cleaned == 7
-%
-%     tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
-%     tripsInfo.date = {'2021-01-23 15:00:00'};
-%     tripsInfo.driver = {'Wushuang Bai'};
-%     tripsInfo.passengers = {'Liming Gao'};
-%     tripsInfo.notes = {'Mapping from State College(exit 73) to Altoona (exit 33) through I-99. Lost DGPS mode when approaching Altoona. Drving on the right lane.'};
-%     cleanedData  = mergedByKFData;
-% elseif trip_id_cleaned == 8
-%     tripsInfo.description = {'Map I99 from Altoona (exit 33) to State College(exit 73)'};
-%     tripsInfo.date = {'2021-01-23 16:00:00'};
-%     tripsInfo.driver = {'Wushuang Bai'};
-%     tripsInfo.passengers = {'Liming Gao'};
-%     tripsInfo.notes = {'Mapping from Altoona (exit 33) to State College(exit 73) through I-99. Nexver lost DGPS mode except for passing below bridge or traffic sign. Drving on the right lane.'};
-%     cleanedData  = mergedByKFData;
-% else
-%     error("Wrong Trip ID");
+
+
+ 
+% %% ======================= Raw Data Clean and Merge =========================
+% % Step 1: we check if the time is incrementing uniformly. If it does not,
+% % the data around this is set to NaN. In later steps, this is interpolated.
+% rawDataTimeFixed = fcn_DataClean_removeTimeGapsFromRawData(rawData);
+% %fcn_DataClean_searchAllFieldsForNaN(rawDataTimeFixed)
+% 
+% % Step 2: assign to each data a measured or calculated variance.
+% % Fill in the sigma values for key fields. This just calculates the sigma
+% % values for key fields (velocities, accelerations, angular rates in
+% % particular), useful for doing outlier detection, etc. in steps that
+% % follow.
+% rawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(rawDataTimeFixed);
+% 
+% % NOTE: the following function changes the yaw angles to wind (correctly)
+% % up or down)
+% 
+% % Step 3: Remove outliers on key fields via median filtering
+% % This removes outliers by median filtering key values.
+% rawDataWithSigmasAndMedianFiltered = fcn_DataClean_medianFilterFromRawAndSigmaData(rawDataWithSigmas);
+% 
+% % PLOTS to show winding up or down:
+% % figure(2); plot(mod(rawDataWithSigmas.GPS_Novatel.Yaw_deg,360),'b')
+% % figure(3); plot(mod(rawDataWithSigmasAndMedianFiltered.GPS_Novatel.Yaw_deg,360),'k')
+% % figure(4); plot(rawDataWithSigmasAndMedianFiltered.GPS_Novatel.Yaw_deg,'r')
+% 
+% % Step 4: Remove additional data artifacts such as yaw angle wrapping. This
+% % is the cleanData structure. This has to be done before filtering to avoid
+% % smoothing these artificial discontinuities. Clean the raw data
+% cleanData = fcn_DataClean_cleanRawDataBeforeTimeAlignment(rawDataWithSigmasAndMedianFiltered);
+% 
+% % Step 5: Time align the data to GPS time. and make time a "sensor" field This step aligns
+% % all the time vectors to GPS time, and ensures that the data has an even time sampling.
+% cleanAndTimeAlignedData = fcn_DataClean_alignToGPSTimeAllData(cleanData);
+% 
+% % Step 6: Time filter the signals
+% timeFilteredData = fcn_DataClean_timeFilterData(cleanAndTimeAlignedData);
+% 
+% % Step 7: Merge each signal by those that are common along the same state.
+% % This is in the structure mergedData. Calculate merged data via Baysian
+% % averaging across same state
+% mergedData = fcn_DataClean_mergeTimeAlignedData(timeFilteredData);
+% 
+% % Step 8: Remove jumps from merged data caused by DGPS outages
+% mergedDataNoJumps = fcn_DataClean_removeDGPSJumpsFromMergedData(mergedData,rawData,base_station);
+% 
+% 
+% % Step 9: Calculate the KF fusion of single signals
+% mergedByKFData = mergedDataNoJumps;  % Initialize the structure with prior data
+% 
+% % KF the yawrate and yaw together
+% t_x1 = mergedByKFData.MergedGPS.GPS_Time;
+% x1 = mergedByKFData.MergedGPS.Yaw_deg;
+% x1_Sigma = mergedByKFData.MergedGPS.Yaw_deg_Sigma;
+% t_x1dot = mergedByKFData.MergedIMU.GPS_Time;
+% x1dot = mergedByKFData.MergedIMU.ZGyro*180/pi;
+% x1dot_Sigma = mergedByKFData.MergedIMU.ZGyro_Sigma*180/pi;
+% nameString = 'Yaw_deg';
+% [x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
+% x_kf_resampled = interp1(t_x1dot,x_kf,t_x1,'linear','extrap');
+% sigma_x_resampled = interp1(t_x1dot,sigma_x,t_x1,'linear','extrap');
+% mergedByKFData.MergedGPS.Yaw_deg = x_kf_resampled;
+% mergedByKFData.MergedGPS.Yaw_deg_Sigma = sigma_x_resampled;
+% 
+% % KF the xEast_increments and xEast together
+% t_x1 = mergedByKFData.MergedGPS.GPS_Time;
+% x1 = mergedByKFData.MergedGPS.xEast;
+% x1_Sigma = mergedByKFData.MergedGPS.xEast_Sigma;
+% t_x1dot = mergedByKFData.MergedGPS.GPS_Time;
+% x1dot = mergedByKFData.MergedGPS.xEast_increments/0.05;  % The increments are raw changes, not velocities. Have to divide by time step.
+% x1dot_Sigma = mergedByKFData.MergedGPS.xEast_increments_Sigma/0.05;
+% nameString = 'xEast';
+% [x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
+% mergedByKFData.MergedGPS.xEast = x_kf;
+% mergedByKFData.MergedGPS.xEast_Sigma = sigma_x;
+% 
+% % KF the yNorth_increments and yNorth together
+% t_x1 = mergedByKFData.MergedGPS.GPS_Time;
+% x1 = mergedByKFData.MergedGPS.yNorth;
+% x1_Sigma = mergedByKFData.MergedGPS.yNorth_Sigma;
+% t_x1dot = mergedByKFData.MergedGPS.GPS_Time;
+% x1dot = mergedByKFData.MergedGPS.yNorth_increments/0.05;  % The increments are raw changes, not velocities. Have to divide by time step.
+% x1dot_Sigma = mergedByKFData.MergedGPS.yNorth_increments_Sigma/0.05;
+% nameString = 'yNorth';
+% [x_kf,sigma_x] = fcn_DataClean_KFmergeStateAndStateDerivative(t_x1,x1,x1_Sigma,t_x1dot,x1dot,x1dot_Sigma,nameString);
+% mergedByKFData.MergedGPS.yNorth = x_kf;
+% mergedByKFData.MergedGPS.yNorth_Sigma = sigma_x;
+% 
+% % convert ENU to LLA (used for geoplot)
+% [mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,mergedByKFData.MergedGPS.altitude] ...
+%     = enu2geodetic(mergedByKFData.MergedGPS.xEast,mergedByKFData.MergedGPS.yNorth,mergedByKFData.MergedGPS.zUp,...
+%     base_station.latitude,base_station.longitude, base_station.altitude,wgs84Ellipsoid);
+% 
+% %% Step 10: Add interpolation to Lidar data to create field in Lidar that has GPS position in ENU
+% % NOTE: as of 2023-06-11
+% % The following does NOT work yet, and needs to be corrected via transforms
+% % [mergedDataNoJumps,mergedByKFData] = fcn_DataClean_AddLocationToLidar(mergedDataNoJumps,mergedByKFData,base_station);
+% 
+% % Note: mergedDataNoJumps may have better GPS location data than
+% % mergedByKFData if the Kalman filter fusion does not work well, for
+% % example, the data at test track with trip_id =2.
+% 
+% % add Hemisphere_gps_week to mergedDataNoJumps and mergedByKFData
+% if length(Hemisphere_gps_week) >1
+%     error('More than one week data was collected in the trip!')
 % end
-% % insert cleaned data
-% fcn_DataClean_insertCleanedData(cleanedData,rawData,tripsInfo,flag);
-% % save('cleanedData.mat','cleanedData')
-%
+% mergedDataNoJumps.MergedGPS.GPS_week = Hemisphere_gps_week;
+% mergedDataNoJumps.Lidar.GPS_week = Hemisphere_gps_week;
+% mergedByKFData.MergedGPS.GPS_week = Hemisphere_gps_week;
+% mergedByKFData.Lidar.GPS_week = Hemisphere_gps_week;
+% 
+% % Probably can delete the following if statement (VERY old)
+% if 1==0
+%     % The following shows that we should NOT use yaw angles to calculate yaw rate
+%     fcn_plotArtificialYawRateFromYaw(MergedData,timeFilteredData);
+% 
+%     % Now to check to see if raw integration of YawRate can recover the yaw
+%     % angle
+%     fcn_plotArtificialYawFromYawRate(MergedData,timeFilteredData);
+% 
+% 
+%     %fcn_plotArtificialVelocityFromXAccel(MergedData,timeFilteredData);
+%     fcn_plotArtificialPositionFromIncrementsAndVelocity(MergedData,cleanAndTimeAlignedData)
+% end
+% 
+% 
+% %% Update plotting flags to allow merged data to now appear hereafter
+% 
+% clear plottingFlags
+% plottingFlags.fields_to_plot = [...
+%     %     {'All_AllSensors_velMagnitude'}...
+%     %     {'All_AllSensors_ZGyro'},...
+%     %     {'All_AllSensors_yNorth_increments'}...
+%     %     {'All_AllSensors_xEast_increments'}...
+%     %     {'All_AllSensors_xEast'}...
+%     %     {'All_AllSensors_yNorth'}...
+%     %     {'xEast'}...
+%     %     {'yNorth'}...
+%     %     {'xEast_increments'}...
+%     %     {'yNorth_increments'}...
+%     %     {'All_AllSensors_Yaw_deg'},...
+%     %     {'Yaw_deg'},...
+%     %     {'ZGyro_merged'},...
+%     %     {'All_AllSensors_ZGyro_merged'},...
+%     {'XYplot'},...
+%     %     {'All_AllSensors_XYplot'},...
+%     ];
+% % Define what is plotted
+% plottingFlags.flag_plot_Garmin = 0;
+% 
+% %
+% % % THE TEMPLATE FOR ALL PLOTTING
+% % fieldOrdering = [...
+% %     {'Yaw_deg'},...                 % Yaw variables
+% %     {'Yaw_deg_from_position'},...
+% %     {'Yaw_deg_from_velocity'},...
+% %     {'All_SingleSensor_Yaw_deg'},...
+% %     {'All_AllSensors_Yaw_deg'},...
+% %     {'Yaw_deg_merged'},...
+% %     {'All_AllSensors_Yaw_deg_merged'},...
+% %     {'ZGyro'},...                   % Yawrate (ZGyro) variables
+% %     {'All_AllSensors_ZGyro'},...
+% %     {'velMagnitude'},...            % velMagnitude variables
+% %     {'All_AllSensors_velMagnitude'},...
+% %     {'XAccel'},...                  % XAccel variables
+% %     {'All_AllSensors_XAccel'},...
+% %     {'xEast_increments'},...        % Position increment variables
+% %     {'All_AllSensors_xEast_increments'},...
+% %     {'yNorth_increments'},...
+% %     {'All_AllSensors_yNorth_increments'},...
+% %     {'zUp_increments'},...
+% %     {'All_AllSensors_zUp_increments'},...
+% %     {'XYplot'},...                  % XY plots
+% %     {'All_AllSensors_XYplot'},...
+% %     {'xEast'},...                   % xEast and yNorth plots
+% %     {'All_AllSensors_xEast'},...
+% %     {'yNorth'},...
+% %     {'All_AllSensors_yNorth'},...
+% %     {'zUp'},...
+% %     {'All_AllSensors_zUp'},...
+% %     {'DGPS_is_active'},...
+% %     {'All_AllSensors_DGPS_is_active'},...
+% %     %     {'velNorth'},...                % Remaining are not yet plotted - just kept here for now as  placeholders
+% %     %     {'velEast'},...
+% %     %     {'velUp'},...
+% %     %     {'Roll_deg'},...
+% %     %     {'Pitch_deg'},...
+% %     %     {'xy_increments'}... % Confirmed
+% %     %     {'YAccel'},...
+% %     %     {'ZAccel'},...
+% %     %     {'XGyro'},...
+% %     %     {'YGyro'},...
+% %     %     {'VelocityR},...
+% %     ];
+% 
+% % Define which sensors to plot individually
+% plottingFlags.SensorsToPlotIndividually = [...
+%     {'GPS_Hemisphere'}...
+%     {'GPS_Novatel'}...
+%     {'MergedGPS'}...
+%     %    {'VelocityProjectedByYaw'}...
+%     %     {'GPS_Garmin'}...
+%     %     {'IMU_Novatel'}...
+%     %     {'IMU_ADIS'}...
+%     %     {'Input_Steering'}...
+%     %     {'Encoder_RearWheels'}...
+%     %     {'MergedIMU'}...
+%     ];
+% 
+% % Define zoom points for plotting
+% % plottingFlags.XYZoomPoint = [-4426.14413504648 -4215.78947791467 1601.69022519862 1709.39208889317]; % This is the corner after Toftrees, where the DGPS lock is nearly always bad
+% % plottingFlags.TimeZoomPoint = [297.977909295872          418.685505549775];
+% % plottingFlags.TimeZoomPoint = [1434.33632953011          1441.17612419014];
+% % plottingFlags.TimeZoomPoint = [1380   1600];
+% % plottingFlags.TimeZoomPoint = [760 840];
+% % plottingFlags.TimeZoomPoint = [596 603];  % Shows a glitch in the Yaw_deg_all_sensors plot
+% % plottingFlags.TimeZoomPoint = [1360   1430];  % Shows lots of noise in the individual Yaw signals
+% % plottingFlags.TimeZoomPoint = [1226 1233]; % This is the point of time discontinuity in the raw dat for Hemisphere
+% % plottingFlags.TimeZoomPoint = [580 615];  % Shows a glitch in xEast_increments plot
+% % plottingFlags.TimeZoomPoint = [2110 2160]; % This is the point of discontinuity in xEast
+% % plottingFlags.TimeZoomPoint = [2119 2129]; % This is the location of a discontinuity produced by a variance change
+% % plottingFlags.TimeZoomPoint = [120 150]; % Strange jump in xEast data
+% plottingFlags.TimeZoomPoint = [185 185+30]; % Strange jump in xEast data
+% 
+% 
+% % if isfield(plottingFlags,'TimeZoomPoint')
+% %     plottingFlags = rmfield(plottingFlags,'TimeZoomPoint');
+% % end
+% 
+% 
+% % These set common y limits on values
+% % plottingFlags.ylim.('xEast') = [-4500 500];
+% plottingFlags.ylim.('yNorth') = [500 2500];
+% 
+% plottingFlags.ylim.('xEast_increments') = [-1.5 1.5];
+% plottingFlags.ylim.('All_AllSensors_xEast_increments') = [-1.5 1.5];
+% plottingFlags.ylim.('yNorth_increments') = [-1.5 1.5];
+% plottingFlags.ylim.('All_AllSensors_yNorth_increments') = [-1.5 1.5];
+% 
+% plottingFlags.ylim.('velMagnitude') = [-5 35];
+% plottingFlags.ylim.('All_AllSensors_velMagnitude') = [-5 35];
+% 
+% 
+% plottingFlags.PlotDataDots = 0; % If set to 1, then the data is plotted as dots as well as lines. Useful to see data drops.
+% 
+% %% Plot the results
+% fcn_DataClean_plotStructureData(rawData,plottingFlags);
+% %fcn_DataClean_plotStructureData(rawDataTimeFixed,plottingFlags);
+% %fcn_DataClean_plotStructureData(rawDataWithSigmas,plottingFlags);
+% %fcn_DataClean_plotStructureData(rawDataWithSigmasAndMedianFiltered,plottingFlags);
+% %fcn_DataClean_plotStructureData(cleanData,plottingFlags);
+% %fcn_DataClean_plotStructureData(cleanAndTimeAlignedData,plottingFlags);
+% %fcn_DataClean_plotStructureData(timeFilteredData,plottingFlags);
+% %fcn_DataClean_plotStructureData(mergedData,plottingFlags);
+% fcn_DataClean_plotStructureData(mergedDataNoJumps,plottingFlags);
+% fcn_DataClean_plotStructureData(mergedByKFData,plottingFlags);
+% 
+% % The following function allows similar plots, made when there are repeated
+% % uncommented versions above, to all scroll/zoom in unison.
+% %fcn_plotAxesLinkedTogetherByField;
+% 
+% 
+% %% geoplot
+% figure(123)
+% clf
+% geoplot(mergedByKFData.GPS_Hemisphere.Latitude,mergedByKFData.GPS_Hemisphere.Longitude,'b', ...
+%     mergedByKFData.MergedGPS.latitude,mergedByKFData.MergedGPS.longitude,'r',...
+%     mergedDataNoJumps.MergedGPS.latitude,mergedDataNoJumps.MergedGPS.longitude,'g', 'LineWidth',2)
+% 
+% % geolimits([45 62],[-149 -123])
+% legend('mergedByKFData.GPS\_Hemisphere','mergedByKFData.MergedGPS','mergedDataNoJumps.MergedGPS')
+% geobasemap satellite
+% %geobasemap street
+% %% OLD STUFF
+% 
+% % %% Export results to Google Earth?
+% % %fcn_exportXYZ_to_GoogleKML(rawData.GPS_Hemisphere,'rawData_GPS_Hemisphere.kml');
+% % %fcn_exportXYZ_to_GoogleKML(mergedData.MergedGPS,'mergedData_MergedGPS.kml');
+% % fcn_exportXYZ_to_GoogleKML(mergedDataNoJumps.MergedGPS,[dir.datafiles 'mergedDataNoJumps_MergedGPS.kml']);
+% %
+% %
+% % %% Save cleaned data to .mat file
+% % % The following is not used
+% % newStr = regexprep(trip_name{1},'\s','_'); % replace whitespace with underscore
+% % newStr = strrep(newStr,'-','_');
+% % cleaned_fileName = [newStr,'_cleaned'];
+% % eval([cleaned_fileName,'=mergedByKFData'])
+% % save(strcat(dir.datafiles,cleaned_fileName,'.mat'),cleaned_fileName)
+% 
+% %
+% % fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+% % I99_Altoona33_to_StateCollege73 = rmfield(mergedByKFData.MergedGPS,fields);
+% % save('I99_Altoona33_to_StateCollege73_20210123.mat','I99_Altoona33_to_StateCollege73')
+% % if trip_id_cleaned == 7
+% %     fields_rm = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+% %     I99_StateCollege73_to_Altoona33 = rmfield(mergedByKFData.MergedGPS,fields_rm);
+% %     save('I99_StateCollege73_to_Altoona33_20210123.mat','I99_StateCollege73_to_Altoona33')
+% % 
+% %     fields_rm = {'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+% %     I99_StateCollege73_to_Altoona33_mergedDataNoJumps = rmfield(mergedDataNoJumps.MergedGPS,fields_rm);
+% %     I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station = [0; cumsum(sqrt(diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast).^2+diff(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth).^2))];
+% %     save('I99_StateCollege73_to_Altoona33_mergedDataNoJumps_20210123.mat','I99_StateCollege73_to_Altoona33_mergedDataNoJumps')
+% % end
+% 
+% % extract TestTrack data
+% % fields = {'Yaw_deg';'Yaw_deg_Sigma';'velMagnitude_Sigma';'xEast_increments';'xEast_increments_Sigma';'yNorth_increments';'yNorth_increments_Sigma';'xEast_Sigma';'yNorth_Sigma';'zUp_Sigma';};
+% % TestTrack_all = rmfield(mergedByKFData.MergedGPS,fields);
+% % TestTrack_all_table = struct2table(TestTrack_all);
+% % TestTrack_table = TestTrack_all_table(6000:9398,:);
+% % TestTrack = table2struct(TestTrack_table,'ToScalar',true);
+% % save('TestTrack.mat','TestTrack')
+% %
+% % figure(1234)
+% % clf
+% % geoplot(TestTrack.latitude,TestTrack.longitude,'b', ...
+% % TestTrack.latitude(1),TestTrack.longitude(1),'r.',...
+% % TestTrack.latitude(end),TestTrack.longitude(end),'g.','LineWidth',2)
+% % % geolimits([45 62],[-149 -123])
+% % legend('Merged')
+% % geobasemap satellite
+% 
+% %%  Yaw Rate and Curvature Comparision
+% if 1 ==0
+%     [~, ~, ~, ~,R_spiral,UnitNormalV,concavity]=fnc_parallel_curve(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.xEast, I99_StateCollege73_to_Altoona33_mergedDataNoJumps.yNorth, 1, 0,1,100);
+% 
+%     yaw_rate = [0; diff(mergedDataNoJumps.MergedGPS.Yaw_deg)./diff(mergedDataNoJumps.MergedGPS.GPS_Time)];
+% 
+%     figure(23)
+%     clf
+%     hold on
+%     % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
+%     plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,mergedDataNoJumps.MergedGPS.Yaw_deg,'b','LineWidth',1)
+%     plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,yaw_rate,'r','LineWidth',1)
+% 
+%     grid on
+%     box on
+%     xlabel('station (m)')
+%     ylabel('yaw and yaw rate (deg)')
+%     % ylim([0 0.01])
+% 
+% 
+%     figure(24)
+%     clf
+%     hold on
+%     Ux = mergedDataNoJumps.GPS_Hemisphere.velEast.*cosd(mergedDataNoJumps.MergedGPS.Yaw_deg) + ...
+%         mergedDataNoJumps.GPS_Hemisphere.velNorth.*sind(mergedDataNoJumps.MergedGPS.Yaw_deg);
+%     plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,Ux,'b','LineWidth',1)
+%     plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velNorth,'g')
+%     plot(mergedDataNoJumps.GPS_Hemisphere.GPS_Time,mergedDataNoJumps.GPS_Hemisphere.velEast,'r','LineWidth',1)
+% 
+%     % plot(mergedDataNoJumps.IMU_Novatel.GPS_Time,mergedDataNoJumps.IMU_Novatel.ZAccel,'b')
+%     grid on
+%     box on
+%     xlabel('time (s)')
+%     ylabel('velocity (m/s)')
+%     % ylim([0 0.01])
+% 
+%     curvature_ss  = (yaw_rate*pi/180)./Ux;
+% 
+%     figure(22)
+%     clf
+%     % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,I99_StateCollege73_to_Altoona33_mergedDataNoJumps.altitude)
+%     hold on
+%     % plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,curvature_ss,'g','LineWidth',1)
+%     plot(I99_StateCollege73_to_Altoona33_mergedDataNoJumps.station,abs(concavity).*1./R_spiral,'r','LineWidth',1)
+%     grid on
+%     box on
+%     xlabel('Station (m)')
+%     ylabel('Curvature')
+%     ylim([-0.01 0.04])
+% 
+% 
+% end
+% %% ======================= Insert Cleaned Data to 'mapping_van_cleaned' database =========================
+% % Input trips information
+% %
+% % tripsInfo.id = trip_id_cleaned;
+% % tripsInfo.vehicle_id = 1;
+% % tripsInfo.base_stations_id = base_station.id;
+% % tripsInfo.name = trip_name;
+% % if trip_id_cleaned == 2
+% %
+% %     tripsInfo.description = {'Test Track MappingVan night middle speed'};
+% %     tripsInfo.date = {'2019-10-18 20:39:30'};
+% %     tripsInfo.driver = {'Liming Gao'};
+% %     tripsInfo.passengers = {'N/A'};
+% %     tripsInfo.notes = {'without traffic light, at night. DGPS mode was activated. middle speed. 7 traversals'};
+% %     cleanedData  = mergedDataNoJumps;
+% %
+% %     start_point.start_longitude=-77.833842140800000;  %deg
+% %     start_point.start_latitude =40.862636161300000;   %deg
+% %     start_point.start_xEast=1345.204537286125; % meters
+% %     start_point.start_yNorth=6190.884280063217; % meters
+% %
+% %     start_point.end_longitude=-77.833842140800000;  %deg
+% %     start_point.end_latitude =40.862636161300000;   %deg
+% %     start_point.end_xEast=1345.204537286125; % meters
+% %     start_point.end_yNorth=6190.884280063217; % meters
+% %
+% %     start_point.start_yaw_angle = 37.38; %deg
+% %     start_point.expectedRouteLength = 1555.5; % meters
+% %     start_point.direction = 'CCW'; %
+% %     cleanedData.start_point = start_point;
+% % elseif trip_id_cleaned == 7
+% %
+% %     tripsInfo.description = {'Map I99 from State College(exit 73) to Altoona (exit 33)'};
+% %     tripsInfo.date = {'2021-01-23 15:00:00'};
+% %     tripsInfo.driver = {'Wushuang Bai'};
+% %     tripsInfo.passengers = {'Liming Gao'};
+% %     tripsInfo.notes = {'Mapping from State College(exit 73) to Altoona (exit 33) through I-99. Lost DGPS mode when approaching Altoona. Drving on the right lane.'};
+% %     cleanedData  = mergedByKFData;
+% % elseif trip_id_cleaned == 8
+% %     tripsInfo.description = {'Map I99 from Altoona (exit 33) to State College(exit 73)'};
+% %     tripsInfo.date = {'2021-01-23 16:00:00'};
+% %     tripsInfo.driver = {'Wushuang Bai'};
+% %     tripsInfo.passengers = {'Liming Gao'};
+% %     tripsInfo.notes = {'Mapping from Altoona (exit 33) to State College(exit 73) through I-99. Nexver lost DGPS mode except for passing below bridge or traffic sign. Drving on the right lane.'};
+% %     cleanedData  = mergedByKFData;
+% % else
+% %     error("Wrong Trip ID");
+% % end
+% % % insert cleaned data
+% % fcn_DataClean_insertCleanedData(cleanedData,rawData,tripsInfo,flag);
+% % % save('cleanedData.mat','cleanedData')
+% %
 
 
 %% Functions follow

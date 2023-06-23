@@ -16,15 +16,21 @@ function IMU_data_structure = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(file_pa
 % 
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
-%
+
+
 % Updates:
-%
+% 2023_06_22 sbrennan@psu.edu
+% -- fixed type error for imu (it was listed as ins, which is deprecated)
+% -- fixed error in datatype (typo in variable name)
+
 % To do lists:
+% -- Need test script to catch errors
+% -- Need to functionalize code into standard form
 % 
 % Reference:
 % 
 %%
-if strcmp(datatype, 'ins')
+if strcmp(datatype, 'imu')
     
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
@@ -208,7 +214,7 @@ if strcmp(datatype, 'ins')
     end
 
 else
-    error('Wrong data type requested: %s',dataType)
+    error('Wrong data type requested: %s',datatype)
 
 end
 

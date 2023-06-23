@@ -1,10 +1,10 @@
-function dataStructure = fcn_DataClean_fillTestDataStructure(varargin)
+function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDataStructure(varargin)
 % fcn_DataClean_fillTestDataStructure
 % Creates five seconds of test data for testing functions
 %
 % FORMAT:
 %
-%      dataStructure = fcn_DataClean_fillTestDataStructure((corruption_type)
+%      dataStructure = fcn_DataClean_fillTestDataStructure((time_time_corruption_type)
 %
 % INPUTS:
 %
@@ -12,20 +12,110 @@ function dataStructure = fcn_DataClean_fillTestDataStructure(varargin)
 %
 %      (OPTIONAL INPUTS)
 %
-%      corruption_type: an integer listing the type of noise, errors, faults, etc. to
-%      add to the data. The types are as follows:
+%      time_time_corruption_type: an integer listing the type of noise,
+%      errors, faults, etc. to add to the time data. The types can be
+%      entered as a decimal integer, where the bits represent what
+%      noise/corruption are added. Note: bit flags can easily be turned
+%      into decimal using the "bi2de" (binary to decimal) command. The bits
+%      are defined as follows:
 %
-%          0: (default) Perfect data with no noise added. All standard
+%          2^0 bit = 0: (default) Perfect data with no noise added. All standard
 %          deviations are zero.
 %
-%          1: Typical data for the mapping van. Standard deviations are
+%          2^0 bit = 1: Typical data for the mapping van. Standard deviations are
 %          representative of the sensors used on the vehicle.
 %
+%          2^1 bit (2) = 1: The GPS_Time field is missing on one of the GPS sensors. This
+%          is a catastrophic failure as these sensors align true UTC time
+%          (measured from GPS) to the CPU time as noted in ROS.
+%
+%          2^2 bit (4) = 1: The GPS_Time field is empty on one of the GPS sensors. This
+%          is a catastrophic failure as these sensors align true UTC time
+%          (measured from GPS) to the CPU time as noted in ROS.
+%    
+%          2^3 bit (8) = 1: The GPS_Time field is empty on one of the GPS sensors. This
+%          is a catastrophic failure as these sensors align true UTC time
+%          (measured from GPS) to the CPU time as noted in ROS.
+%    
+%          2^4 bit (16) = 1:: The centiSeconds field is missing on one of the sensors. This
+%          is a major failure as this field defines the sampling rate.
+%    
+%          12^5 bit (32) = 1: The centiSeconds field is empty on one of the sensors. This
+%          is a major failure as this field defines the sampling rate.
+%    
+%          12^6 bit (64) = 1: The centiSeconds field is NaN on one of the sensors. This
+%          is a major failure as this field defines the sampling rate.
+%    
+%          12^7 bit (128) = 1: The centiSeconds field is inconsistent with
+%          GPS_Time data. This occurs if the sampling rate is set wrong, if
+%          the GPS mode changes unexpectedly, or if there is a failure
+%          during operation of the GPS sensor.
+%    
+%          12^8 bit (256) = 1: The centiSeconds field is inconsistent with
+%          ROS_Time data. This occurs if the sampling rate is set wrong, if
+%          the GPS mode changes unexpectedly, or if there is a failure
+%          during operation of the GPS sensor. (NOTE: Trigger_Time is
+%          calculated from centiSeconds, so there is no check if this is
+%          missing, as this is redundant to checking if centiSeconds
+%          exists.)
+%    
+%          12^9 bit (512) = 1: The Trigger_Time field is missing. This
+%          indicates that this field must be calculated or recalculated.
+%
+%          12^10 bit (1024) = 1: The Trigger_Time field is empty. This
+%          indicates that this field must be calculated or recalculated.
+%
+%          12^11 bit (2048) = 1: The Trigger_Time field has a NaN value.
+%          This indicates that this field must be calculated or
+%          recalculated.
+%
+%          12^12 bit (4092) = 1: The GPS_Time field is not increasing. This
+%          occurs when packets arrive from the GPS out-of-order. In most
+%          cases, this can be fixed with reprocessing.
+%
+%          12^13 bit (8192) = 1: The GPS_Time field has a repeating time. This
+%          occurs when a packet is resent due to a sensor fault. In most
+%          cases, this can be fixed with reprocessing.
+%
+%          12^14 bit (16384) = 1: The ROS_Time field is missing.
+%          This occurs if there is a major fault in the ROS bag file. This
+%          is recoverable if the sensor has GPS_Time recorded or if the
+%          trigger time is known.
+%
+%          12^15 bit (32768) = 1: The ROS_Time field is empty.
+%          This occurs if there is a major fault in the ROS bag file. This
+%          is recoverable if the sensor has GPS_Time recorded or if the
+%          trigger time is known.
+%
+%          12^16 bit (65536) = 1: The ROS_Time field contains NaN.
+%          This occurs if there is a minor fault in the ROS bag file. This
+%          is recoverable if the sensor has GPS_Time recorded or if the
+%          trigger time is known.
+%
+%          12^17 bit = 1: The ROS_Time is not increasing
+%          This occurs if there is a minor fault in the ROS bag file. This
+%          is recoverable if the sensor has GPS_Time recorded or if the
+%          trigger time is known.
+%
+%          12^18 bit = 1: ROS_Time has a repeat.
+%          This occurs if there is a minor fault in the ROS bag file. This
+%          is recoverable if the sensor has GPS_Time recorded.
+%
+%          12^19 bit = 1: The ROS_Time field has wrong length.
+%          This occurs if the ROS time does not align in count to the
+%          expected number of data from the Trigger_Time. This is
+%          recoverable by matching the ROS_Time values to Trigger_Times to
+%          find the missing data, then resampling over the gap.
+%
+
 %
 % OUTPUTS:
 %
 %      dataStructure: a template data structure containing the fields that
 %      are typical for the mapping van.
+% 
+%      time_corruption_type_string: a string indicating the sequence of
+%      corruptions added into the time data
 %
 %
 % DEPENDENCIES:
@@ -35,7 +125,9 @@ function dataStructure = fcn_DataClean_fillTestDataStructure(varargin)
 % EXAMPLES:
 %
 %     See the script: script_test_fcn_DataClean_fillTestDataStructure
-%     for a full test suite.
+%     for a basic test suite. See the script:
+%     script_test_fcn_DataClean_checkDataConsistency for additional
+%     examples.
 %
 % This function was written on 2023_06_19 by S. Brennan
 % Questions or comments? sbrennan@psu.edu 
@@ -48,7 +140,7 @@ function dataStructure = fcn_DataClean_fillTestDataStructure(varargin)
 % TO DO
 % 
 
-flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_debug = 1;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
@@ -75,7 +167,7 @@ end
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    if nargin < 0 || nargin > 1
+    if nargin < 0 || nargin > 2
         error('Incorrect number of input arguments')
     end
 
@@ -84,13 +176,13 @@ end
 % Does user want to corrupt the data?
 % Set default flags:
 flag_add_normal_noise = 0;
-
+time_corruption_type = 0;
 if 1 <= nargin
     temp = varargin{end};
     if ~isempty(temp)
-        corruption_type = temp;
+        time_corruption_type = temp;
     end
-    if corruption_type>=1
+    if time_corruption_type>=1
         flag_add_normal_noise = 1;
     end
 end
@@ -108,6 +200,15 @@ end
 
 % Initialize structure
 dataStructure = struct;
+
+% Initialize corruption type
+if time_corruption_type == 0
+    time_corruption_type_string = 'Perfect data, no noise, no errors';
+elseif time_corruption_type ==1
+    time_corruption_type_string = 'Typical data, typical noise, no errors';
+else
+    time_corruption_type_string = '';
+end
 
 
 % Initialize all the sensors
@@ -163,6 +264,7 @@ deltaT = 0.01;
 time_full_data = (0:deltaT:numSeconds)';
 ones_full_data = ones(length(time_full_data(:,1)),1);
 yaw_angles = 357*pi/180 + 15*pi/180 * sin(2*pi/numSeconds*time_full_data); % A swerving maneuver
+yaw_angles = mod(yaw_angles,360*pi/180); % Round it just like the sensor does, to 0 to 360 degrees
 base_velocity = 20; % Meters per second
 
 velocity = base_velocity*ones_full_data + velMagnitude_Sigma*randn(length(ones_full_data(:,1)),1);
@@ -305,7 +407,7 @@ for i_data = 1:length(names)
                 case {'velUp'}
                     sensor_structure.velUp = interp1(time_full_data,velUp,timeSensor);
                 case {'velMagnitude'}
-                    sensor_structure.velocity = interp1(time_full_data,velocity,timeSensor);
+                    sensor_structure.velMagnitude = interp1(time_full_data,abs(velocity),timeSensor);
                 case {'velNorth_Sigma'}
                     sensor_structure.velNorth_Sigma = onesSensor*velNorth_Sigma;
                 case {'velEast_Sigma'}
@@ -516,6 +618,184 @@ for i_data = 1:length(names)
     dataStructure.(sensor_name) = sensor_structure;
     
 end % Ends looping through structure
+
+%% Create bad data?
+
+if time_corruption_type>1
+    BadDataStructure = dataStructure;
+    
+    % Use decimal to binary to convert the input flags into binary, and pad
+    % the bits that were not specified with zeros
+    binary_time_corruption = de2bi(time_corruption_type);       
+    if length(binary_time_corruption)<20
+        binary_time_corruption(end+1:20) = 0;
+    end
+
+    % Missing GPS_Time field test - the GPS_Time field is completely missing
+    if binary_time_corruption(2)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field missing, ');
+        BadGPSSensor = rmfield(BadDataStructure.GPS_Hemisphere, 'GPS_Time');
+        BadDataStructure.GPS_Hemisphere = BadGPSSensor;
+    end
+    
+    % Missing GPS_Time field test - the GPS_Time field is empty
+    if binary_time_corruption(3)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field is empty, ');
+        BadDataStructure.GPS_Sparkfun_RearLeft.GPS_Time = [];
+    end
+    
+    % Missing GPS_Time field test - the GPS_Time field is only NaNs
+    if binary_time_corruption(4)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field has only NaNs, ');
+        BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time*NaN;
+    end    
+
+    % Missing centiSeconds field test - the centiSeconds field is completely missing
+    if binary_time_corruption(5)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'centiSeconds field is completely missing, ');
+        BadGPSSensor = rmfield(BadDataStructure.IMU_ADIS, 'centiSeconds');
+        BadDataStructure.GPS_Hemisphere = BadGPSSensor;
+    end
+
+    % Missing centiSeconds field test - the centiSeconds field is empty
+    if binary_time_corruption(6)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'centiSeconds field is empty, ');
+        BadDataStructure.IMU_ADIS.centiSeconds = [];
+    end
+
+    % Missing centiSeconds field test - the centiSeconds field is only NaNs
+    if binary_time_corruption(7)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'centiSeconds field is NaN, ');
+        BadDataStructure.GPS_Sparkfun_RearRight.centiSeconds = BadDataStructure.GPS_Hemisphere.centiSeconds*NaN;
+    end
+
+    % Bad time interval test - the centiSeconds field is inconsistent with GPS_Time data
+    if binary_time_corruption(8)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'centiSeconds field is inconsistent with GPS_Time data, ');
+        % Copy time structure from encoder (100 Hz) to Trigger (1 Hz) to create bad
+        % time sample interval.
+        BadDataStructure.TRIGGER.GPS_Time = BadDataStructure.ENCODER_RearLeft.GPS_Time;
+    end
+    
+    % Bad time interval test - the centiSeconds field is inconsistent with ROS_Time data
+    if binary_time_corruption(9)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'centiSeconds field is inconsistent with ROS_Time data, ');
+        % Copy time structure from encoder (100 Hz) to Trigger (1 Hz) to create bad
+        % time sample interval.
+        BadDataStructure.TRIGGER.ROS_Time = BadDataStructure.ENCODER_RearLeft.ROS_Time;
+    end
+
+    % Missing Trigger_Time field test - the Trigger_Time field is completely missing
+    if binary_time_corruption(10)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'Trigger_Time field missing, ');
+        BadGPSSensor = rmfield(BadDataStructure.GPS_Hemisphere, 'Trigger_Time');
+        BadDataStructure.GPS_Hemisphere = BadGPSSensor;
+    end
+
+    % Missing Trigger_Time field test - the Trigger_Time field is empty
+    if binary_time_corruption(11)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'Trigger_Time field is empty, ');
+        BadDataStructure.GPS_Hemisphere.Trigger_Time = [];
+    end
+
+    % Missing Trigger_Time field test - the Trigger_Time field is only NaNs
+    if binary_time_corruption(12)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'Trigger_Time field has NaN, ');
+        BadDataStructure.GPS_Hemisphere.Trigger_Time = BadDataStructure.GPS_Hemisphere.Trigger_Time*NaN;
+    end
+    
+    % Bad time ordering test - the GPS_Time is not increasing
+    if binary_time_corruption(13)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time not increasing, ');
+
+        % Swap order of first two time elements
+        BadDataStructure.ENCODER_RearLeft.GPS_Time(1,:) = dataStructure.ENCODER_RearLeft.GPS_Time(2,:);
+        BadDataStructure.ENCODER_RearLeft.GPS_Time(2,:) = dataStructure.ENCODER_RearLeft.GPS_Time(1,:);
+    end
+
+    % Bad time ordering test - the GPS_Time has a repeat
+    if binary_time_corruption(14)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field has repeat, ');
+ 
+        % Fill one of the values with a repeat
+        BadDataStructure.ENCODER_RearLeft.GPS_Time(2,:) = dataStructure.ENCODER_RearLeft.GPS_Time(1,:);
+    end
+
+    % Missing ROS_Time field test - the ROS_Time field is completely missing
+    if binary_time_corruption(15)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time field missing, ');        
+        BadGPSSensor = rmfield(BadDataStructure.GPS_Sparkfun_RearLeft, 'ROS_Time');
+        BadDataStructure.GPS_Sparkfun_RearLeft = BadGPSSensor;
+    end
+
+    % Missing ROS_Time field test - the ROS_Time field is empty
+    if binary_time_corruption(16)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time field empty, ');
+        BadDataStructure.GPS_Hemisphere.ROS_Time = [];
+    end
+
+    % Missing ROS_Time field test - the ROS_Time field is only NaNs
+    if binary_time_corruption(17)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time field has NaNs, ');
+        BadDataStructure.ENCODER_RearRight.ROS_Time = BadDataStructure.ENCODER_RearRight.ROS_Time*NaN;
+    end
+
+    % Bad time ordering test - the ROS_Time is not increasing
+    if binary_time_corruption(18)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time is not increasing, ');
+ 
+        % Swap order of first two time elements
+        BadDataStructure.ENCODER_RearLeft.ROS_Time(1,:) = dataStructure.ENCODER_RearLeft.ROS_Time(2,:);
+        BadDataStructure.ENCODER_RearLeft.ROS_Time(2,:) = dataStructure.ENCODER_RearLeft.ROS_Time(1,:);
+    end
+
+    % Bad time ordering test - the ROS_Time has a repeat
+    if binary_time_corruption(19)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time has a repeat, ');
+ 
+        % Swap order of first two time elements
+        BadDataStructure.TRIGGER.ROS_Time(2,:) = dataStructure.TRIGGER.ROS_Time(1,:);
+    end
+
+    % Bad time length test - the ROS_Time has wrong length
+    if binary_time_corruption(20)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time has wrong length, ');
+ 
+        % Add one more tiny data point to end
+        BadDataStructure.ENCODER_RearLeft.ROS_Time(end+1,:) = dataStructure.ENCODER_RearLeft.ROS_Time(end,:)+0.001;
+
+    end
+    dataStructure = BadDataStructure;
+end % Ends if statement on time_corruption
+
+% 
+% 
+% 
+% 
+% 
+% % Bad data - there is a NaN inside one of the Sigma fields
+%     if mod(time_corruption_type,2)==0
+%         time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field missing, ');
+%  
+% BadDataStructure = dataStructure;
+% % Add bad data to the end
+% BadDataStructure.ENCODER_RearLeft.ROS_Time(end+1) = BadDataStructure.ENCODER_RearLeft.ROS_Time(end)+0.01;
+% 
+% [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+% assert(isequal(flags.ROS_Time_has_correct_length,0));
+% assert(strcmp(offending_sensor,'ENCODER_RearLeft'));
+% 
+% % Bad data - there is a NaN inside the data
+%      if mod(time_corruption_type,2)==0
+%         time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field missing, ');
+% 
+% BadDataStructure = dataStructure;
+% % Put a NaN into the data
+% BadDataStructure.ENCODER_RearLeft.Counts(end) = NaN;
+% 
+% [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+% assert(isequal(flags.sensor_fields_have_no_NaN,0));
+% assert(strcmp(offending_sensor,'ENCODER_RearLeft Counts'));
 
 
 

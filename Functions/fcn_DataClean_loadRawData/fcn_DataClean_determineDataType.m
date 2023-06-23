@@ -37,6 +37,8 @@ function datatype = fcn_DataClean_determineDataType(topic_name)
 % -- first functionalization of the code
 % 2023_06_19 - S. Brennan
 % -- added structure
+% 2023_06_22 - S. Brennan
+% -- fixed INS to be IMU, as wrong datatype given (line 93)
 
 % TO DO
 % 
@@ -89,7 +91,7 @@ topic_name_lower = lower(topic_name);
 if any([contains(topic_name_lower,'sparkfun_gps_rear'), contains(topic_name_lower,'bin1')])
     datatype = 'gps';
 elseif any([contains(topic_name_lower,'ins'), contains(topic_name_lower,'imu'),contains(topic_name_lower, 'adis')])
-    datatype = 'ins';
+    datatype = 'imu';
 elseif contains(topic_name_lower,'parsetrigger')
     datatype = 'trigger';
 elseif contains(topic_name_lower,'parseencoder')
