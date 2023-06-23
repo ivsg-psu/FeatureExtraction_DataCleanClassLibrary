@@ -78,7 +78,7 @@ end
 % \\IVSG\GitHubMirror\MappingVanDataCollection\ParsedData, to use data from other files,
 % change the data_folder variable and bagname variable to corresponding path and bag
 % name.
-bagFolderName = "mapping_van_2023-06-05-1Lap";
+bagFolderName = "mapping_van_2023-06-22-1Lap_0";
 rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
 %% Grab sparkfun gps fields from raw data
 sparkfun_gps_rear_left = rawdata.SparkFun_GPS_RearLeft;
@@ -86,6 +86,9 @@ sparkfun_gps_rear_right = rawdata.SparkFun_GPS_RearRight;
 %% Extract GPS Time and LLA Coordinates
 sparkfun_gps_rear_left_RefTime = sparkfun_gps_rear_left.GPS_Time - min(sparkfun_gps_rear_left.GPS_Time);
 sparkfun_gps_rear_right_RefTime = sparkfun_gps_rear_right.GPS_Time - min(sparkfun_gps_rear_right.GPS_Time);
+diff_t_left = diff(sparkfun_gps_rear_left_RefTime);
+diff_t_right = diff(sparkfun_gps_rear_right_RefTime);
+
 sparkfun_gps_rear_left_LLA = [sparkfun_gps_rear_left.Latitude,sparkfun_gps_rear_left.Longitude,sparkfun_gps_rear_left.Altitude];
 sparkfun_gps_rear_right_LLA = [sparkfun_gps_rear_right.Latitude,sparkfun_gps_rear_right.Longitude,sparkfun_gps_rear_right.Altitude];
 
@@ -99,6 +102,9 @@ sparkfun_gps_rear_right_unique = unique(sparkfun_gps_rear_right_TimeSpace,'rows'
 Npoints_left = length(sparkfun_gps_rear_left_unique);
 Npoints_right = length(sparkfun_gps_rear_right_unique);
 % Align the datapoitns using linear interpolation
+
+
+
 if Npoints_left < Npoints_right
     sparkfun_gps_rear_left_interp = interp1(sparkfun_gps_rear_left_unique(:,1),sparkfun_gps_rear_left_unique(:,2:4),sparkfun_gps_rear_right_unique(:,1));
     sparkfun_gps_rear_left_LLA_plot = sparkfun_gps_rear_left_interp;
