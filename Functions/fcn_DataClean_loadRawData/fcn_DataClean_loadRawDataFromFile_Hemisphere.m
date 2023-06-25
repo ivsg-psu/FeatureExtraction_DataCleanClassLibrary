@@ -11,10 +11,14 @@ function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_pat
 % Author: Liming Gao
 
 % Created Date: 2020_11_15
-% Modify Date: 2023_06_16
-%
-% Modified by Xinyu Cao, Aneesh Batchu and Mariam Abdellatief on 2023_06_16
+
+% Revisions:
+% Modify Date: 2023_06_16 by Xinyu Cao, Aneesh Batchu and Mariam
+% Abdellatief
+% 2023_006_25 by Sean Brennan
+% -- Fixed centiSeconds to 5, not 10, to agree with the data.
 % 
+
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
 %
@@ -45,7 +49,7 @@ if strcmp(datatype,'gps')
     Hemisphere_DGPS.GPS_Time           = secs+nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
     Hemisphere_DGPS.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
-    Hemisphere_DGPS.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    Hemisphere_DGPS.centiSeconds       = 5;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     Hemisphere_DGPS.Npoints            = Npoints;  % This is the number of data points in the array
     Hemisphere_DGPS.Latitude           = datatable.Latitude;  % The latitude [deg]
     Hemisphere_DGPS.Longitude          = datatable.Longitude;  % The longitude [deg]

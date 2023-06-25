@@ -81,13 +81,15 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataConsistency(dataStruc
 %     
 % 2023_06_12: sbrennan@psu.edu
 % -- wrote the code originally 
+% 2023_06_24 - sbrennan@psu.edu
+% -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
 
 % TO DO
 % 
 
 % Set default fid (file ID) first:
 fid = 1; % Default case is to print to the console
-flag_do_debug = 1;  % Flag to show the results for debugging
+flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
@@ -151,7 +153,9 @@ end
 
 % Initialize flags
 flags = struct;
-
+flags.GPS_Time_exists_in_at_least_one_sensor = 0;
+flags.GPS_Time_exists_in_GPS_sensors = 0;
+flags.centiSeconds_exists_in_GPS_sensors = 0;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -193,13 +197,16 @@ flags = struct;
 %    ### DETECTION:
 %    * Examine if GPS time fields exist on any GPS sensor
 %    ### FIXES:
-%    * Check if ROS_Time recorded, and is locked to UTC via NTP, use ROS
+%    * Catastrophic error. Data collection should end.
+%    * One option? Check if ROS_Time recorded, and is locked to UTC via NTP, use ROS
 %    Time as stand-in
 %    * Otherwise, complete failure of sensor recordings
 
 %% Check existence of GPS_Time data in ANY sensor
-disp('Need to code this');
-
+[flags,offending_sensor,~] = fcn_INTERNAL_checkIfFieldInAnySensor(fid, dataStructure, flags, 'GPS_Time');
+if 0==flags.GPS_Time_exists_in_at_least_one_sensor
+    return
+end
 
 %% At least one GPS sensor is missing GPS time
 %    ### ISSUES with this:
@@ -212,13 +219,13 @@ disp('Need to code this');
 %    * Remove this GPS data field
 
 
-%% Check existence of GPS_Time data in each sensor
-[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkFieldExists(fid, dataStructure, flags, 'GPS_Time');
-if return_flag
+%% Check existence of GPS_Time data in each GPS sensor
+[flags,offending_sensor,~] = fcn_INTERNAL_checkIfFieldInAllSensors(fid, dataStructure, flags, 'GPS_Time','GPS');
+if 0==flags.GPS_Time_exists_in_GPS_sensors
     return
 end
 
-%% The centiSeconds field is missing
+%% The centiSeconds field is missing on one of the GPS sensors
 %    ### ISSUES with this:
 %    * This field defines the expected sample rate for each sensor
 %    ### DETECTION:
@@ -228,9 +235,9 @@ end
 %    * Remove this sensor
 
 
-%% Check existence of centiSeconds data in each sensor
-[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkFieldExists(fid, dataStructure, flags, 'centiSeconds');
-if return_flag
+%% Check existence of centiSeconds data in each GPS sensor
+[flags,offending_sensor,~] = fcn_INTERNAL_checkIfFieldInAllSensors(fid, dataStructure, flags, 'centiSeconds','GPS');
+if 0==flags.centiSeconds_exists_in_GPS_sensors
     return
 end
 
@@ -250,8 +257,30 @@ end
 %    * Remove this sensor
 
 %% Check consistency of expected and actual time sampling for GPS_Time
-[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkTimeSamplingConsistency(fid, dataStructure, flags,'GPS_Time');
-if return_flag
+[flags,offending_sensor,~] = fcn_INTERNAL_checkTimeSamplingConsistency(fid, dataStructure, flags,'GPS_Time', 'GPS');
+if 0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+    return
+end
+
+%% Inconsistency between start and end times for GPS_Time
+%    ### ISSUES with this:
+%    * The start times and end times of all data collection assumes all GPS
+%    systems are operating simultaneously
+%    * The calculation of Trigger_Time assumes that all start times are the
+%    same, and all end times are the same
+%    * If they are not the same, the count of data in one sensor may be
+%    different than another, especially if each were referencing different
+%    GPS sources.
+%    ### DETECTION:
+%    * Seach through the GPS time fields for all sensors, rounding them to
+%    their appropriate centi-second values
+%    * Check that they all agree
+%    ### FIXES:
+%    * Crop all data to same starting centi-second value
+
+%% Check consistency between start times for GPS_Time
+[flags,offending_sensor,~] = fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes(fid, dataStructure, flags);
+if 0==flags.consistent_start_and_end_times_across_GPS_sensors
     return
 end
 
@@ -267,8 +296,8 @@ end
 %    * Recalculate Trigger_Time fields as needed, using centiSeconds
 
 %% Check existence of Trigger_Time data in each sensor
-[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkFieldExists(fid, dataStructure, flags, 'Trigger_Time');
-if return_flag
+[flags,offending_sensor,~] = fcn_INTERNAL_checkIfFieldInAllSensors(fid, dataStructure, flags, 'Trigger_Time','GPS');
+if 0==flags.Trigger_Time_exists_in_GPS_sensors
     return
 end
 
@@ -304,7 +333,7 @@ end
 %% TO-DO - need to finish documentation - starting HERE
 
 %% Check existence of ROS_Time data in each sensor
-[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkFieldExists(fid, dataStructure, flags, 'ROS_Time');
+[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkIfFieldInAllSensors(fid, dataStructure, flags, 'ROS_Time');
 if return_flag
     return
 end
@@ -328,7 +357,7 @@ if return_flag
 end
 
 %% Check that ROS_Time data would round to correct centiSeconds
-[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkROSTimeRoundsCorrectly(fid, dataStructure, flags, 'ROS_Time');
+[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkTimeRoundsCorrectly(fid, dataStructure, flags, 'ROS_Time');
 if return_flag
     return
 end
@@ -364,6 +393,22 @@ end
 %
 % The above issues are explained in more detail in the following
 % sub-sections
+
+%% The centiSeconds field is missing
+%    ### ISSUES with this:
+%    * This field defines the expected sample rate for each sensor
+%    ### DETECTION:
+%    * Examine if centiSeconds fields exist on all sensors
+%    ### FIXES:
+%    * Manually fix, or
+%    * Remove this sensor
+
+
+%% Check existence of centiSeconds data in each sensor
+[flags,offending_sensor,return_flag] = fcn_INTERNAL_checkIfFieldInAllSensors(fid, dataStructure, flags, 'centiSeconds');
+if return_flag
+    return
+end
 
 %% Data is missing either entirely or partially
 %    ### ISSUES with this:
@@ -706,8 +751,12 @@ end % Ends main function
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
-%% fcn_INTERNAL_checkFieldExists
-function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkFieldExists(fid, dataStructure, flags, field_name)
+
+%% fcn_INTERNAL_checkIfFieldInAnySensor
+function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkIfFieldInAnySensor(fid, dataStructure, flags, field_name)
+% Checks to see if ANY sensor has the requested field
+% Useful to "find" if a particular field is available
+% Works by setting the flag to off, and returns if it is 1
 
 % Initialize offending_sensor
 offending_sensor = '';
@@ -730,30 +779,38 @@ for i_data = 1:length(sensor_names)
     end
 
    
-    flag_field_exists= 1;
-    if ~isfield(sensor_data,field_name)
-        flag_field_exists = 0;
-    elseif isempty(sensor_data.(field_name))
-        flag_field_exists = 0;
-    elseif all(isnan(sensor_data.(field_name)))
-        flag_field_exists = 0;
+    flag_field_exists= 0;
+    if isfield(sensor_data,field_name)
+        if ~isempty(sensor_data.(field_name))
+            if ~all(isnan(sensor_data.(field_name)))
+                flag_field_exists = 1;
+            end
+        end
     end
 
-    flag_name = cat(2,field_name,'_exists');
+    flag_name = cat(2,field_name,'_exists_in_at_least_one_sensor');
     flags.(flag_name) = flag_field_exists;
 
-    if 0==flags.(flag_name)
-        offending_sensor = sensor_name; % Save the name of the sensor
+    if 1==flags.(flag_name)
         return_flag = 1; % Indicate that the return was forced
         return; % Exit the function immediately to avoid more processing
+    else
+        offending_sensor = sensor_name; % Save the name of the sensor
     end
 end
 
-end % Ends fcn_INTERNAL_checkFieldExists
+end % Ends fcn_INTERNAL_checkIfFieldInAnySensor
 
 
-%% fcn_INTERNAL_checkTimeSamplingConsistency
-function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkTimeSamplingConsistency(fid, dataStructure, flags, time_field)
+%% fcn_INTERNAL_checkIfFieldInAllSensors
+function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkIfFieldInAllSensors(fid, dataStructure, flags, field_name,sensors_to_check)
+% Checks to see if EVERY sensor has the requested field
+
+if ~exist('sensors_to_check','var')
+    flag_check_all_sensors = 1;    
+else
+    flag_check_all_sensors = 0;
+end
 
 % Initialize offending_sensor
 offending_sensor = '';
@@ -763,40 +820,180 @@ return_flag = 0;
 sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
 
 if 0~=fid
-    fprintf(fid,'Checking consistency of expected and actual time sampling rates:\n');
+    fprintf(fid,'Checking existence of %s data ',field_name);
+    if flag_check_all_sensors
+        fprintf(fid,':\n');
+    else
+        fprintf(fid,'in all %s sensors:\n', sensors_to_check);
+    end
 end
 
 for i_data = 1:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{i_data};
-    sensor_data = dataStructure.(sensor_name);
     
-    if 0~=fid
-        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
-    end
-
-    flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
-    centiSeconds = sensor_data.centiSeconds;
-    try
-        if centiSeconds ~= round(100*mean(diff(sensor_data.(time_field))))
-            flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
+    if (flag_check_all_sensors==0 && contains(sensor_name,sensors_to_check)) || (flag_check_all_sensors==1)
+        sensor_data = dataStructure.(sensor_name);
+        
+        if 0~=fid
+            fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
         end
-    catch
-        disp('stop here');
+        
+        
+        flag_field_exists= 1;
+        if ~isfield(sensor_data,field_name)
+            flag_field_exists = 0;
+        elseif isempty(sensor_data.(field_name))
+            flag_field_exists = 0;
+        elseif all(isnan(sensor_data.(field_name)))
+            flag_field_exists = 0;
+        end
+        
+        if flag_check_all_sensors
+            flag_name = cat(2,field_name,'_exists_in_all_sensors');
+        else
+            flag_name = cat(2,field_name,sprintf('_exists_in_%s_sensors',sensors_to_check));
+        end
+        flags.(flag_name) = flag_field_exists;
+        
+        if 0==flags.(flag_name)
+            offending_sensor = sensor_name; % Save the name of the sensor
+            return_flag = 1; % Indicate that the return was forced
+            return; % Exit the function immediately to avoid more processing
+        end
+    end % Ends check if this field should be checked
+end
+
+end % Ends fcn_INTERNAL_checkIfFieldInAllSensors
+
+
+%% fcn_INTERNAL_checkTimeSamplingConsistency
+function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkTimeSamplingConsistency(fid, dataStructure, flags, time_field,sensors_to_check)
+% Checks to see if the sensor's observed, average sampling time in
+% centiSeconds matches the actual sampling time
+
+if ~exist('sensors_to_check','var')
+    flag_check_all_sensors = 1;    
+else
+    flag_check_all_sensors = 0;
+end
+
+% Initialize offending_sensor
+offending_sensor = '';
+return_flag = 0;
+
+% Produce a list of all the sensors (each is a field in the structure)
+sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
+
+if 0~=fid
+    fprintf(fid,'Checking consistency of expected and actual time sampling rates');
+    if flag_check_all_sensors
+        fprintf(fid,':\n');
+    else
+        fprintf(fid,' in all %s sensors:\n', sensors_to_check);
     end
-    
-    flag_name = cat(2,time_field,'_has_same_sample_rate_as_centiSeconds');
-    flags.(flag_name) = flags_dataTimeIntervalMatchesIntendedSamplingRate;
-    
-    if 0==flags.(flag_name)
-        offending_sensor = sensor_name; % Save the name of the sensor
-        return_flag = 1; % Indicate that the return was forced
-        return; % Exit the function immediately to avoid more processing
-    end
-   
+end
+
+for i_data = 1:length(sensor_names)
+    % Grab the sensor subfield name
+    sensor_name = sensor_names{i_data};
+    if (flag_check_all_sensors==0 && contains(sensor_name,sensors_to_check)) || (flag_check_all_sensors==1)
+        
+        sensor_data = dataStructure.(sensor_name);
+        
+        if 0~=fid
+            fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
+        end
+        
+        flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
+        centiSeconds = sensor_data.centiSeconds;
+        try
+            if centiSeconds ~= round(100*mean(diff(sensor_data.(time_field))))
+                flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
+            end
+        catch
+            error('stop here - unknown error encountered in fcn_INTERNAL_checkTimeSamplingConsistency ');
+        end
+        
+        if flag_check_all_sensors
+            flag_name = cat(2,time_field,'_has_same_sample_rate_as_centiSeconds');
+        else
+            flag_name = cat(2,time_field,sprintf('_has_same_sample_rate_as_centiSeconds_in_%s_sensors',sensors_to_check));
+        end
+        flags.(flag_name) = flags_dataTimeIntervalMatchesIntendedSamplingRate;
+        
+        if 0==flags.(flag_name)
+            offending_sensor = sensor_name; % Save the name of the sensor
+            return_flag = 1; % Indicate that the return was forced
+            return; % Exit the function immediately to avoid more processing
+        end
+    end % Ends check if this field should be checked
 end
 
 end % Ends fcn_INTERNAL_checkTimeSamplingConsistency
+
+%% fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes
+function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes(fid, dataStructure, flags)
+% Checks to see if all the GPS systems have same start or end time
+
+% Initialize offending_sensor
+offending_low_sensor = '';
+offending_high_sensor = '';
+lowest_start_time = inf;
+highest_end_time = -inf;
+
+% Initialize starting centiSeconds
+start_times_centiSeconds = [];
+end_times_centiSeconds = [];
+
+% Produce a list of all the sensors (each is a field in the structure)
+sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
+
+if 0~=fid
+    fprintf(fid,'Checking consistency of start and end times across GPS sensors:\n');
+end
+
+for i_data = 1:length(sensor_names)
+    % Grab the sensor subfield name
+    sensor_name = sensor_names{i_data};
+    if contains(sensor_name,'GPS')
+        
+        sensor_data = dataStructure.(sensor_name);
+        
+        if 0~=fid
+            fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
+        end
+        
+        times_centiSeconds = round(100*sensor_data.GPS_Time/sensor_data.centiSeconds)*sensor_data.centiSeconds;
+        start_times_centiSeconds = [start_times_centiSeconds; times_centiSeconds(1)]; %#ok<AGROW>
+        end_times_centiSeconds = [end_times_centiSeconds; times_centiSeconds(end)]; %#ok<AGROW>
+        
+        if times_centiSeconds(1)< lowest_start_time
+            lowest_start_time = times_centiSeconds(1);
+            offending_low_sensor = sensor_name;
+        end
+        
+        if times_centiSeconds(end)> highest_end_time
+            highest_end_time = times_centiSeconds(end);
+            offending_high_sensor = sensor_name;
+        end
+        
+    end % Ends check if this field should be checked
+end
+
+flags.consistent_start_and_end_times_across_GPS_sensors = (all(diff(start_times_centiSeconds)==0))*(all(diff(end_times_centiSeconds)==0));
+if 1==flags.consistent_start_and_end_times_across_GPS_sensors
+    offending_sensor = '';
+    return_flag = 0; % Indicate that the return was NOT forced
+else
+    offending_sensor = cat(2,offending_low_sensor,' ',offending_high_sensor); % Save the names of the sensor
+    return_flag = 1; % Indicate that the return was forced
+end
+
+
+
+
+end % Ends fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes
 
 
 %% fcn_INTERNAL_checkTimeOrdering
@@ -840,7 +1037,7 @@ end
 end % Ends fcn_INTERNAL_checkTimeOrdering
 
 %% fcn_INTERNAL_checkROSTimeRoundsCorrectly
-function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkROSTimeRoundsCorrectly(fid, dataStructure, flags, field_name)
+function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkTimeRoundsCorrectly(fid, dataStructure, flags,time_field)
 
 % Initialize offending_sensor
 offending_sensor = '';
@@ -850,7 +1047,7 @@ return_flag = 0;
 sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
 
 if 0~=fid
-    fprintf(fid,'Checking that ROS time would round correctly:\n',field_name);
+    fprintf(fid,'Checking that %s would round correctly:\n',time_field);
 end
 
 for i_data = 1:length(sensor_names)
@@ -864,10 +1061,10 @@ for i_data = 1:length(sensor_names)
     flags_data_rounds_correctly = 1;
     
     % Round ROS_Time    
-    ROS_Time_samples = round(sensor_data.ROS_Time*100/sensor_data.centiSeconds);
+    Rounded_Time_samples = round(sensor_data.(time_field)*100/sensor_data.centiSeconds);
     
     % Shift it to 1, 2, etc.
-    ROS_Time_samples_shifted = ROS_Time_samples - ROS_Time_samples(1) + 1;
+    Rounded_Time_samples_shifted = Rounded_Time_samples - Rounded_Time_samples(1) + 1;
     
     % Shift the Trigger time similarly
     Trigger_Time_samples = round(sensor_data.Trigger_Time*100/sensor_data.centiSeconds);
@@ -876,12 +1073,12 @@ for i_data = 1:length(sensor_names)
     Trigger_Time_samples_shifted = Trigger_Time_samples - Trigger_Time_samples(1) + 1;
     
     % Make sure it counts strictly up
-    if ~isequal(ROS_Time_samples_shifted,Trigger_Time_samples_shifted)
+    if ~isequal(Rounded_Time_samples_shifted,Trigger_Time_samples_shifted)
         flags_data_rounds_correctly = 0;
     end
         
     %flag_name = cat(2,field_name,'_strictly_ascends');
-    flag_name = 'ROS_Time_correct_length';
+    flag_name = sprintf('%s_rounds_correctly_to_Trigger_Time',time_field);
     flags.(flag_name) = flags_data_rounds_correctly;
 
     if 0==flags.(flag_name)

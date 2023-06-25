@@ -44,6 +44,10 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName)
 % 2023_06_22 - S. Brennan
 % -- fixed fcn_DataClean_loadRawDataFromFile_SickLidar filename
 % -- to correct: fcn_DataClean_loadRawDataFromFile_sickLIDAR
+% 2023_06_22 - S. Brennan
+% AGAIN - someone reverted the edits
+% -- fixed fcn_DataClean_loadRawDataFromFile_SickLidar filename
+% -- to correct: fcn_DataClean_loadRawDataFromFile_sickLIDAR
 
 % TO DO
 % 
@@ -139,7 +143,7 @@ for file_idx = 1:num_files
 %         topic sicm_,ms500/sick_time 
         if contains(topic_name,'sick_lms500/scan')
 
-            SickLiDAR = fcn_DataClean_loadRawDataFromFile_SickLidar(full_file_path,datatype,flag_do_debug);
+            SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,flag_do_debug);
             rawdata.SickLiDAR = SickLiDAR;
 
         else

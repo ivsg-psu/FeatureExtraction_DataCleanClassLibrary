@@ -660,7 +660,7 @@ if time_corruption_type>1
     % Missing centiSeconds field test - the centiSeconds field is empty
     if binary_time_corruption(6)
         time_corruption_type_string = cat(2,time_corruption_type_string,'centiSeconds field is empty, ');
-        BadDataStructure.IMU_ADIS.centiSeconds = [];
+        BadDataStructure.GPS_Hemisphere.centiSeconds = [];
     end
 
     % Missing centiSeconds field test - the centiSeconds field is only NaNs
@@ -674,7 +674,7 @@ if time_corruption_type>1
         time_corruption_type_string = cat(2,time_corruption_type_string,'centiSeconds field is inconsistent with GPS_Time data, ');
         % Copy time structure from encoder (100 Hz) to Trigger (1 Hz) to create bad
         % time sample interval.
-        BadDataStructure.TRIGGER.GPS_Time = BadDataStructure.ENCODER_RearLeft.GPS_Time;
+        BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.ENCODER_RearLeft.GPS_Time;
     end
     
     % Bad time interval test - the centiSeconds field is inconsistent with ROS_Time data

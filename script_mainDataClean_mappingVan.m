@@ -297,7 +297,7 @@ end
 
 %% Fill in test cases?
 % Fill in the initial data - we use this for testing
-dataStructure = fcn_DataClean_fillTestDataStructure;
+% dataStructure = fcn_DataClean_fillTestDataStructure;
 
 %% Start the looping process to iteratively clean data
 % The method used below is as follows:
@@ -314,15 +314,101 @@ dataStructure = fcn_DataClean_fillTestDataStructure;
 flag_stay_in_main_loop = 1;
 N_max_loops = 30;
 
+% Preallocate the data array
+data_structure_sequence{N_max_loops} = struct;
+
 main_data_cleaan_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
 while 1==flag_stay_in_main_loop
+    dataStructure = dataset{1};
     main_data_cleaan_loop_iteration_number = main_data_cleaan_loop_iteration_number+1;
     
     %% Check data for errors
     [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(dataStructure,fid);
     
-    %% Data cleaning processes to fix the latest error
+    %% Data cleaning processes to fix the latest error start here
+
+    %% Check if there are no data collected that have GPS time (UTC time) recorded
+    %    ### ISSUES with this:
+    %    * There is no absolute time base to use for the data
+    %    * The tracking of vehicle data relative to external sourses is no
+    %    longer possible
+    %    ### DETECTION:
+    %    * Examine if GPS time fields exist on any GPS sensor
+    %    ### FIXES:
+    %    * Catastrophic error. Data collection should end.
+    %    * One option? Check if ROS_Time recorded, and is locked to UTC via NTP, use ROS
+    %    Time as stand-in
+    %    * Otherwise, complete failure of sensor recordings
     
+    if 0==flags.GPS_Time_exists_in_at_least_one_sensor
+        error('Catastrophic data error detected: no GPS_Time data detected in any sensor.');
+    end
+    
+    
+    %% Check if at least one GPS sensor is missing GPS time
+    %    ### ISSUES with this:
+    %    * There is no absolute time base to use for the sensor
+    %    * This usually indicates back lock for the GPS
+    %    ### DETECTION:
+    %    * Examine if GPS time fields exist on all GPS sensors
+    %    ### FIXES:
+    %    * If another GPS is available, use its time alongside the GPS data
+    %    * Remove this GPS data field
+    if 0==flags.GPS_Time_exists_in_GPS_sensors
+        error('Catastrophic data error detected: the following GPS sensor is missing GPS_Time data: %s.',offending_sensor);        
+    end
+    
+    %% Check if the centiSeconds field is missing on one of the GPS sensors
+    %    ### ISSUES with this:
+    %    * This field defines the expected sample rate for each sensor
+    %    ### DETECTION:
+    %    * Examine if centiSeconds fields exist on all sensors
+    %    ### FIXES:
+    %    * Manually fix, or
+    %    * Remove this sensor
+    if 0==flags.centiSeconds_exists_in_GPS_sensors
+        error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
+    end
+    
+    %% Check if inconsistency between expected and actual time sampling for GPS_Time
+    %    ### ISSUES with this:
+    %    * This field is used to confirm GPS sampling rates for all
+    %    GPS-triggered sensors
+    %    * These sensors are used to correct ROS timings, so if misisng, the
+    %    timing and thus positioning of vehicle data may be wrong
+    %    * The GPS unit may be configured wrong
+    %    * The GPS unit may be faililng or operating incorrectly
+    %    ### DETECTION:
+    %    * Make sure centiSeconds exists in all GPS sensors
+    %    * Examine if centiSeconds calculation of time interval matches GPS
+    %    time interval for data collection, on average
+    %    ### FIXES:
+    %    * Manually fix, or
+    %    * Remove this sensor
+    if 0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+        error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
+    end
+    
+    %% Inconsistency between start and end times for GPS_Time
+    %    ### ISSUES with this:
+    %    * The start times and end times of all data collection assumes all GPS
+    %    systems are operating simultaneously
+    %    * The calculation of Trigger_Time assumes that all start times are the
+    %    same, and all end times are the same
+    %    * If they are not the same, the count of data in one sensor may be
+    %    different than another, especially if each were referencing different
+    %    GPS sources.
+    %    ### DETECTION:
+    %    * Seach through the GPS time fields for all sensors, rounding them to
+    %    their appropriate centi-second values
+    %    * Check that they all agree
+    %    ### FIXES:
+    %    * Crop all data to same starting centi-second value
+    
+    %% Check consistency between start times for GPS_Time
+    if 0==flags.consistent_start_and_end_times_across_GPS_sensors
+        error('Need to fix this!');
+    end
     
     %% Exiting conditions
     % Check if all the flags work, so we can exit!

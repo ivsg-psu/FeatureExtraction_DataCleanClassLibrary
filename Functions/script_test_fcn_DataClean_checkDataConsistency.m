@@ -16,10 +16,33 @@ dataStructure = fcn_DataClean_fillTestDataStructure;
 %% Basic call
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(dataStructure,fid);
-assert(isequal(flags.GPS_Time_exists,1));
+assert(isequal(flags.GPS_Time_exists_in_GPS_sensors,1));
 assert(strcmp(offending_sensor,''));
 
-%% Missing GPS_Time field test - the GPS_Time field is completely missing
+%% Missing GPS_Time field test - the GPS_Time field is completely missing in all sensors
+
+% Define a dataset with no GPS_Time fields
+BadDataStructure = dataStructure;
+sensor_names = fieldnames(BadDataStructure); % Grab all the fields that are in dataStructure structure
+for i_data = 1:length(sensor_names)
+    % Grab the sensor subfield name
+    sensor_name = sensor_names{i_data};
+    sensor_data = BadDataStructure.(sensor_name);
+    sensor_data_removed_field = rmfield(sensor_data,'GPS_Time');
+    BadDataStructure.(sensor_name) = sensor_data_removed_field;    
+end
+% Clean up variables
+clear sensor_name sensor_data sensor_data_removed_field i_data sensor_names
+    
+error_type_string = 'All GPS_Time fields are missing on all sensors';
+fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
+
+
+[flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+assert(isequal(flags.GPS_Time_exists_in_at_least_one_sensor,0));
+assert(strcmp(offending_sensor,'LIDAR2D_Sick'));
+
+%% Missing GPS_Time field test - the GPS_Time field is completely missing in at least one GPS sensor
 
 % Define a dataset with corrupted GPS_Time where the field is missing
 time_time_corruption_type = 2^1; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
@@ -27,7 +50,7 @@ time_time_corruption_type = 2^1; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.GPS_Time_exists,0));
+assert(isequal(flags.GPS_Time_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Missing GPS_Time field test - the GPS_Time field is empty
@@ -38,7 +61,7 @@ time_time_corruption_type = 2^2; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.GPS_Time_exists,0));
+assert(isequal(flags.GPS_Time_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearLeft'));
 
 %% Missing GPS_Time field test - the GPS_Time field is only NaNs
@@ -49,7 +72,7 @@ time_time_corruption_type = 2^3; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.GPS_Time_exists,0));
+assert(isequal(flags.GPS_Time_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
 %% Missing centiSeconds field test - the centiSeconds field is completely missing
@@ -60,7 +83,7 @@ time_time_corruption_type = 2^4; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.centiSeconds_exists,0));
+assert(isequal(flags.centiSeconds_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Missing centiSeconds field test - the centiSeconds field is empty
@@ -71,8 +94,8 @@ time_time_corruption_type = 2^5; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.centiSeconds_exists,0));
-assert(strcmp(offending_sensor,'IMU_ADIS'));
+assert(isequal(flags.centiSeconds_exists_in_GPS_sensors,0));
+assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Missing centiSeconds field test - the centiSeconds field is only NaNs
  
@@ -82,7 +105,7 @@ time_time_corruption_type = 2^6; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.centiSeconds_exists,0));
+assert(isequal(flags.centiSeconds_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
 %% Bad time interval test - the centiSeconds field is inconsistent with GPS_Time data
@@ -94,8 +117,20 @@ time_time_corruption_type = 2^7; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds,0));
-assert(strcmp(offending_sensor,'TRIGGER'));
+assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors,0));
+assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
+
+
+%% Shifted time interval test - the start/end of a GPS system does not match
+ 
+BadDataStructure = dataStructure;
+BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - 1; 
+fprintf(1,'\nData created with following errors injected: shifted start point');
+
+[flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+assert(isequal(flags.consistent_start_and_end_times_across_GPS_sensors,0));
+assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
+
 
 %% Bad time interval test - the centiSeconds field is inconsistent with ROS_Time data
  
@@ -117,7 +152,7 @@ time_time_corruption_type = 2^9; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.Trigger_Time_exists,0));
+assert(isequal(flags.Trigger_Time_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Missing Trigger_Time field test - the Trigger_Time field is empty
@@ -128,7 +163,7 @@ time_time_corruption_type = 2^10; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.Trigger_Time_exists,0));
+assert(isequal(flags.Trigger_Time_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Missing Trigger_Time field test - the Trigger_Time field is only NaNs
@@ -139,7 +174,7 @@ time_time_corruption_type = 2^11; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.Trigger_Time_exists,0));
+assert(isequal(flags.Trigger_Time_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Bad time ordering test - the GPS_Time is not increasing 
@@ -174,7 +209,7 @@ time_time_corruption_type = 2^14; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_exists,0));
+assert(isequal(flags.ROS_Time_exists_in_all_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearLeft'));
 
 %% Missing ROS_Time field test - the ROS_Time field is empty
@@ -185,7 +220,7 @@ time_time_corruption_type = 2^15; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_exists,0));
+assert(isequal(flags.ROS_Time_exists_in_all_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Missing ROS_Time field test - the ROS_Time field is only NaNs
@@ -196,7 +231,7 @@ time_time_corruption_type = 2^16; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_exists,0));
+assert(isequal(flags.ROS_Time_exists_in_all_sensors,0));
 assert(strcmp(offending_sensor,'ENCODER_RearRight'));
 
 %% Bad time ordering test - the ROS_Time is not increasing 
