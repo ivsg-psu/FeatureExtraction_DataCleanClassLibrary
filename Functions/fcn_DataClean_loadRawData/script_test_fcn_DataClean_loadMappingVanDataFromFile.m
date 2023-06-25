@@ -35,7 +35,15 @@ addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 % \\IVSG\GitHubMirror\MappingVanDataCollection\ParsedData, to use data from other files,
 % change the data_folder variable and bagname variable to corresponding path and bag
 % name.
-bagFolderName = "mapping_van_2023-06-05-1Lap";
+% Data from "mapping_van_2023-06-22-1Lap_0.bag" and "mapping_van_2023-06-22-1Lap_1"
+% will be used as the default value used in this test script. 
+% The parsed the data files are saved on OneDrive
+% in \IVSG\GitHubMirror\MappingVanDataCollection\ParsedData. To process the
+% bag file, please copy mapping_van_2023-06-22-1Lap_0 and
+% mapping_van_2023-06-22-1Lap_1 folder to the LargeData folder.
+
+% bagFolderName = "mapping_van_2023-06-05-1Lap";
+bagFolderName = "mapping_van_2023-06-22-1Lap_0";
 rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
 
 

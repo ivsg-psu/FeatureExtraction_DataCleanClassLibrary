@@ -20,8 +20,8 @@ if strcmp(datatype,'gps')
     datatable = readtable(file_path,opts);
     Npoints = height(datatable);
     SparkFun_GPS_data_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
-    secs = datatable.GPSSecs;
-    microsecs = datatable.GPSMicroSecs;
+    secs = datatable.GPSSecs; % For data collected after 2023-06-06, new fields GPSSecs are added
+    microsecs = datatable.GPSMicroSecs; % For data collected after 2023-06-06, new fields GPSMicroSecs are added
     
     SparkFun_GPS_data_structure.GPS_Time           = secs + microsecs*10^-6;  % This is the GPS time, UTC, as reported by the unit
     % SparkFun_GPS_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample

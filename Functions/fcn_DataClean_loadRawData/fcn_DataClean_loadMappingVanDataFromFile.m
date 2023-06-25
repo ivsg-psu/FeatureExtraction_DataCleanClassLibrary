@@ -143,7 +143,7 @@ for file_idx = 1:num_files
 %         topic sicm_,ms500/sick_time 
         if contains(topic_name,'sick_lms500/scan')
 
-            SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,flag_do_debug);
+            SickLiDAR = fcn_DataClean_loadRawDataFromFile_SickLidar(full_file_path,datatype,flag_do_debug);
             rawdata.SickLiDAR = SickLiDAR;
 
         else
@@ -169,7 +169,7 @@ for file_idx = 1:num_files
                 Novatel_IMU = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(full_file_path,datatype,flag_do_debug);
                 rawdata.Novatel_IMU = Novatel_IMU;
 
-            elseif contains(topic_name, 'Encoder')
+            elseif contains(topic_name, 'parseEncoder')
 
                 parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(full_file_path,datatype,flag_do_debug);
                 rawdata.Raw_Encoder = parseEncoder;
