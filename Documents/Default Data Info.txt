@@ -1,0 +1,24 @@
+Default Data Info
+
+Written by: Xinyu Cao, 2023-06-25
+
+Data from "mapping_van_2023-06-22-1Lap_0.bag" and "mapping_van_2023-06-22-1Lap_1.bag"
+will be used as the default value used in this test script. 
+The parsed the data files are saved on OneDrive
+in \IVSG\GitHubMirror\MappingVanDataCollection\ParsedData. To process the
+bag file, please copy mapping_van_2023-06-22-1Lap_0 and
+mapping_van_2023-06-22-1Lap_1 folder to the LargeData folder.
+
+
+Bag Name: "mapping_van_2023-06-22-1Lap_0.bag" and "mapping_van_2023-06-22-1Lap_1.bag"
+
+Collection Date: 2023-06-22
+
+Collection Location: Test Track
+
+Storage Location: OneDrive\IVSG\GitHubMirror\MappingVanDataCollection\ParsedData\2023-06-22
+
+Pre-process step: Parsed the original bag files and save each topic to a csv file or txt file in the folder with the same name.
+
+How to use: Please copy "mapping_van_2023-06-22-1Lap_0" and "mapping_van_2023-06-22-1Lap_1" folder to the LargeData folder under the Github repo FeatureExtraction_DataCleanClassLibrary.
+
