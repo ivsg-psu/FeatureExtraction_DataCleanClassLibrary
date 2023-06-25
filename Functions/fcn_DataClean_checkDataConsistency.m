@@ -85,7 +85,8 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataConsistency(dataStruc
 % -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
 
 % TO DO
-% 
+% -- As of 2023_06_25, Finish header comments for every flag
+
 
 % Set default fid (file ID) first:
 fid = 1; % Default case is to print to the console

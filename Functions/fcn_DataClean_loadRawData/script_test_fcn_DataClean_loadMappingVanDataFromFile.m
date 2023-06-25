@@ -1,9 +1,11 @@
-% script_test_fcn_DataClean_initializeDataByType.m
-% tests fcn_DataClean_initializeDataByType.m
+% script_test_fcn_DataClean_loadMappingVanDataFromFile.m
+% tests fcn_DataClean_loadMappingVanDataFromFile.m
 
 % Revision history
 % 2023_06_19 - sbrennan@psu.edu
 % -- wrote the code originally, using Laps_checkZoneType as starter
+% 2023_06_25 - sbrennan@psu.edu
+% -- fixed typo in comments where script had wrong name! 
 
 %% Set up the workspace
 close all

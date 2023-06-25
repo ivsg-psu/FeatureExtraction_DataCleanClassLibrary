@@ -1,4 +1,5 @@
-%%
+%% script_mainDataClean_mappingVan.m
+% 
 % This main script is used to test the DataClean functions. It was
 % originally written to process and plot the mapping van DGPS data
 % collected for the Wahba route on 2019_09_17 with the Penn State Mapping
@@ -68,6 +69,9 @@
 % -- automated dependency installs
 % -- checked subfields to determine if LIDAR is there
 % -- commented out code that doesn't work
+% 2023_06_25
+% -- added loop-type structure to check data consistency
+% -- within the loop, tries to fix inconsistencies
 
 %
 % Known issues:
