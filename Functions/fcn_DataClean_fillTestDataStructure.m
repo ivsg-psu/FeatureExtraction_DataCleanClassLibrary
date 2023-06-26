@@ -40,18 +40,18 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %          2^4 bit (16) = 1:: The centiSeconds field is missing on one of the sensors. This
 %          is a major failure as this field defines the sampling rate.
 %    
-%          12^5 bit (32) = 1: The centiSeconds field is empty on one of the sensors. This
+%          2^5 bit (32) = 1: The centiSeconds field is empty on one of the sensors. This
 %          is a major failure as this field defines the sampling rate.
 %    
-%          12^6 bit (64) = 1: The centiSeconds field is NaN on one of the sensors. This
+%          2^6 bit (64) = 1: The centiSeconds field is NaN on one of the sensors. This
 %          is a major failure as this field defines the sampling rate.
 %    
-%          12^7 bit (128) = 1: The centiSeconds field is inconsistent with
+%          2^7 bit (128) = 1: The centiSeconds field is inconsistent with
 %          GPS_Time data. This occurs if the sampling rate is set wrong, if
 %          the GPS mode changes unexpectedly, or if there is a failure
 %          during operation of the GPS sensor.
 %    
-%          12^8 bit (256) = 1: The centiSeconds field is inconsistent with
+%          2^8 bit (256) = 1: The centiSeconds field is inconsistent with
 %          ROS_Time data. This occurs if the sampling rate is set wrong, if
 %          the GPS mode changes unexpectedly, or if there is a failure
 %          during operation of the GPS sensor. (NOTE: Trigger_Time is
@@ -59,55 +59,58 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %          missing, as this is redundant to checking if centiSeconds
 %          exists.)
 %    
-%          12^9 bit (512) = 1: The Trigger_Time field is missing. This
+%          2^9 bit (512) = 1: The Trigger_Time field is missing. This
 %          indicates that this field must be calculated or recalculated.
 %
-%          12^10 bit (1024) = 1: The Trigger_Time field is empty. This
+%          2^10 bit (1024) = 1: The Trigger_Time field is empty. This
 %          indicates that this field must be calculated or recalculated.
 %
-%          12^11 bit (2048) = 1: The Trigger_Time field has a NaN value.
+%          2^11 bit (2048) = 1: The Trigger_Time field has a NaN value.
 %          This indicates that this field must be calculated or
 %          recalculated.
 %
-%          12^12 bit (4092) = 1: The GPS_Time field is not increasing. This
+%          2^12 bit (4092) = 1: The GPS_Time field is not increasing. This
 %          occurs when packets arrive from the GPS out-of-order. In most
 %          cases, this can be fixed with reprocessing.
 %
-%          12^13 bit (8192) = 1: The GPS_Time field has a repeating time. This
+%          2^13 bit (8192) = 1: The GPS_Time field has a repeating time. This
 %          occurs when a packet is resent due to a sensor fault. In most
 %          cases, this can be fixed with reprocessing.
 %
-%          12^14 bit (16384) = 1: The ROS_Time field is missing.
+%          2^14 bit (16384) = 1: The ROS_Time field is missing.
 %          This occurs if there is a major fault in the ROS bag file. This
 %          is recoverable if the sensor has GPS_Time recorded or if the
 %          trigger time is known.
 %
-%          12^15 bit (32768) = 1: The ROS_Time field is empty.
+%          2^15 bit (32768) = 1: The ROS_Time field is empty.
 %          This occurs if there is a major fault in the ROS bag file. This
 %          is recoverable if the sensor has GPS_Time recorded or if the
 %          trigger time is known.
 %
-%          12^16 bit (65536) = 1: The ROS_Time field contains NaN.
+%          2^16 bit (65536) = 1: The ROS_Time field contains NaN.
 %          This occurs if there is a minor fault in the ROS bag file. This
 %          is recoverable if the sensor has GPS_Time recorded or if the
 %          trigger time is known.
 %
-%          12^17 bit = 1: The ROS_Time is not increasing
+%          2^17 bit = 1: The ROS_Time is not increasing
 %          This occurs if there is a minor fault in the ROS bag file. This
 %          is recoverable if the sensor has GPS_Time recorded or if the
 %          trigger time is known.
 %
-%          12^18 bit = 1: ROS_Time has a repeat.
+%          2^18 bit = 1: ROS_Time has a repeat.
 %          This occurs if there is a minor fault in the ROS bag file. This
 %          is recoverable if the sensor has GPS_Time recorded.
 %
-%          12^19 bit = 1: The ROS_Time field has wrong length.
+%          2^19 bit = 1: The ROS_Time field has wrong length.
 %          This occurs if the ROS time does not align in count to the
 %          expected number of data from the Trigger_Time. This is
 %          recoverable by matching the ROS_Time values to Trigger_Times to
 %          find the missing data, then resampling over the gap.
 %
-
+%          2^20 bit = 1: The GPS_Time field in a GPS sensor has repeated
+%          entries.
+%
+%
 %
 % OUTPUTS:
 %
@@ -763,8 +766,42 @@ if time_corruption_type>1
  
         % Add one more tiny data point to end
         BadDataStructure.ENCODER_RearLeft.ROS_Time(end+1,:) = dataStructure.ENCODER_RearLeft.ROS_Time(end,:)+0.001;
-
     end
+    
+    % The GPS_Time field in a GPS sensor has repeated entries.
+    if binary_time_corruption(21)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time has repeated entries, ');
+        
+        dataStructureToCorrupt = dataStructure.GPS_Hemisphere;
+        
+        lengthReference = length(dataStructureToCorrupt.GPS_Time);
+        badIndicies = [ones(7,1);(1:lengthReference)']; % Throw in some repeats
+        goodIndicies = (1:length(badIndicies))';
+        dataStructureToCorrupt.Npoints = length(goodIndicies);
+        
+        % Grab all the subfields
+        subfieldNames = fieldnames(dataStructureToCorrupt);
+        
+        % Loop through subfields
+        for i_subField = 1:length(subfieldNames)
+            % Grab the name of the ith subfield
+            subFieldName = subfieldNames{i_subField};
+            
+            if ~iscell(dataStructureToCorrupt.(subFieldName)) % Is it a cell? If yes, skip it
+                if length(dataStructureToCorrupt.(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
+                    % It's an array, make sure it has right length
+                    if lengthReference== length(dataStructureToCorrupt.(subFieldName))
+                        dataStructureToCorrupt.(subFieldName)(goodIndicies,:) = dataStructureToCorrupt.(subFieldName)(badIndicies,:);
+                    end
+                end
+            end
+            
+        end % Ends for loop through the subfields
+        
+        % Put data into the BadDataStructure
+        BadDataStructure.GPS_Hemisphere = dataStructureToCorrupt;
+    end
+    
     dataStructure = BadDataStructure;
 end % Ends if statement on time_corruption
 

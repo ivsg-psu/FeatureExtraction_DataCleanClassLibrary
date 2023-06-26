@@ -108,6 +108,19 @@ fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_str
 assert(isequal(flags.centiSeconds_exists_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
+%% Duplicated time values - the GPS_Time field in the GPS sensors has repeats
+
+% Define a dataset with corrupted centiSeconds where the field is NaNs only
+time_time_corruption_type = 2^20; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
+[BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
+fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
+
+[flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+assert(isequal(flags.GPS_Time_has_no_repeats_in_GPS_sensors,0));
+assert(strcmp(offending_sensor,'GPS_Hemisphere'));
+
+
+
 %% Bad time interval test - the centiSeconds field is inconsistent with GPS_Time data
  
 % Define a dataset with corrupted centiSeconds where the field is

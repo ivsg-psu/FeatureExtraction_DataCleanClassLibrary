@@ -178,6 +178,7 @@ flags.centiSeconds_exists_in_GPS_sensors = 0;
 % ## There are no data collected that have GPS time (UTC time) recorded
 % ## At least one GPS sensor is missing GPS time
 % ## The centiSeconds field is missing
+% ## Repeated GPS_Time values
 % ## Inconsistency between expected and actual time sampling for GPS_Time
 % ## The Trigger_Time field is missing on a sensor
 % ## GPS_Time data is not strictly ascending on a sensor
@@ -241,6 +242,21 @@ end
 if 0==flags.centiSeconds_exists_in_GPS_sensors
     return
 end
+
+%% Repeated GPS_Time values
+%    ### ISSUES with this:
+%    * If there are many repeated time values, the calculation of sampling
+%    time in the next step produces incorrect results
+%    ### DETECTION:
+%    * Examine if time values are unique
+%    ### FIXES:
+%    * Remove repeats
+
+[flags,offending_sensor,~] = fcn_INTERNAL_checkIfFieldHasRepeatedValues(fid, dataStructure, flags, 'GPS_Time','GPS');
+if 0==flags.GPS_Time_has_no_repeats_in_GPS_sensors
+    return
+end
+
 
 %% Inconsistency between expected and actual time sampling for GPS_Time
 %    ### ISSUES with this:
@@ -867,6 +883,68 @@ end
 
 end % Ends fcn_INTERNAL_checkIfFieldInAllSensors
 
+%% fcn_INTERNAL_checkIfFieldHasRepeatedValues
+function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkIfFieldHasRepeatedValues(fid, dataStructure, flags, field_name,sensors_to_check)
+% Checks to see if a particular sensor has any repeated values in the
+% requested field
+
+if ~exist('sensors_to_check','var')
+    flag_check_all_sensors = 1;    
+else
+    flag_check_all_sensors = 0;
+end
+
+% Initialize offending_sensor
+offending_sensor = '';
+return_flag = 0;
+
+% Produce a list of all the sensors (each is a field in the structure)
+sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
+
+if 0~=fid
+    fprintf(fid,'Checking for repeats in %s data ',field_name);
+    if flag_check_all_sensors
+        fprintf(fid,':\n');
+    else
+        fprintf(fid,'in all %s sensors:\n', sensors_to_check);
+    end
+end
+
+for i_data = 1:length(sensor_names)
+    % Grab the sensor subfield name
+    sensor_name = sensor_names{i_data};
+    
+    if (flag_check_all_sensors==0 && contains(sensor_name,sensors_to_check)) || (flag_check_all_sensors==1)
+        sensor_data = dataStructure.(sensor_name);
+        
+        if 0~=fid
+            fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
+        end
+        
+        unique_values = unique(sensor_data.(field_name));
+        
+        if ~isequal(unique_values,sensor_data.(field_name))
+            flag_no_repeats_detected = 0;
+        else
+            flag_no_repeats_detected = 1;
+        end
+                
+        if flag_check_all_sensors
+            flag_name = cat(2,field_name,'_has_no_repeats_in_all_sensors');
+        else
+            flag_name = cat(2,field_name,sprintf('_has_no_repeats_in_%s_sensors',sensors_to_check));
+        end
+        flags.(flag_name) = flag_no_repeats_detected;
+        
+        if 0==flags.(flag_name)
+            offending_sensor = sensor_name; % Save the name of the sensor
+            return_flag = 1; % Indicate that the return was forced
+            return; % Exit the function immediately to avoid more processing
+        end
+    end % Ends check if this field should be checked
+end % Ends for loop
+
+end % Ends fcn_INTERNAL_checkIfFieldHasRepeatedValues
 
 %% fcn_INTERNAL_checkTimeSamplingConsistency
 function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkTimeSamplingConsistency(fid, dataStructure, flags, time_field,sensors_to_check)

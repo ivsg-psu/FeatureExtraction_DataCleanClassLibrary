@@ -10,11 +10,11 @@
 %% Set up the workspace
 close all
 clc
-
-% % % Make sure we can see the utilities folder
-addpath '../Utilities';
-addpath '../data'; % add the data path
-addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
+% 
+% % % % Make sure we can see the utilities folder
+% addpath '../Utilities';
+% addpath '../data'; % add the data path
+% addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 
 %% Check assertions for basic path operations and function testing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

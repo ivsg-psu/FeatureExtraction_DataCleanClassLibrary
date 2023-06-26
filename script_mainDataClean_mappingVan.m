@@ -275,7 +275,8 @@ end
 
 
 %% Specify the data to use
-bagFolderName = "mapping_van_2023-06-05-1Lap";
+% bagFolderName = "mapping_van_2023-06-05-1Lap"; 
+bagFolderName = "mapping_van_2023-06-22-1Lap_0";
 
 
 %% ======================= Load the raw data =========================
