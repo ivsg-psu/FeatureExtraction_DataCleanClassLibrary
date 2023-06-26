@@ -72,6 +72,8 @@
 % 2023_06_25
 % -- added loop-type structure to check data consistency
 % -- within the loop, tries to fix inconsistencies
+% 2023_06_26
+% -- added checks and corrections for duplicated data
 
 %
 % Known issues:
@@ -375,6 +377,27 @@ while 1==flag_stay_in_main_loop
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
     end
     
+    fid = 1;
+
+    %% Repeated GPS_Time values
+    %    ### ISSUES with this:
+    %    * If there are many repeated time values, the calculation of sampling
+    %    time in the future steps produces incorrect results
+    %    ### DETECTION:
+    %    * Examine if time values are unique
+    %    ### FIXES:
+    %    * Remove repeats
+
+    URHERE
+    if 0==flags.GPS_Time_has_no_repeats_in_GPS_sensors
+        % Fix the data
+        field_name = 'GPS_Time';
+        sensors_to_check = 'GPS';
+        fixed_dataStructure = fcn_DataClean_trimRepeatsFromField(BadDataStructure,fid, field_name,sensors_to_check);
+    end
+
+
+
     %% Check if inconsistency between expected and actual time sampling for GPS_Time
     %    ### ISSUES with this:
     %    * This field is used to confirm GPS sampling rates for all

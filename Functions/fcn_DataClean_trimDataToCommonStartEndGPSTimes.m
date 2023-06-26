@@ -226,10 +226,8 @@ for i_data = 1:length(sensor_names)
     end_index   = find(sensor_data.GPS_Time <= master_end_time_Seconds, 1, 'last');
     lengthReference = length(sensor_data.GPS_Time);
 
-    % Grab all the subfields
-    subfieldNames = fieldnames(sensor_data);
-    
     % Loop through subfields
+    subfieldNames = fieldnames(sensor_data);
     for i_subField = 1:length(subfieldNames)
         % Grab the name of the ith subfield
         subFieldName = subfieldNames{i_subField};

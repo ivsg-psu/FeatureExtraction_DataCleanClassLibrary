@@ -1,16 +1,9 @@
 function trimmed_dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructure,varargin)
-
-URHERE
-
-% fcn_DataClean_trimDataToCommonStartEndGPSTimes
-% Trims all sensor data so that all start and end at the same GPS_Time
-% values.
+% fcn_DataClean_trimRepeatsFromField
+% Removes repeated data from a selected field within a sensor structure.
+% For all repeated values, also deletes the corresponding data entries.
 %
-% The method this is done is to:
-% 1. Pull out the GPS_Time field from all GPS-tagged sensors
-% 2. Find the start/end values for each. Take the maximum start time and
-%    minimum end time and assign these to the global start and end times.
-% 3. Crop all data in all sensors to these global start and end times
+% Also allows the type of sensor, for example 'GPS', to be selected.
 %
 % FORMAT:
 %
@@ -27,32 +20,34 @@ URHERE
 %      fid: a file ID to print results of analysis. If not entered, the
 %      console (FID = 1) is used.
 %
+%      field_name: a string idicating the field to be checked, for example
+%      'GPS_Time' (default)
+%
+%      sensors_to_check: a string idicating the sensors to be checked, for
+%      example 'GPS' (default)
+%
 % OUTPUTS:
 %
-%      trimmed_dataStructure: a data structure to be analyzed that includes the following
-%      fields:
-% 
+%      trimmed_dataStructure: a data structure with repeated values removed
+%
 % DEPENDENCIES:
 %
 %      fcn_DebugTools_checkInputsToFunctions
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_trimDataToCommonStartEndGPSTimes
+%     See the script: script_test_fcn_DataClean_trimRepeatsFromField
 %     for a full test suite.
 %
-% This function was written on 2023_06_19 by S. Brennan
-% Questions or comments? sbrennan@psu.edu 
+% This function was written on 2023_06_26 by S. Brennan
+% Questions or comments? sbrennan@psu.edu
 
 % Revision history:
-%     
-% 2023_06_12: sbrennan@psu.edu
-% -- wrote the code originally 
-% 2023_06_24 - sbrennan@psu.edu
-% -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
+%
+% 2023_06_26: sbrennan@psu.edu
+% -- wrote the code originally
 
 % TO DO
-% -- As of 2023_06_25, Finish header comments for every flag
 
 
 % Set default fid (file ID) first:
@@ -82,17 +77,15 @@ end
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    if nargin < 1 || nargin > 2
-        error('Incorrect number of input arguments')
-    end
-        
+    narginchk(1,4);
+
 end
 
 
 % Does the user want to specify the fid?
 
-% Check for user input
-if 1 <= nargin
+% Check for user-defined fid input
+if 2 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
         % Check that the FID works
@@ -108,6 +101,24 @@ if 1 <= nargin
 end
 
 
+% Check for user-defined field_name input
+field_name = 'GPS_Time'; % Set the default
+if 3 <= nargin
+    temp = varargin{2};
+    if ~isempty(temp)
+        field_name = temp;
+    end
+end
+
+% Check for user-defined field_name input
+sensors_to_check = 'GPS'; % Set the default
+if 3 <= nargin
+    temp = varargin{3};
+    if ~isempty(temp)
+        sensors_to_check = temp;
+    end
+end
+
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   __  __       _
@@ -119,65 +130,77 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% The method this is done is to:
-% 1. Pull out the GPS_Time field from all GPS-tagged sensors
-% 2. Find the start/end values for each. Take the maximum start time and
-%    minimum end time and assign these to the global start and end times.
-% 3. Crop all data in all sensors to these global start and end times
-
-if ~exist('sensors_to_check','var')
-    flag_check_all_sensors = 1;    
-else
-    flag_check_all_sensors = 0;
+% Report what we are doing
+if 0~=fid
+    fprintf(fid,'Checking for repeats in %s data ',field_name);
+    fprintf(fid,'in all %s sensors:\n', sensors_to_check);
 end
 
-% Initialize offending_sensor
-offending_sensor = '';
-return_flag = 0;
+% Initialize the outputs
+trimmed_dataStructure = dataStructure;
 
 % Produce a list of all the sensors (each is a field in the structure)
 sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
 
-if 0~=fid
-    fprintf(fid,'Checking for repeats in %s data ',field_name);
-    if flag_check_all_sensors
-        fprintf(fid,':\n');
-    else
-        fprintf(fid,'in all %s sensors:\n', sensors_to_check);
-    end
-end
-
 for i_data = 1:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{i_data};
-    
-    if (flag_check_all_sensors==0 && contains(sensor_name,sensors_to_check)) || (flag_check_all_sensors==1)
+
+    if contains(sensor_name,sensors_to_check)
         sensor_data = dataStructure.(sensor_name);
-        
+
         if 0~=fid
             fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
         end
-        
-        unique_values = unique(sensor_data.(field_name));
-        
-        if ~isequal(unique_values,sensor_data.(field_name))
-            flag_no_repeats_detected = 0;
+
+        % Find the unique values, indicies_data (indicies of what data to
+        % keep), and indicies_unique (indicies indicating which data was
+        % repeated)
+        [~,indicies_data,indicies_unique] = unique(sensor_data.(field_name),'rows','stable');
+
+        Nrepeats = length(indicies_unique)-length(indicies_data);
+        if 0==Nrepeats
+            fprintf(fid,'\t\t No repeats found\n');
         else
-            flag_no_repeats_detected = 1;
-        end
-                
-        if flag_check_all_sensors
-            flag_name = cat(2,field_name,'_has_no_repeats_in_all_sensors');
-        else
-            flag_name = cat(2,field_name,sprintf('_has_no_repeats_in_%s_sensors',sensors_to_check));
-        end
-        flags.(flag_name) = flag_no_repeats_detected;
-        
-        if 0==flags.(flag_name)
-            offending_sensor = sensor_name; % Save the name of the sensor
-            return_flag = 1; % Indicate that the return was forced
-            return; % Exit the function immediately to avoid more processing
-        end
+            fprintf(fid,'\t\t A total of %.0d repeats discovered.\n',Nrepeats);
+
+            if Nrepeats/length(indicies_unique)>0.1
+                if fid==1
+                    fcn_DebugTools_cprintf('-Red','\t\t WARNING: More than 10%% of data is repeated - this indicates a faulty sensor!\n');
+                else
+                    warning('More than 10%% of data is repeated in a sensor field - this indicates a faulty sensor!');
+                    fprintf(fid,'More than 10%% of data is repeated - this indicates a faulty sensor!\n');
+                end
+            end % Ends special warning for really bad data
+
+            fprintf(fid,'\t\t Looping through subfields to remove repeats on all data.\n');
+            lengthReference = length(sensor_data.(field_name)(:,1));
+
+            % Loop through subfields
+            subfieldNames = fieldnames(sensor_data);
+            for i_subField = 1:length(subfieldNames)
+                % Grab the name of the ith subfield
+                subFieldName = subfieldNames{i_subField};
+
+                fprintf(fid,'\t\t\t Checking field: %s.\n',subFieldName);
+
+                if ~iscell(dataStructure.(sensor_name).(subFieldName)) % Is it a cell? If yes, skip it
+                    if length(dataStructure.(sensor_name).(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
+                        % It's an array, make sure it has right length
+                        if lengthReference~= length(dataStructure.(sensor_name).(subFieldName))
+                            error('Sensor %s contains a datafield %s that has an amount of data not equal to the query field. This is usually because data is missing.',sensor_name,subFieldName);
+                        end
+
+                        % Replace the values
+                        trimmed_dataStructure.(sensor_name).(subFieldName) = dataStructure.(sensor_name).(subFieldName)(indicies_data,:);
+                    end
+                end
+
+            end % Ends for loop through the subfields
+
+            % Fix the Npoints
+            trimmed_dataStructure.(sensor_name).Npoints = length(indicies_data);
+        end % Ends if
     end % Ends check if this field should be checked
 end % Ends for loop
 
@@ -193,9 +216,9 @@ end % Ends for loop
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-    
-    % Nothing to plot        
-    
+
+    % Nothing to plot
+
 end
 
 if  fid~=0
@@ -219,6 +242,3 @@ end % Ends main function
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
-
-
-end % Ends fcn_INTERNAL_checkIfFieldHasRepeatedValues
