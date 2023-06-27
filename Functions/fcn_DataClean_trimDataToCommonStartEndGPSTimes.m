@@ -129,6 +129,7 @@ end
 sensor_centiSeconds = [];
 start_times_centiSeconds = [];
 end_times_centiSeconds = [];
+GPS_names = {};
 
 % Produce a list of all the sensors (each is a field in the structure)
 sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
@@ -155,7 +156,8 @@ for i_data = 1:length(sensor_names)
         sensor_centiSeconds = [sensor_centiSeconds; sensor_data.centiSeconds]; %#ok<AGROW>
         start_times_centiSeconds = [start_times_centiSeconds; times_centiSeconds(1)]; %#ok<AGROW>
         end_times_centiSeconds = [end_times_centiSeconds; times_centiSeconds(end)]; %#ok<AGROW>
-                
+        GPS_names{end+1} = sensor_name; %#ok<AGROW>
+        
     end % Ends check if this field should be checked
 end
 
@@ -199,7 +201,32 @@ master_end_time_Seconds = floor(master_end_time_centiSeconds*0.01);
 % master_end_time_Seconds = master_end_time_centiSeconds*0.01;
 
 if master_start_time_Seconds>=master_end_time_Seconds
-    error('Unable to synchronize GPS signals because one GPS sensor has a GPS_Time field that started after another GPS sensor recording ended.');
+    warning('\n\nAn error will be thrown due to bad GPS timings. The following table should assist in debugging this issue: \n');
+    fprintf('Sensor \t\t\t\t Start time: \t End_time\n');    
+    for ith_sensor = 1:length(start_times_centiSeconds)
+        fprintf('%s \t %d  \t %d \n',GPS_names{ith_sensor}, start_times_centiSeconds(ith_sensor),end_times_centiSeconds(ith_sensor));        
+    end
+    
+    fprintf('Master start time (seconds): \t%d\n',master_start_time_Seconds);
+    fprintf('Master end time (seconds):   \t%d\n',master_end_time_Seconds);
+    
+    fprintf('\n\nTable reshifted by start time:\n');
+    fprintf('Sensor \t\t\t\t Start time: \t End_time\n');
+    for ith_sensor = 1:length(start_times_centiSeconds)
+        fprintf('%s \t %d  \t %d \n',GPS_names{ith_sensor}, start_times_centiSeconds(ith_sensor)-master_start_time_Seconds*100,end_times_centiSeconds(ith_sensor)-master_start_time_Seconds*100);        
+    end
+
+        
+    fprintf('\n\nEach sensor shifted by its own start time:\n');
+    fprintf('Sensor \t\t\t\t Start time: \t End_time\n');
+    for ith_sensor = 1:length(start_times_centiSeconds)
+        fprintf('%s \t %d  \t %d \n',...
+            GPS_names{ith_sensor}, ...
+            start_times_centiSeconds(ith_sensor)-start_times_centiSeconds(ith_sensor),...
+            end_times_centiSeconds(ith_sensor)-start_times_centiSeconds(ith_sensor));        
+    end
+    
+    error('Unable to synchronize GPS signals because one GPS sensor has a starting GPS_Time field that seems to "start" after another GPS sensor recording ended! This is not physically possible if the sensors are running at the same time.');
 end
 
 fprintf(fid,'\t The GPS_Time that overlaps all sensors has the following range: \n');

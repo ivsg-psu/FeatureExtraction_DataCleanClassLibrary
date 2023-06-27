@@ -986,13 +986,16 @@ for i_data = 1:length(sensor_names)
         
         flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
         centiSeconds = sensor_data.centiSeconds;
-        try
-            if centiSeconds ~= round(100*mean(diff(sensor_data.(time_field))))
-                flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
-            end
-        catch
-            error('stop here - unknown error encountered in fcn_INTERNAL_checkTimeSamplingConsistency ');
+        meanSamplingInterval = mean(diff(sensor_data.(time_field)));
+        effective_centiSeconds = round(100*meanSamplingInterval);
+        if centiSeconds > effective_centiSeconds
+            flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
         end
+        if centiSeconds ~= effective_centiSeconds
+            warning('The sensor: %s is missing so much data that the field: %s effectively has an incorrect sample rate.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (sec): %.4f \n',...
+                sensor_name,time_field,centiSeconds,effective_centiSeconds,meanSamplingInterval);           
+        end
+
         
         if flag_check_all_sensors
             flag_name = cat(2,time_field,'_has_same_sample_rate_as_centiSeconds');

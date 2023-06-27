@@ -324,16 +324,17 @@ N_max_loops = 30;
 % Preallocate the data array
 data_structure_sequence{N_max_loops} = struct;
 
-main_data_cleaan_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
+main_data_clean_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
 while 1==flag_stay_in_main_loop
-    dataStructure = dataset{1};
-    main_data_cleaan_loop_iteration_number = main_data_cleaan_loop_iteration_number+1;
+    dataStructure = dataset{end};
+    main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     
     %% Check data for errors
     [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(dataStructure,fid);
     
     %% Data cleaning processes to fix the latest error start here
-
+    flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
+    
     %% Check if there are no data collected that have GPS time (UTC time) recorded
     %    ### ISSUES with this:
     %    * There is no absolute time base to use for the data
@@ -347,7 +348,7 @@ while 1==flag_stay_in_main_loop
     %    Time as stand-in
     %    * Otherwise, complete failure of sensor recordings
     
-    if 0==flags.GPS_Time_exists_in_at_least_one_sensor
+    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_at_least_one_sensor)
         error('Catastrophic data error detected: no GPS_Time data detected in any sensor.');
     end
     
@@ -361,7 +362,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * If another GPS is available, use its time alongside the GPS data
     %    * Remove this GPS data field
-    if 0==flags.GPS_Time_exists_in_GPS_sensors
+    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_GPS_sensors)
         error('Catastrophic data error detected: the following GPS sensor is missing GPS_Time data: %s.',offending_sensor);        
     end
     
@@ -373,7 +374,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
-    if 0==flags.centiSeconds_exists_in_GPS_sensors
+    if (1==flag_keep_checking) && (0==flags.centiSeconds_exists_in_GPS_sensors)
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
     end
     
@@ -388,12 +389,12 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Remove repeats
 
-    URHERE
-    if 0==flags.GPS_Time_has_no_repeats_in_GPS_sensors
+    if (1==flag_keep_checking) && (0==flags.GPS_Time_has_no_repeats_in_GPS_sensors)
         % Fix the data
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
-        fixed_dataStructure = fcn_DataClean_trimRepeatsFromField(BadDataStructure,fid, field_name,sensors_to_check);
+        fixed_dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructure,fid, field_name,sensors_to_check);
+        flag_keep_checking = 0;
     end
 
 
@@ -413,7 +414,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
-    if 0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+    if (1==flag_keep_checking) && (0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
         error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
     end
     
@@ -433,12 +434,15 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Crop all data to same starting centi-second value
     
-    %% Check consistency between start times for GPS_Time
-    if 0==flags.consistent_start_and_end_times_across_GPS_sensors
-        error('Need to fix this!');
+    %% Check consistency between start and end times for GPS_Time
+    if (1==flag_keep_checking) && (0==flags.consistent_start_and_end_times_across_GPS_sensors)
+        fixed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,fid);
+        flag_keep_checking = 0;
     end
     
     %% Exiting conditions
+    dataset{end+1} = fixed_dataStructure; %#ok<SAGROW>
+    
     % Check if all the flags work, so we can exit!
     flag_fields = fieldnames(flags); % Grab all the flags
     flag_array = zeros(length(flag_fields),1);
@@ -450,7 +454,7 @@ while 1==flag_stay_in_main_loop
     end
     
     % Have we done too many loops?
-    if main_data_cleaan_loop_iteration_number>N_max_loops
+    if main_data_clean_loop_iteration_number>N_max_loops
         flag_stay_in_main_loop = 0;
     end
           
