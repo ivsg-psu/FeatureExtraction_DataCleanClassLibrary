@@ -145,9 +145,14 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.MessageID          = default_value;  % This is the type of the NMEA sentence
         dataStructure.Latitude           = default_value;  % The latitude [deg]
+        dataStructure.StdLat             = default_value;  % Standard Deviation in Latitude [m]
         dataStructure.Longitude          = default_value;  % The longitude [deg]
+        dataStructure.StdLon             = default_value;  % Standard Deviation in Longitude [m]
         dataStructure.Altitude           = default_value;  % The altitude above sea level [m]
+        dataStructure.StdAlt             = default_value;  % Standard Deviation in Altitude [m]
+        dataStructure.GeoSep             = default_value;  % Geoid separation (Height of geoid above WGS84 ellipsoid) [m]
         dataStructure.xEast              = default_value;  % The xEast value (ENU) [m]
         dataStructure.xEast_Sigma        = default_value;  % Sigma in xEast [m]
         dataStructure.yNorth             = default_value;  % The yNorth value (ENU) [m]
@@ -174,6 +179,11 @@ switch lower(dataType)
         dataStructure.HDOP                = default_value; % DOP in horizontal position (ratio, usually close to 1, smaller is better)
         dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
         dataStructure.StdDevResid        = default_value;  % Standard deviation of residuals [m[
+        dataStructure.SpdOverGrndKmph    = default_value;  % Speed over ground [km/h]
+        % The following two fields are commented out because these two
+        % messages need to be verified
+%         dataStructure.TrueTrack          = default_value;  % This is true track made good [degree]
+%         dataStructure.MagTrack           = default_value;  % This is magnetic track made good [degree]
         % Event functions
         dataStructure.GPS_EventFunctions = {}; % These are the functions to determine if something went wrong
 
@@ -250,18 +260,24 @@ switch lower(dataType)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         % Data related to trigger box and encoder box
         dataStructure.Seq                = default_value;  % This is the sequence of the topic
-        % Moved from parseTrigger, will be added later, commented out
-        % temporarily
-        % dataStructure.err_failed_mode_count             = default_value; 
-        % dataStructure.err_failed_checkInformation       = default_value;  
-        % dataStructure.err_failed_XI_format              = default_value; 
-        % dataStructure.err_trigger_unknown_error_occured = default_value; 
-        % dataStructure.err_bad_uppercase_character       = default_value; 
-        % dataStructure.err_bad_lowercase_character       = default_value; 
-        % dataStructure.err_bad_three_adj_element         = default_value; 
-        % dataStructure.err_bad_first_element             = default_value; 
-        % dataStructure.err_bad_character                 = default_value; 
-        % dataStructure.err_wrong_element_length          = default_value; 
+        % Moved from parseTrigger
+        dataStructure.err_failed_mode_count             = default_value; 
+        dataStructure.err_failed_checkInformation       = default_value;  
+        dataStructure.err_failed_XI_format              = default_value; 
+        dataStructure.err_trigger_unknown_error_occured = default_value; 
+        dataStructure.err_bad_uppercase_character       = default_value; 
+        dataStructure.err_bad_lowercase_character       = default_value; 
+        dataStructure.err_bad_three_adj_element         = default_value; 
+        dataStructure.err_bad_first_element             = default_value; 
+        dataStructure.err_bad_character                 = default_value; 
+        dataStructure.err_wrong_element_length          = default_value; 
+        % Added from the new topic Encoder_diag
+        dataStructure.err_wrong_element_length_encoder  = default_value;
+        dataStructure.err_bad_element_structure         = default_value;
+        dataStructure.err_failed_time                   = default_value;
+        dataStructure.err_bad_uppercase_character_encoder = default_value; 
+        dataStructure.err_bad_lowercase_character_encoder = default_value; 
+        dataStructure.err_bad_character_encoder           = default_value;
         % Data related to SparkFun GPS Diagnostic
         dataStructure.DGPS_mode          = default_value;  % Mode indicating DGPS status (for example, navmode 6)
         dataStructure.numSatellites      = default_value;  % Number of satelites visible 

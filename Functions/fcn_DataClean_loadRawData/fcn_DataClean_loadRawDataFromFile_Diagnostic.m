@@ -18,7 +18,10 @@ function diagnostic_structure = fcn_DataClean_loadRawDataFromFile_Diagnostic(fil
 % the Penn State Mapping Van.
 %
 % Updates:
-%
+% 2023_06_26 - X. Cao
+% -- The old diagnostic topics 'diagnostic_trigger' and
+% 'diagnostic_encoder' are replaced with 'Trigger_diag' and 'Encoder_diag'
+
 % To do lists:
 % 
 % Reference:
@@ -32,7 +35,7 @@ if strcmp(datatype, 'diagnostic')
     Npoints = height(datatable);
     diagnostic_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
     switch topic_name
-        case '/diagnostic_trigger'
+        case '/Trigger_diag'
             % secs = datatable.secs;
             % nsecs = datatable.nsecs;
             % diagnostic_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
@@ -40,9 +43,19 @@ if strcmp(datatype, 'diagnostic')
             diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             % diagnostic_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
-            diagnostic_structure.Seq                = datatable.data; 
+            diagnostic_structure.Seq                = datatable.seq;
+            diagnostic_structure.err_failed_mode_count             = datatable.err_failed_mode_count; 
+            diagnostic_structure.err_failed_checkInformation       = datatable.err_failed_checkInformation;
+            diagnostic_structure.err_failed_XI_format              = datatable.err_failed_XI_format;
+            diagnostic_structure.err_trigger_unknown_error_occured = datatable.err_trigger_unknown_error_occured;
+            diagnostic_structure.err_bad_uppercase_character       = datatable.err_bad_uppercase_character;
+            diagnostic_structure.err_bad_lowercase_character       = datatable.err_bad_lowercase_character;
+            diagnostic_structure.err_bad_three_adj_element         = datatable.err_bad_three_adj_element;
+            diagnostic_structure.err_bad_first_element             = datatable.err_bad_first_element;
+            diagnostic_structure.err_bad_character                 = datatable.err_bad_character;
+            diagnostic_structure.err_wrong_element_length          = datatable.err_wrong_element_length;
 
-        case '/diagnostic_encoder'
+        case '/Encoder_diag'
             % secs = datatable.secs;
             % nsecs = datatable.nsecs;
             % diagnostic_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
@@ -50,7 +63,13 @@ if strcmp(datatype, 'diagnostic')
             diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             % diagnostic_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
-            diagnostic_structure.Seq                = datatable.data; 
+            diagnostic_structure.Seq                = datatable.seq;
+            diagnostic_structure.err_wrong_element_length_encoder  = datatable.err_wrong_element_length;
+            diagnostic_structure.err_bad_element_structure         = datatable.err_bad_element_structure;
+            diagnostic_structure.err_failed_time                   = datatable.err_failed_time;
+            diagnostic_structure.err_bad_uppercase_character_encoder = datatable.err_bad_uppercase_character; 
+            diagnostic_structure.err_bad_lowercase_character_encoder = datatable.err_bad_lowercase_character; 
+            diagnostic_structure.err_bad_character_encoder           = datatable.err_bad_character;
   
         case '/sparkfun_gps_diag_rear_left'
             secs = datatable.secs;

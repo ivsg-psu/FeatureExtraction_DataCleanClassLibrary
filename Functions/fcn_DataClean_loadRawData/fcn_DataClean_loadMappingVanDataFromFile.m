@@ -48,9 +48,16 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName)
 % AGAIN - someone reverted the edits
 % -- fixed fcn_DataClean_loadRawDataFromFile_SickLidar filename
 % -- to correct: fcn_DataClean_loadRawDataFromFile_sickLIDAR
-
+% 2023_06_26 - X. Cao
+% -- modified fcn_DataClean_loadRawDataFromFile_Diagnostic
+% -- The old diagnostic topics 'diagnostic_trigger' and
+% 'diagnostic_encoder' are replaced with 'Trigger_diag' and 'Encoder_diag'
+% -- modified fcn_DataClean_loadRawDataFromFile_SparkFun_GPS
+% -- each sparkfun gps has three topics, sparkfun_gps_GGA, sparkfun_gps_VTG
+% and sparkfun_gps_GST. 
 % TO DO
-% 
+% -- Discuss how to merge the sparkfun gps topics into one topic for each
+% SparkFun GPS receiver
 
 flag_do_debug = 1;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -217,20 +224,38 @@ for file_idx = 1:num_files
                 parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(full_file_path,datatype,flag_do_debug);
                 rawdata.RawTrigger = parseTrigger;
 
-            elseif contains(topic_name, 'sparkfun_gps_rear_left')
+            elseif contains(topic_name, 'sparkfun_gps_rear_left_GGA')
 
-                SparkFun_GPS_RearLeft = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug);
-                rawdata.SparkFun_GPS_RearLeft = SparkFun_GPS_RearLeft;
+                SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.SparkFun_GPS_RearLeft_GGA = SparkFun_GPS_RearLeft_GGA;
+            
+            elseif contains(topic_name, 'sparkfun_gps_rear_left_VTG')
 
-            elseif contains(topic_name, 'sparkfun_gps_rear_right')
-                SparkFun_GPS_RearRight = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug);
-                rawdata.SparkFun_GPS_RearRight = SparkFun_GPS_RearRight;
+                SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.SparkFun_GPS_RearLeft_VTG = SparkFun_GPS_RearLeft_VTG;
 
-            elseif contains(topic_name, 'diagnostic_trigger')
+            elseif contains(topic_name, 'sparkfun_gps_rear_left_GST')
+
+                SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.SparkFun_GPS_RearLeft_GST = SparkFun_GPS_RearLeft_GST;
+
+            elseif contains(topic_name, 'sparkfun_gps_rear_right_GGA')
+                sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.SparkFun_GPS_RearRight = sparkfun_gps_rear_right_GGA;
+            
+            elseif contains(topic_name, 'sparkfun_gps_rear_right_VTG')
+                sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.SparkFun_GPS_RearRight_VTG = sparkfun_gps_rear_right_VTG;
+            
+            elseif contains(topic_name, 'sparkfun_gps_rear_right_GST')
+                sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                rawdata.SparkFun_GPS_RearRight_GST = sparkfun_gps_rear_right_GST;
+
+            elseif contains(topic_name, 'Trigger_diag')
                 diagnostic_trigger = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
                 rawdata.diagnostic_trigger = diagnostic_trigger;
     
-            elseif contains(topic_name, 'diagnostic_encoder')
+            elseif contains(topic_name, 'Encoder_diag')
                 diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
                 rawdata.diagnostic_encoder = diagnostic_encoder;
             
