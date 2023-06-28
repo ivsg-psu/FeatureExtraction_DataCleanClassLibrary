@@ -477,6 +477,19 @@ for i_data = 1:length(names)
                     sensor_structure.GPS_EventFunctions = {};
                 case {'StdDevResid'}
                     sensor_structure.StdDevResid = onesSensor;
+                case{'MessageID'}
+                    sensor_structure.MessageID = onesSensor;
+                case{'StdLat'}
+                    sensor_structure.StdLat = onesSensor;
+                case{'StdLon'}
+                    sensor_structure.StdLon = onesSensor;
+                case{'StdAlt'}
+                    sensor_structure.StdAlt = onesSensor;
+                case{'GeoSep'}
+                    sensor_structure.GeoSep = onesSensor;
+                case{'SpdOverGrndKmph'}
+                    sensor_structure.SpdOverGrndKmph = onesSensor;
+                    
                     
                     
                     % ENCODER fields
@@ -630,8 +643,9 @@ if time_corruption_type>1
     % Use decimal to binary to convert the input flags into binary, and pad
     % the bits that were not specified with zeros
     binary_time_corruption = de2bi(time_corruption_type);       
-    if length(binary_time_corruption)<20
-        binary_time_corruption(end+1:20) = 0;
+    num_bits = 21;
+    if length(binary_time_corruption)<num_bits
+        binary_time_corruption(end+1:num_bits) = 0;
     end
 
     % Missing GPS_Time field test - the GPS_Time field is completely missing

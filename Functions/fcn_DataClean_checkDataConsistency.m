@@ -295,7 +295,14 @@ end
 %    ### FIXES:
 %    * Crop all data to same starting centi-second value
 
-%% Check consistency between start times for GPS_Time
+
+%% Check consistency between start times for GPS_Time for large errors
+[flags,offending_sensor,~] = fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes(fid, dataStructure, flags);
+if 0==flags.start_time_GPS_sensors_agrees_to_within_5_seconds
+    return
+end
+
+%% Check consistency between start times for GPS_Time for small errors
 [flags,offending_sensor,~] = fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes(fid, dataStructure, flags);
 if 0==flags.consistent_start_and_end_times_across_GPS_sensors
     return
@@ -1063,13 +1070,28 @@ for i_data = 1:length(sensor_names)
     end % Ends check if this field should be checked
 end
 
-flags.consistent_start_and_end_times_across_GPS_sensors = (all(diff(start_times_centiSeconds)==0))*(all(diff(end_times_centiSeconds)==0));
-if 1==flags.consistent_start_and_end_times_across_GPS_sensors
-    offending_sensor = '';
-    return_flag = 0; % Indicate that the return was NOT forced
-else
+% Calculate the differences in the times
+start_time_differences = diff(start_times_centiSeconds);
+end_time_differences = diff(end_times_centiSeconds);
+
+% Check that the start times are all within 5 seconds of each other 
+% Note: typical boot-up time for sensors is about 2 seconds
+flags.start_time_GPS_sensors_agrees_to_within_5_seconds = max(abs(start_time_differences))<=5;
+if 0==flags.start_time_GPS_sensors_agrees_to_within_5_seconds % Is it bad?
     offending_sensor = cat(2,offending_low_sensor,' ',offending_high_sensor); % Save the names of the sensor
     return_flag = 1; % Indicate that the return was forced
+    return
+end
+
+% Check that they all agree exactly
+flags.consistent_start_and_end_times_across_GPS_sensors = (all(start_time_differences==0))*(all(end_time_differences==0));
+if 0==flags.consistent_start_and_end_times_across_GPS_sensors
+    offending_sensor = cat(2,offending_low_sensor,' ',offending_high_sensor); % Save the names of the sensor
+    return_flag = 1; % Indicate that the return was forced
+    return
+else
+    offending_sensor = '';
+    return_flag = 0; % Indicate that the return was NOT forced
 end
 
 

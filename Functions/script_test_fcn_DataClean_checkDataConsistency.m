@@ -134,7 +134,21 @@ assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensor
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
 
-%% Shifted time interval test - the start/end of a GPS system does not match
+%% Shifted time interval test - one of the sensors is very far off
+% Simulate a time zone error 
+
+BadDataStructure = dataStructure;
+hours_off = 1;
+BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - hours_off*60*60; 
+clear hours_off
+fprintf(1,'\nData created with following errors injected: shifted start point');
+
+[flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,0));
+assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
+
+
+%% Shifted time interval test - the start/end of a GPS system does not match slightly
  
 BadDataStructure = dataStructure;
 BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - 1; 
