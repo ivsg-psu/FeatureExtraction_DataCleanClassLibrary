@@ -256,7 +256,7 @@ library_folders{ith_library} = {'Functions'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/blob/main/Releases/PathClass_v2023_02_01.zip?raw=true';
 
 ith_library = ith_library+1;
-library_name{ith_library}    = 'GPSClass_v2023_04_21';
+library_name{ith_library}    = 'GPSClass_v2023_06_29';
 library_folders{ith_library} = {'Functions'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_GPSRelatedCodes_GPSClass/archive/refs/tags/GPSClass_v2023_04_21.zip';
 
