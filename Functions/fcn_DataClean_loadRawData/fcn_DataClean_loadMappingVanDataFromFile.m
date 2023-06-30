@@ -241,7 +241,7 @@ for file_idx = 1:num_files
 
             elseif contains(topic_name, 'sparkfun_gps_rear_right_GGA')
                 sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
-                rawdata.SparkFun_GPS_RearRight = sparkfun_gps_rear_right_GGA;
+                rawdata.SparkFun_GPS_RearRight_GGA = sparkfun_gps_rear_right_GGA;
             
             elseif contains(topic_name, 'sparkfun_gps_rear_right_VTG')
                 sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);

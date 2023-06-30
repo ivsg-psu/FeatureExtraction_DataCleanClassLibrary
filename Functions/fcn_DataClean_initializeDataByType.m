@@ -180,10 +180,7 @@ switch lower(dataType)
         dataStructure.AgeOfDiff          = default_value;  % Age of correction data [s]
         dataStructure.StdDevResid        = default_value;  % Standard deviation of residuals [m[
         dataStructure.SpdOverGrndKmph    = default_value;  % Speed over ground [km/h]
-        % The following two fields are commented out because these two
-        % messages need to be verified
-%         dataStructure.TrueTrack          = default_value;  % This is true track made good [degree]
-%         dataStructure.MagTrack           = default_value;  % This is magnetic track made good [degree]
+        dataStructure.TrueTrack          = default_value;  % This is true track made good [degree]
         % Event functions
         dataStructure.GPS_EventFunctions = {}; % These are the functions to determine if something went wrong
 

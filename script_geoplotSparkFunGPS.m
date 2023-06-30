@@ -78,11 +78,13 @@ end
 % \\IVSG\GitHubMirror\MappingVanDataCollection\ParsedData, to use data from other files,
 % change the data_folder variable and bagname variable to corresponding path and bag
 % name.
-bagFolderName = "mapping_van_2023-06-22-1Lap_0";
+% bagFolderName = "mapping_van_2023-06-22-1Lap_0";
+% bagFolderName = "mapping_van_2023-06-27-10s-Curve
+bagFolderName = "mapping_van_2023-06-29-5s";
 rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
 %% Grab sparkfun gps fields from raw data
-sparkfun_gps_rear_left = rawdata.SparkFun_GPS_RearLeft;
-sparkfun_gps_rear_right = rawdata.SparkFun_GPS_RearRight;
+sparkfun_gps_rear_left = rawdata.SparkFun_GPS_RearLeft_GGA;
+sparkfun_gps_rear_right = rawdata.SparkFun_GPS_RearRight_GGA;
 %% Extract GPS Time and LLA Coordinates
 sparkfun_gps_rear_left_RefTime = sparkfun_gps_rear_left.GPS_Time - min(sparkfun_gps_rear_left.GPS_Time);
 sparkfun_gps_rear_right_RefTime = sparkfun_gps_rear_right.GPS_Time - min(sparkfun_gps_rear_right.GPS_Time);
@@ -91,35 +93,20 @@ diff_t_right = diff(sparkfun_gps_rear_right_RefTime);
 
 sparkfun_gps_rear_left_LLA = [sparkfun_gps_rear_left.Latitude,sparkfun_gps_rear_left.Longitude,sparkfun_gps_rear_left.Altitude];
 sparkfun_gps_rear_right_LLA = [sparkfun_gps_rear_right.Latitude,sparkfun_gps_rear_right.Longitude,sparkfun_gps_rear_right.Altitude];
-
-%% Interpolate Raw Data
-% Create an array containing time and LLA coordinates
-sparkfun_gps_rear_left_TimeSpace = [sparkfun_gps_rear_left_RefTime,sparkfun_gps_rear_left_LLA];
-sparkfun_gps_rear_right_TimeSpace = [sparkfun_gps_rear_right_RefTime,sparkfun_gps_rear_right_LLA];
-% Grab the datapoints without repetitions
-sparkfun_gps_rear_left_unique = unique(sparkfun_gps_rear_left_TimeSpace,'rows','stable');
-sparkfun_gps_rear_right_unique = unique(sparkfun_gps_rear_right_TimeSpace,'rows','stable');
-Npoints_left = length(sparkfun_gps_rear_left_unique);
-Npoints_right = length(sparkfun_gps_rear_right_unique);
-% Align the datapoitns using linear interpolation
-CentiSecs_SparkFun_GPS = sparkfun_gps_rear_left.centiSeconds;
-Time_Standard = (min(sparkfun_gps_rear_left_unique(:,1)):CentiSecs_SparkFun_GPS/100:max(sparkfun_gps_rear_left_unique(:,1)));
-sparkfun_gps_rear_left_interp = interp1(sparkfun_gps_rear_left_unique(:,1),sparkfun_gps_rear_left_unique(:,2:4),Time_Standard.');
-sparkfun_gps_rear_right_interp = interp1(sparkfun_gps_rear_right_unique(:,1),sparkfun_gps_rear_right_unique(:,2:4),Time_Standard.');
-
+%%
 %% Geoplot
 TestTrack_Base_LLA = [40.86368573, -77.83592832, 344.189]; % Test Track Base Station LLA coordinates
 figure(1)
 clf
-s = geoplot(sparkfun_gps_rear_left_interp(:,1),sparkfun_gps_rear_left_interp(:,2),'color','blue','LineWidth',2,'marker','.','MarkerSize',20);
+s = geoplot(sparkfun_gps_rear_left_LLA(:,1),sparkfun_gps_rear_left_LLA(:,2),'color','blue','LineWidth',2,'marker','.','MarkerSize',20);
 hold on
-geoplot(sparkfun_gps_rear_right_interp(:,1),sparkfun_gps_rear_right_interp(:,2),'color','red','LineWidth',2,'marker','.','MarkerSize',20);
+geoplot(sparkfun_gps_rear_right_LLA(:,1),sparkfun_gps_rear_right_LLA(:,2),'color','red','LineWidth',2,'marker','.','MarkerSize',20);
 geoplot(TestTrack_Base_LLA(:,1),TestTrack_Base_LLA(:,2),'color','magenta','LineWidth',2,'marker','+','MarkerSize',20);
 % plot the start and end point with green and black
-geoplot(sparkfun_gps_rear_left_interp(1,1),sparkfun_gps_rear_left_interp(1,2),'color','green','LineWidth',2,'marker','x','MarkerSize',20);
-geoplot(sparkfun_gps_rear_left_interp(end,1),sparkfun_gps_rear_left_interp(end,2),'color','black','LineWidth',2,'marker','x','MarkerSize',20);
-geoplot(sparkfun_gps_rear_right_interp(1,1),sparkfun_gps_rear_right_interp(1,2),'color','green','LineWidth',2,'marker','x','MarkerSize',20);
-geoplot(sparkfun_gps_rear_right_interp(end,1),sparkfun_gps_rear_right_interp(end,2),'color','black','LineWidth',2,'marker','x','MarkerSize',20);
+geoplot(sparkfun_gps_rear_left_LLA(1,1),sparkfun_gps_rear_left_LLA(1,2),'color','green','LineWidth',2,'marker','x','MarkerSize',20);
+geoplot(sparkfun_gps_rear_left_LLA(end,1),sparkfun_gps_rear_left_LLA(end,2),'color','black','LineWidth',2,'marker','x','MarkerSize',20);
+geoplot(sparkfun_gps_rear_right_LLA(1,1),sparkfun_gps_rear_right_LLA(1,2),'color','green','LineWidth',2,'marker','x','MarkerSize',20);
+geoplot(sparkfun_gps_rear_right_LLA(end,1),sparkfun_gps_rear_right_LLA(end,2),'color','black','LineWidth',2,'marker','x','MarkerSize',20);
 geobasemap 'satellite'
 s.Parent.FontSize = 24;
 grid on
@@ -127,24 +114,59 @@ title('SparkFun GPS LLA Coordinates at the Test Track 2023-06-05', 'FontSize',28
 legend('Rear Left SparkFun GPS', 'Rear Right SparkFun GPS','Test Track Base Station','Start Point','End Point')
 
 
-%% Convert LLA to ENU using the Test Track Base Station LLA as a reference
-
-sparkfun_gps_rear_left_ENU = lla2enu(sparkfun_gps_rear_left_interp,TestTrack_Base_LLA,'ellipsoid');
-sparkfun_gps_rear_right_ENU = lla2enu(sparkfun_gps_rear_right_interp,TestTrack_Base_LLA,'ellipsoid');
-figure(2)
-plot(sparkfun_gps_rear_left_ENU(:,1),sparkfun_gps_rear_left_ENU(:,2),'color','blue','LineWidth',2,'marker','.','MarkerSize',20)
-hold on
-plot(sparkfun_gps_rear_right_ENU(:,1),sparkfun_gps_rear_right_ENU(:,2),'color','red','LineWidth',2,'marker','.','MarkerSize',20)
-scatter(0, 0, 500,"magenta","+",'LineWidth',2)
-scatter(sparkfun_gps_rear_left_ENU(1,1),sparkfun_gps_rear_left_ENU(1,2),500,"green","x",'LineWidth',2)
-scatter(sparkfun_gps_rear_left_ENU(end,1),sparkfun_gps_rear_left_ENU(end,2),500,"black","x",'LineWidth',2)
-scatter(sparkfun_gps_rear_right_ENU(1,1),sparkfun_gps_rear_right_ENU(1,2),500,"green","x",'LineWidth',2)
-scatter(sparkfun_gps_rear_right_ENU(end,1),sparkfun_gps_rear_right_ENU(end,2),500,"black","x",'LineWidth',2)
-grid on
-grid minor
-dist = vecnorm(sparkfun_gps_rear_left_ENU-sparkfun_gps_rear_right_ENU,2,2);
-xlabel('xEast [m]','FontSize',24)
-ylabel('yNorth [m]','FontSize',24)
-axis equal
-title('SparkFun GPS ENU Coordinates at the Test Track 2023-06-05', 'FontSize',28)       
-legend('Rear Left SparkFun GPS', 'Rear Right SparkFun GPS','Test Track Base Station','Start Point','End Point','FontSize',24)
+%% Interpolate Raw Data
+% Create an array containing time and LLA coordinates
+% sparkfun_gps_rear_left_TimeSpace = [sparkfun_gps_rear_left_RefTime,sparkfun_gps_rear_left_LLA];
+% sparkfun_gps_rear_right_TimeSpace = [sparkfun_gps_rear_right_RefTime,sparkfun_gps_rear_right_LLA];
+% % Grab the datapoints without repetitions
+% sparkfun_gps_rear_left_unique = unique(sparkfun_gps_rear_left_TimeSpace,'rows','stable');
+% sparkfun_gps_rear_right_unique = unique(sparkfun_gps_rear_right_TimeSpace,'rows','stable');
+% Npoints_left = length(sparkfun_gps_rear_left_unique);
+% Npoints_right = length(sparkfun_gps_rear_right_unique);
+% % Align the datapoitns using linear interpolation
+% CentiSecs_SparkFun_GPS = sparkfun_gps_rear_left.centiSeconds;
+% Time_Standard = (min(sparkfun_gps_rear_left_unique(:,1)):CentiSecs_SparkFun_GPS/100:max(sparkfun_gps_rear_left_unique(:,1)));
+% sparkfun_gps_rear_left_interp = interp1(sparkfun_gps_rear_left_unique(:,1),sparkfun_gps_rear_left_unique(:,2:4),Time_Standard.');
+% sparkfun_gps_rear_right_interp = interp1(sparkfun_gps_rear_right_unique(:,1),sparkfun_gps_rear_right_unique(:,2:4),Time_Standard.');
+% 
+% %% Geoplot
+% TestTrack_Base_LLA = [40.86368573, -77.83592832, 344.189]; % Test Track Base Station LLA coordinates
+% figure(1)
+% clf
+% s = geoplot(sparkfun_gps_rear_left_interp(:,1),sparkfun_gps_rear_left_interp(:,2),'color','blue','LineWidth',2,'marker','.','MarkerSize',20);
+% hold on
+% geoplot(sparkfun_gps_rear_right_interp(:,1),sparkfun_gps_rear_right_interp(:,2),'color','red','LineWidth',2,'marker','.','MarkerSize',20);
+% geoplot(TestTrack_Base_LLA(:,1),TestTrack_Base_LLA(:,2),'color','magenta','LineWidth',2,'marker','+','MarkerSize',20);
+% % plot the start and end point with green and black
+% geoplot(sparkfun_gps_rear_left_interp(1,1),sparkfun_gps_rear_left_interp(1,2),'color','green','LineWidth',2,'marker','x','MarkerSize',20);
+% geoplot(sparkfun_gps_rear_left_interp(end,1),sparkfun_gps_rear_left_interp(end,2),'color','black','LineWidth',2,'marker','x','MarkerSize',20);
+% geoplot(sparkfun_gps_rear_right_interp(1,1),sparkfun_gps_rear_right_interp(1,2),'color','green','LineWidth',2,'marker','x','MarkerSize',20);
+% geoplot(sparkfun_gps_rear_right_interp(end,1),sparkfun_gps_rear_right_interp(end,2),'color','black','LineWidth',2,'marker','x','MarkerSize',20);
+% geobasemap 'satellite'
+% s.Parent.FontSize = 24;
+% grid on
+% title('SparkFun GPS LLA Coordinates at the Test Track 2023-06-05', 'FontSize',28)       
+% legend('Rear Left SparkFun GPS', 'Rear Right SparkFun GPS','Test Track Base Station','Start Point','End Point')
+% 
+% 
+% %% Convert LLA to ENU using the Test Track Base Station LLA as a reference
+% 
+% sparkfun_gps_rear_left_ENU = lla2enu(sparkfun_gps_rear_left_interp,TestTrack_Base_LLA,'ellipsoid');
+% sparkfun_gps_rear_right_ENU = lla2enu(sparkfun_gps_rear_right_interp,TestTrack_Base_LLA,'ellipsoid');
+% figure(2)
+% plot(sparkfun_gps_rear_left_ENU(:,1),sparkfun_gps_rear_left_ENU(:,2),'color','blue','LineWidth',2,'marker','.','MarkerSize',20)
+% hold on
+% plot(sparkfun_gps_rear_right_ENU(:,1),sparkfun_gps_rear_right_ENU(:,2),'color','red','LineWidth',2,'marker','.','MarkerSize',20)
+% scatter(0, 0, 500,"magenta","+",'LineWidth',2)
+% scatter(sparkfun_gps_rear_left_ENU(1,1),sparkfun_gps_rear_left_ENU(1,2),500,"green","x",'LineWidth',2)
+% scatter(sparkfun_gps_rear_left_ENU(end,1),sparkfun_gps_rear_left_ENU(end,2),500,"black","x",'LineWidth',2)
+% scatter(sparkfun_gps_rear_right_ENU(1,1),sparkfun_gps_rear_right_ENU(1,2),500,"green","x",'LineWidth',2)
+% scatter(sparkfun_gps_rear_right_ENU(end,1),sparkfun_gps_rear_right_ENU(end,2),500,"black","x",'LineWidth',2)
+% grid on
+% grid minor
+% dist = vecnorm(sparkfun_gps_rear_left_ENU-sparkfun_gps_rear_right_ENU,2,2);
+% xlabel('xEast [m]','FontSize',24)
+% ylabel('yNorth [m]','FontSize',24)
+% axis equal
+% title('SparkFun GPS ENU Coordinates at the Test Track 2023-06-05', 'FontSize',28)       
+% legend('Rear Left SparkFun GPS', 'Rear Right SparkFun GPS','Test Track Base Station','Start Point','End Point','FontSize',24)
