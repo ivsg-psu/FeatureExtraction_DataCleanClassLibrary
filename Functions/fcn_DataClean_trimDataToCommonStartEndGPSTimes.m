@@ -132,7 +132,8 @@ end_times_centiSeconds = [];
 GPS_names = {};
 
 % Produce a list of all the sensors (each is a field in the structure)
-sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
+[~,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
+
 
 if 0~=fid
     fprintf(fid,'Checking consistency of start and end times across GPS sensors:\n');
@@ -142,23 +143,17 @@ end
 for i_data = 1:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{i_data};
+    sensor_data = dataStructure.(sensor_name);
     
-    % Does the name contain "GPS"?
-    if contains(sensor_name,'GPS')
-        
-        sensor_data = dataStructure.(sensor_name);
-        
-        if 0~=fid
-            fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
-        end
-        
-        times_centiSeconds = round(100*sensor_data.GPS_Time/sensor_data.centiSeconds)*sensor_data.centiSeconds;
-        sensor_centiSeconds = [sensor_centiSeconds; sensor_data.centiSeconds]; %#ok<AGROW>
-        start_times_centiSeconds = [start_times_centiSeconds; times_centiSeconds(1)]; %#ok<AGROW>
-        end_times_centiSeconds = [end_times_centiSeconds; times_centiSeconds(end)]; %#ok<AGROW>
-        GPS_names{end+1} = sensor_name; %#ok<AGROW>
-        
-    end % Ends check if this field should be checked
+    if 0~=fid
+        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
+    end
+    
+    times_centiSeconds = round(100*sensor_data.GPS_Time/sensor_data.centiSeconds)*sensor_data.centiSeconds;
+    sensor_centiSeconds = [sensor_centiSeconds; sensor_data.centiSeconds]; %#ok<AGROW>
+    start_times_centiSeconds = [start_times_centiSeconds; times_centiSeconds(1)]; %#ok<AGROW>
+    end_times_centiSeconds = [end_times_centiSeconds; times_centiSeconds(end)]; %#ok<AGROW>
+    GPS_names{end+1} = sensor_name; %#ok<AGROW>
 end
 
 
@@ -263,7 +258,11 @@ for i_data = 1:length(sensor_names)
             if length(dataStructure.(sensor_name).(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
                 % It's an array, make sure it has right length
                 if lengthReference~= length(dataStructure.(sensor_name).(subFieldName))
-                    error('Sensor %s contains a datafield %s that has an amount of data not equal to the GPS_Time. This is usually because data is missing.',sensor_name,subFieldName);
+                    if strcmp(sensor_name,'SickLiDAR') && strcmp(subFieldName,'Sick_Time')
+                        warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
+                    else
+                        error('Sensor %s contains a datafield %s that has an amount of data not equal to the GPS_Time. This is usually because data is missing.',sensor_name,subFieldName);
+                    end
                 end
                 
                 % Replace the values

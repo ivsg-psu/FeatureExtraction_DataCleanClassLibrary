@@ -21,6 +21,8 @@ function diagnostic_structure = fcn_DataClean_loadRawDataFromFile_Diagnostic(fil
 % 2023_06_26 - X. Cao
 % -- The old diagnostic topics 'diagnostic_trigger' and
 % 'diagnostic_encoder' are replaced with 'Trigger_diag' and 'Encoder_diag'
+% 2023_06_29 - S. Brennan
+% -- fixed bug where centiSeconds is being filled with NaNs
 
 % To do lists:
 % 
@@ -41,7 +43,7 @@ if strcmp(datatype, 'diagnostic')
             % diagnostic_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % diagnostic_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
-            % diagnostic_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+            diagnostic_structure.centiSeconds       = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             diagnostic_structure.Seq                = datatable.seq;
             diagnostic_structure.err_failed_mode_count             = datatable.err_failed_mode_count; 
@@ -61,7 +63,7 @@ if strcmp(datatype, 'diagnostic')
             % diagnostic_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % diagnostic_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
-            % diagnostic_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+            diagnostic_structure.centiSeconds       = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             diagnostic_structure.Seq                = datatable.seq;
             diagnostic_structure.err_wrong_element_length_encoder  = datatable.err_wrong_element_length;
@@ -77,7 +79,7 @@ if strcmp(datatype, 'diagnostic')
             diagnostic_structure.GPS_Time    = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
-            % dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+            diagnostic_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % Data related to trigger box and encoder box
             diagnostic_structure.Seq                = datatable.seq;  % This is the sequence of the topic
@@ -95,7 +97,7 @@ if strcmp(datatype, 'diagnostic')
             diagnostic_structure.GPS_Time    = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
-            % dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+            diagnostic_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % Data related to trigger box and encoder box
             diagnostic_structure.Seq                = datatable.seq;  % This is the sequence of the topic

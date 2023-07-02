@@ -15,7 +15,7 @@ time_time_corruption_type = 2^20; % Type 'help fcn_DataClean_fillTestDataStructu
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
-[flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
 assert(isequal(flags.GPS_Time_has_no_repeats_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
@@ -23,18 +23,12 @@ assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 fixed_dataStructure = fcn_DataClean_trimRepeatsFromField(BadDataStructure);
 
 % Make sure it worked
-sensor_names = fieldnames(fixed_dataStructure); % Grab all the fields that are in dataStructure structure
-
-for i_data = 1:length(sensor_names)
-    % Grab the sensor subfield name
-    sensor_name = sensor_names{i_data};
-
-    if contains(sensor_name,'GPS')
-        sensor_data = fixed_dataStructure.(sensor_name);
-        unique_values = unique(sensor_data.GPS_Time);
-        assert(isequal(unique_values,sensor_data.GPS_Time));
-    end
+[data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(fixed_dataStructure, 'GPS_Time','GPS');
+for i_data = 1:length(sensorNames)
+    unique_values = unique(data{i_data});
+    assert(isequal(unique_values,data{i_data}));
 end % Ends for loop
+
 
 
 %% Fix the data using specific call
@@ -44,18 +38,12 @@ sensors_to_check = 'GPS';
 fixed_dataStructure = fcn_DataClean_trimRepeatsFromField(BadDataStructure,fid, field_name,sensors_to_check);
 
 % Make sure it worked
-sensor_names = fieldnames(fixed_dataStructure); % Grab all the fields that are in dataStructure structure
-
-for i_data = 1:length(sensor_names)
-    % Grab the sensor subfield name
-    sensor_name = sensor_names{i_data};
-
-    if contains(sensor_name,'GPS')
-        sensor_data = fixed_dataStructure.(sensor_name);
-        unique_values = unique(sensor_data.GPS_Time);
-        assert(isequal(unique_values,sensor_data.GPS_Time));
-    end
+[data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(fixed_dataStructure, 'GPS_Time','GPS');
+for i_data = 1:length(sensorNames)
+    unique_values = unique(data{i_data});
+    assert(isequal(unique_values,data{i_data}));
 end % Ends for loop
+
 
 if 1==0 % BAD error cases start here
 

@@ -4,7 +4,8 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %
 % FORMAT:
 %
-%      dataStructure = fcn_DataClean_fillTestDataStructure((time_time_corruption_type)
+%      dataStructure =
+%      fcn_DataClean_fillTestDataStructure((time_time_corruption_type),(fid))
 %
 % INPUTS:
 %
@@ -110,7 +111,8 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %          2^20 bit = 1: The GPS_Time field in a GPS sensor has repeated
 %          entries.
 %
-%
+%      fid: a file ID to print results of analysis. If not entered, no
+%      printing is done. Set fid to 1 to print to the console.%
 %
 % OUTPUTS:
 %
@@ -129,7 +131,7 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %
 %     See the script: script_test_fcn_DataClean_fillTestDataStructure
 %     for a basic test suite. See the script:
-%     script_test_fcn_DataClean_checkDataConsistency for additional
+%     script_test_fcn_DataClean_checkDataTimeConsistency for additional
 %     examples.
 %
 % This function was written on 2023_06_19 by S. Brennan
@@ -143,16 +145,11 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 % TO DO
 % 
 
-flag_do_debug = 1;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
-fid = 1; % Print to the console, for any print commands
 
-if flag_do_debug
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
-end
+
 
 
 %% check input arguments
@@ -188,6 +185,29 @@ if 1 <= nargin
     if time_corruption_type>=1
         flag_add_normal_noise = 1;
     end
+end
+
+
+% Does the user want to specify the fid?
+fid = 0; % Do not print by default
+if 2 == nargin
+    temp = varargin{end};
+    if ~isempty(temp)
+        % Check that the FID works
+        try
+            temp_msg = ferror(temp); %#ok<NASGU>
+            % Set the fid value, if the above ferror didn't fail
+            fid = temp;
+        catch ME
+            warning('User-specified FID does not correspond to a file. Unable to continue.');
+            throwAsCaller(ME);
+        end
+    end
+end
+
+if fid
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
 
 %% Main code starts here
@@ -285,7 +305,7 @@ Z_data = cumsum(velUp)*deltaT + OneSigmaPos*randn(length(ones_full_data(:,1)),1)
 
 
 % For debugging, to see what the ENU trajactory looks like
-if flag_do_debug
+if fid
     figure(5874);
     clf;
     hold on;
@@ -307,7 +327,7 @@ reference_altitude = 333.817;
 gps_object = GPS(reference_latitude,reference_longitude,reference_altitude); % Initiate the class object for GPS
 % ENU_full_data = gps_object.WGSLLA2ENU(LLA_full_data(:,1), LLA_full_data(:,2), LLA_full_data(:,3));
 ENU_full_data = [X_data, Y_data, Z_data];
-LLA_full_data  =  gps_object.ENU2WGSLLA(ENU_full_data')';
+LLA_full_data  =  gps_object.ENU2WGSLLA(ENU_full_data);
 Latitude_full_data = LLA_full_data(:,1);
 Longitude_full_data = LLA_full_data(:,1);
 Altitude_full_data = LLA_full_data(:,1);
@@ -321,7 +341,7 @@ for i_data = 1:length(names)
     sensor_structure = dataStructure.(sensor_name);  % This is the input (current) data structure
 
     % Show what we are doing
-    if flag_do_debug
+    if fid
         fprintf(fid,'Filling fields on sensor: %s \n',sensor_name);
     end
     
@@ -330,7 +350,7 @@ for i_data = 1:length(names)
         % Grab the name of the ith subfield
         subFieldName = sensorSubfieldNames{i_subField};
         
-        if flag_do_debug
+        if fid
             fprintf(fid,'\tFilling field: %s \n',subFieldName);
         end
         % Need to calculate the times
@@ -341,7 +361,7 @@ for i_data = 1:length(names)
         % Check to see if this subField is in the time calculationlist
         if any(strcmp(subFieldName,fields_to_calculate_times_for))
             
-            timeSimulated = timeSensor;
+            timeSimulated = timeSensor  + posixtime(datetime('now'));
             
             if strcmp(subFieldName,'ROS_Time')
                 timeSimulated = timeSimulated+ROS_time_offset;
@@ -723,19 +743,21 @@ if time_corruption_type>1
     
     % Bad time ordering test - the GPS_Time is not increasing
     if binary_time_corruption(13)
-        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time not increasing, ');
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time not increasing in GPS_Hemisphere, ');
 
-        % Swap order of first two time elements
-        BadDataStructure.ENCODER_RearLeft.GPS_Time(1,:) = dataStructure.ENCODER_RearLeft.GPS_Time(2,:);
-        BadDataStructure.ENCODER_RearLeft.GPS_Time(2,:) = dataStructure.ENCODER_RearLeft.GPS_Time(1,:);
+        % Make the first element slightly larger than the 2nd element
+        temp = BadDataStructure.GPS_Hemisphere.GPS_Time(2,:);
+        BadDataStructure.GPS_Hemisphere.GPS_Time(2,:) = dataStructure.GPS_Hemisphere.GPS_Time(3,:)+0.001; % nudge to avoid repeats
+        BadDataStructure.GPS_Hemisphere.GPS_Time(3,:) = temp;
     end
 
-    % Bad time ordering test - the GPS_Time has a repeat
+    % Bad ROS units - using nanoseconds instead of seconds
     if binary_time_corruption(14)
-        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field has repeat, ');
- 
-        % Fill one of the values with a repeat
-        BadDataStructure.ENCODER_RearLeft.GPS_Time(2,:) = dataStructure.ENCODER_RearLeft.GPS_Time(1,:);
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time has incorrect units of nanoseconds, ');
+        
+        % Define a dataset with corrupted ROS_Time where the ROS_Time has a
+        % nanosecond scaling
+        BadDataStructure.GPS_Hemisphere.ROS_Time = dataStructure.GPS_Hemisphere.ROS_Time*1E9;
     end
 
     % Missing ROS_Time field test - the ROS_Time field is completely missing
@@ -754,7 +776,7 @@ if time_corruption_type>1
     % Missing ROS_Time field test - the ROS_Time field is only NaNs
     if binary_time_corruption(17)
         time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time field has NaNs, ');
-        BadDataStructure.ENCODER_RearRight.ROS_Time = BadDataStructure.ENCODER_RearRight.ROS_Time*NaN;
+        BadDataStructure.GPS_Hemisphere.ROS_Time = BadDataStructure.GPS_Hemisphere.ROS_Time*NaN;
     end
 
     % Bad time ordering test - the ROS_Time is not increasing
@@ -819,37 +841,6 @@ if time_corruption_type>1
     dataStructure = BadDataStructure;
 end % Ends if statement on time_corruption
 
-% 
-% 
-% 
-% 
-% 
-% % Bad data - there is a NaN inside one of the Sigma fields
-%     if mod(time_corruption_type,2)==0
-%         time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field missing, ');
-%  
-% BadDataStructure = dataStructure;
-% % Add bad data to the end
-% BadDataStructure.ENCODER_RearLeft.ROS_Time(end+1) = BadDataStructure.ENCODER_RearLeft.ROS_Time(end)+0.01;
-% 
-% [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-% assert(isequal(flags.ROS_Time_has_correct_length,0));
-% assert(strcmp(offending_sensor,'ENCODER_RearLeft'));
-% 
-% % Bad data - there is a NaN inside the data
-%      if mod(time_corruption_type,2)==0
-%         time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time field missing, ');
-% 
-% BadDataStructure = dataStructure;
-% % Put a NaN into the data
-% BadDataStructure.ENCODER_RearLeft.Counts(end) = NaN;
-% 
-% [flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
-% assert(isequal(flags.sensor_fields_have_no_NaN,0));
-% assert(strcmp(offending_sensor,'ENCODER_RearLeft Counts'));
-
-
-
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -868,7 +859,7 @@ if flag_do_plots
     
 end
 
-if flag_do_debug
+if fid
     fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 

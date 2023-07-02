@@ -23,7 +23,7 @@ fprintf(fid,'\nData created with shifted up/down GPS_Time fields');
 % Show that the data are not aligned by performing a consistency check. It
 % should show that the GPS_Sparkfun_RearRight has the lowest time, and
 % GPS_Hemisphere has the largest time
-[flags, offending_sensor] = fcn_DataClean_checkDataConsistency(BadDataStructure,fid);
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
 assert(isequal(flags.consistent_start_and_end_times_across_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Hemisphere'));
 
@@ -38,8 +38,10 @@ for i_data = 2:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{i_data};
     
-    assert(trimmed_dataStructure.(sensor_name).GPS_Time(1,1)>= start_time);
-    assert(trimmed_dataStructure.(sensor_name).GPS_Time(end,1)<= end_time);
+    % Make sure the sensor stops within one sampling period of start/end
+    % times (it is 10 Hz)
+    assert(trimmed_dataStructure.(sensor_name).GPS_Time(1,1)>= start_time-0.1);
+    assert(trimmed_dataStructure.(sensor_name).GPS_Time(end,1)<= end_time+0.1);
 end
 
 %% Fail conditions
