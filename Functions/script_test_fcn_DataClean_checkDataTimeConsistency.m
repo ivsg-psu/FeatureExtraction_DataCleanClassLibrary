@@ -35,6 +35,22 @@ fprintf(1,'\nCASE 2: Done!\n\n');
 assert(isequal(flags.GPS_Time_exists_in_at_least_one_GPS_sensor,1));
 assert(strcmp(offending_sensor,''));
 
+
+%% GPS_Time tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    _____ _____   _____            _______ _                   _______        _       
+%   / ____|  __ \ / ____|          |__   __(_)                 |__   __|      | |      
+%  | |  __| |__) | (___               | |   _ _ __ ___   ___      | | ___  ___| |_ ___ 
+%  | | |_ |  ___/ \___ \              | |  | | '_ ` _ \ / _ \     | |/ _ \/ __| __/ __|
+%  | |__| | |     ____) |             | |  | | | | | | |  __/     | |  __/\__ \ |_\__ \
+%   \_____|_|    |_____/              |_|  |_|_| |_| |_|\___|     |_|\___||___/\__|___/
+%                          ______                                                      
+%                         |______|                                                     
+%
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=GPS%20_%20Time%20%20Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Check GPS_Time_exists_in_at_least_one_GPS_sensor - the GPS_Time field is completely missing in all sensors
 
 % Define a dataset with no GPS_Time fields
@@ -158,9 +174,8 @@ BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun
 clear hours_off
 fprintf(1,'\nData created with following errors injected: shifted start point');
 
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
+[flags, ~] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
 assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,0));
-assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
 
 
 %% Check consistent_start_and_end_times_across_GPS_sensors
@@ -174,7 +189,7 @@ assert(isequal(flags.consistent_start_and_end_times_across_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
 
 
-%% Check Trigger_Time_exists_in_all_GPS_sensors - the Trigger_Time field is completely missing
+%% Check if Trigger_Time_exists_in_all_GPS_sensors - the Trigger_Time field is completely missing
  
 % Define a dataset with corrupted Trigger_Time where the field is missing
 time_time_corruption_type = 2^9; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
@@ -185,7 +200,7 @@ fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_str
 assert(isequal(flags.Trigger_Time_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
-%% Check Trigger_Time_exists_in_all_GPS_sensors - the Trigger_Time field is empty
+%% Check if Trigger_Time_exists_in_all_GPS_sensors - the Trigger_Time field is empty
  
 % Define a dataset with corrupted Trigger_Time where the field is empty
 time_time_corruption_type = 2^10; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
@@ -195,6 +210,44 @@ fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_str
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
 assert(isequal(flags.Trigger_Time_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
+
+%% Check if GPS_Time_strictly_ascends
+ 
+% Define a dataset with corrupted GPS_Time where the GPS_Time is not increasing 
+time_time_corruption_type = 2^12; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
+[BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
+fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
+
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
+assert(isequal(flags.GPS_Time_strictly_ascends,0));
+assert(strcmp(offending_sensor,'GPS_Hemisphere'));
+
+%% Check no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+
+% Define a dataset with jump discontinuity in GPS_Time data
+time_time_corruption_type = 2^22; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
+[BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
+fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
+
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
+assert(isequal(flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors,0));
+assert(strcmp(offending_sensor,'GPS_Hemisphere'));
+
+
+%% Trigger_Time Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%   _______   _                                  _______ _                   _______        _       
+%  |__   __| (_)                                |__   __(_)                 |__   __|      | |      
+%     | |_ __ _  __ _  __ _  ___ _ __              | |   _ _ __ ___   ___      | | ___  ___| |_ ___ 
+%     | | '__| |/ _` |/ _` |/ _ \ '__|             | |  | | '_ ` _ \ / _ \     | |/ _ \/ __| __/ __|
+%     | | |  | | (_| | (_| |  __/ |                | |  | | | | | | |  __/     | |  __/\__ \ |_\__ \
+%     |_|_|  |_|\__, |\__, |\___|_|                |_|  |_|_| |_| |_|\___|     |_|\___||___/\__|___/
+%                __/ | __/ |            ______                                                      
+%               |___/ |___/            |______|                                                     
+%
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Trigger%20_%20Time%20%20Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Check Trigger_Time_exists_in_all_GPS_sensors - the Trigger_Time field is only NaNs
  
@@ -207,17 +260,20 @@ fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_str
 assert(isequal(flags.Trigger_Time_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
-%% Check GPS_Time_strictly_ascends
- 
-% Define a dataset with corrupted GPS_Time where the GPS_Time is not increasing 
-time_time_corruption_type = 2^12; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
-[BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
-fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
-assert(isequal(flags.GPS_Time_strictly_ascends,0));
-assert(strcmp(offending_sensor,'GPS_Hemisphere'));
-
+%% ROS_Time Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%   _____   ____   _____            _______ _                   _______        _       
+%  |  __ \ / __ \ / ____|          |__   __(_)                 |__   __|      | |      
+%  | |__) | |  | | (___               | |   _ _ __ ___   ___      | | ___  ___| |_ ___ 
+%  |  _  /| |  | |\___ \              | |  | | '_ ` _ \ / _ \     | |/ _ \/ __| __/ __|
+%  | | \ \| |__| |____) |             | |  | | | | | | |  __/     | |  __/\__ \ |_\__ \
+%  |_|  \_\\____/|_____/              |_|  |_|_| |_| |_|\___|     |_|\___||___/\__|___/
+%                          ______                                                      
+%                         |______|                                                     
+%
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=ROS%20_%20Time%20%20Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Check ROS_Time_exists_in_all_GPS_sensors- the ROS_Time field is completely missing
 

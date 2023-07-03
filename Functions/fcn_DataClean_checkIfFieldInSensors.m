@@ -62,6 +62,8 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 % -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
 % 2023_06_30 - sbrennan@psu.edu
 % -- fixed verbose mode bug
+% 2023_07_03 - sbrennan@psu.edu
+% -- added detailed printing
 
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -251,6 +253,40 @@ end
 flags.(flag_name) = flag_field_exists;
 if 0==flags.(flag_name)
     return_flag = 1; % Indicate that the return was forced
+        % Show the results?
+    if fid
+        % Find the longest name
+        longest_name_string = 0;
+        for ith_name = 1:length(sensor_names)
+            if length(sensor_names{ith_name})>longest_name_string
+                longest_name_string = length(sensor_names{ith_name});
+            end
+        end
+        
+        % Print results
+        fprintf(fid,'\n\t FAILURE TO FIND A FIELD DETECTED! \n');
+        fprintf(fid,'\t Field that failed: %s\n',field_name);
+        if flag_check_all_sensors
+            fprintf(fid,'\t Searching in all sensors.\n');
+        else
+            fprintf(fid,'\t Searching in %s sensors.\n',sensors_to_check);
+        end
+        fprintf(fid,'\t Flag that indicates failure: %s\n',flag_name);
+        
+        % Print start time table
+        fprintf(fid,'\t \t Summarizing results: \n');
+        sensor_title_string = fcn_DebugTools_debugPrintStringToNCharacters('Sensors:',longest_name_string);
+        flag_title_string = fcn_DebugTools_debugPrintStringToNCharacters('Does this field exist?:',25);
+        fprintf(fid,'\t \t %s \t %s \n',sensor_title_string,flag_title_string);
+        for ith_data = 1:length(sensor_names)
+            sensor_name_string = fcn_DebugTools_debugPrintStringToNCharacters(sensor_names{ith_data},longest_name_string);
+            sensor_flag_string = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',any_sensor_exists_results(ith_data,1)),25);
+            fprintf(fid,'\t \t %s \t %s \n',sensor_name_string,sensor_flag_string);
+        end
+        fprintf(fid,'\n');
+        
+    end
+    
     return; % Exit the function immediately to avoid more processing
 end
 

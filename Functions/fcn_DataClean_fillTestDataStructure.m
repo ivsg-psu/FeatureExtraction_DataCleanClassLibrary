@@ -114,6 +114,9 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %          2^21 bit = 1: The ROS_Time field in a GPS sensor has repeated
 %          but ordered entries.
 %
+%          2^22 bit = 1: The GPS_Time field in a GPS sensor has a
+%          discontinuity.
+%
 %      fid: a file ID to print results of analysis. If not entered, no
 %      printing is done. Set fid to 1 to print to the console.%
 %
@@ -667,7 +670,7 @@ if time_corruption_type>1
     % Use decimal to binary to convert the input flags into binary, and pad
     % the bits that were not specified with zeros
     binary_time_corruption = de2bi(time_corruption_type);       
-    num_bits = 22;
+    num_bits = 23;
     if length(binary_time_corruption)<num_bits
         binary_time_corruption(end+1:num_bits) = 0;
     end
@@ -854,6 +857,33 @@ if time_corruption_type>1
         
         % FOR DEBUGGING:
         % disp((dataStructureToCorrupt.ROS_Time(1:10)-dataStructureToCorrupt.ROS_Time(1,1)));
+        
+        % Put data into the BadDataStructure
+        BadDataStructure.GPS_Hemisphere = dataStructureToCorrupt;
+    end
+    
+    %% 2^22 bit = 1: The GPS_Time field in a GPS sensor has a discontinuity.
+    if binary_time_corruption(23)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time has a discontinuity in GPS_Hemisphere, ');
+        
+        dataStructureToCorrupt = dataStructure.GPS_Hemisphere;
+        
+        % Add a jump discontinuity
+        jump = 0.4;
+        dataStructureToCorrupt.GPS_Time(5:end,1) = dataStructureToCorrupt.GPS_Time(5:end,1) + jump;
+
+        % Add random time noise - about 5 milliseconds standard deviation
+        timing_error = 0.005*randn(length(dataStructureToCorrupt.GPS_Time(:,1)),1);
+        dataStructureToCorrupt.GPS_Time = dataStructureToCorrupt.GPS_Time + timing_error;
+        
+        % Cut off the end data
+        cut_point = find(dataStructureToCorrupt.GPS_Time>=dataStructure.GPS_Sparkfun_RearLeft.GPS_Time(end),1,'first');
+        dataStructureToCorrupt.GPS_Time = dataStructureToCorrupt.GPS_Time(1:cut_point,:);
+        
+        % FOR DEBUGGING:
+        % disp(dataStructureToCorrupt.GPS_Time(1:10,1)-dataStructureToCorrupt.GPS_Time(1,1));
+        % disp(dataStructureToCorrupt.GPS_Time(end-3:end,1)-dataStructureToCorrupt.GPS_Time(1,1));
+        % disp(dataStructure.GPS_Sparkfun_RearLeft.GPS_Time(end-3:end,1)-dataStructure.GPS_Sparkfun_RearLeft.GPS_Time(1,1));
         
         % Put data into the BadDataStructure
         BadDataStructure.GPS_Hemisphere = dataStructureToCorrupt;

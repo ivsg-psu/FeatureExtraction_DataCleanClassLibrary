@@ -1,21 +1,31 @@
-function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferencesForJumps(dataStructure, field_name,varargin)
+function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferencesForJumps(dataStructure, field_name, varargin)
 % fcn_DataClean_checkFieldDifferencesForJumps
 % Checks if the differences in data in a sub-field are larger than some
-% threshold. The input is a dataStructure with sensors as fields, and for
+% threshold. The purpose of this is to detect outliers and data drops.
+%
+% To detect jumps, the method is to calculate the difference in the field,
+% take the mean and standard deviation of the differences, then use a
+% threshold on standard deviations (default is 5). If any of the data fall
+% outside of this threshold, a jump error flag is set.
+%
+% The input is a dataStructure with sensors as fields, and for
 % each sensor there are subfields. For a given sub-field, for example
 % position, this function takes differences in the position data (using
-% diff) and checks whether the differences are unexpected, which would
+% diff) and checks whether the differences are unexpected, which could
 % occur if there was a data drop. 
-
-% If no jumps (data is good), it sets a flag = 1 whose name is customized
+%
+% If no jumps exist, it sets a flag = 1 whose name is customized
 % by the input settings. If not, it sets the flag = 0 and immediately
 % exits.
 %
 % FORMAT:
 %
 %      [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(...
-%          dataStructure, field_name, threshold,...
-%          (flags),(string_any_or_all),(sensors_to_check),(fid))
+%          dataStructure, field_name, ...
+%          (flags),...
+%          (threshold_in_standard_deviations),...
+%          (custom_lower_threshold),...
+%          (string_any_or_all),(sensors_to_check),(fid))
 %
 % INPUTS:
 %
@@ -23,17 +33,34 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 %
 %      field_name: the field to be checked
 %
-%      threshold: the threshold for discontinuity
-%
 %      (OPTIONAL INPUTS)
 %
 %      flags: If a structure is entered, it will append the flag result
 %      into the structure to allow a pass-through of flags structure
+% 
+%      threshold_in_standard_deviations: the threshold for jump detection
+%      in standard deviations. Data would be flagged as having jumps if any
+%      data falls outside a range of +/- threshold_in_standard_deviations *
+%      standard deviations of the mean difference in data. Default is 5, to
+%      check for 5 standard deviations.
+%
+%      custom_lower_threshold: a custom lower threshold to use instead of
+%      standard deviation calculations. If set to a number, differences
+%      must be larger than this number for the field to pass the checking
+%      of jumps. For example, changes in time will never be less than 0, so
+%      if the mean time change is 0.1 seconds and the standard deviation is
+%      0.05 seconds, the typical calculations would check that a time
+%      change is within 5 standard deviations, meaning checking time
+%      differences between +0.35 seconds and -.15 seconds. But the lower
+%      value will never occur. With flag = 0.0001, it will check time
+%      differences between +0.35 seconds and 0.0001 seconds. Default is
+%      empty ([]) which is to use the calculated threshold calculated from
+%      standard deviations and threshold_in_standard_deviations.
 %
 %      string_any_or_all: a string consisting of 'any' or 'all' indicating
-%      whether the flag should be set if any sensor has no jumps
-%      ('any'), or to check that all sensors have no jumps
-%      ('all'). Default is 'all' if not specified or left empty ('');
+%      whether the data should be flagged if any sensor has jumps
+%      ('any'), or if all sensors have jumps
+%      ('all'). Default is 'any' if not specified or left empty ('');
 %
 %      sensors_to_check: a string listing the sensors to check. For
 %      example, 'GPS' will check every sensor in the dataStructure whose
@@ -89,22 +116,41 @@ flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    narginchk(2,7);
+    narginchk(2,8);
 end
 
 % Does the user want to specify the flags?
 flags = struct;
-if 4 <= nargin
+if 3 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
         flags = temp;
     end
 end
 
-% Does the user want to specify the string_any_or_all?
-string_any_or_all = 'all';
-if 5 <= nargin
+% Does the user want to specify the threshold_in_standard_deviations?
+threshold_in_standard_deviations = 5;
+if 4 <= nargin
     temp = varargin{2};
+    if ~isempty(temp)
+        threshold_in_standard_deviations = temp;
+    end
+end
+
+% Does the user want to specify the custom_lower_threshold?
+custom_lower_threshold = []; % Default
+if 5 <= nargin
+    temp = varargin{3};
+    if ~isempty(temp)
+        custom_lower_threshold = temp;
+    end
+end
+
+
+% Does the user want to specify the string_any_or_all?
+string_any_or_all = 'any';
+if 6 <= nargin
+    temp = varargin{4};
     if ~isempty(temp)
         string_any_or_all = temp;
     end
@@ -113,8 +159,8 @@ end
 
 % Does the user want to specify the sensors_to_check?
 sensors_to_check = '';
-if 6 <= nargin
-    temp = varargin{3};
+if 7 <= nargin
+    temp = varargin{5};
     if ~isempty(temp)
         sensors_to_check = temp;
     end
@@ -124,7 +170,7 @@ end
 % Does the user want to specify the fid?
 fid = 0;
 % Check for user input
-if 7 <= nargin
+if 8 <= nargin
     temp = varargin{end};
     if ~isempty(temp)
         % Check that the FID works
@@ -167,15 +213,15 @@ end
 switch lower(string_any_or_all)
     case {'any'}
         if flag_check_all_sensors
-            flag_name = sprintf('all_jumps_in_differences_of_%s_are_expected_in_all_sensors',field_name);
+            flag_name = sprintf('no_jumps_in_differences_of_%s_in_any_sensors',field_name);
         else
-            flag_name = sprintf('all_jumps_in_differences_of_%s_are_expected_in_%s_sensors',field_name,sensors_to_check);
+            flag_name = sprintf('no_jumps_in_differences_of_%s_in_any_%s_sensors',field_name,sensors_to_check);
         end
     case {'all'}
         if flag_check_all_sensors
-            flag_name = sprintf('no_jumps_in_differences_exist_in_%s_in_all_sensors',field_name);
+            flag_name = sprintf('no_jumps_in_differences_of_%s_in_all_sensors',field_name);
         else
-            flag_name = sprintf('%s_exists_in_all_%s_sensors',field_name, sensors_to_check);
+            flag_name = sprintf('no_jumps_in_differences_of_%s__in_all_%s_sensors',field_name, sensors_to_check);
         end
     otherwise
         error('Unrecognized setting on string_any_or_all when checking if fields are in sensors.');
@@ -205,72 +251,71 @@ if 0~=fid
     end
 end
 
-
-% 
-%                 % Check to see if there are time jumps out of the ordinary
-%                 diff_t = diff(t);
-%                 mean_dt = mean(diff_t);
-%                 std_dt = std(diff_t);
-%                 max_dt = mean_dt+5*std_dt;
-%                 min_dt = max(0.00001,mean_dt-5*std_dt);
-%                 flag_jump_error_detected = 0;
-%                 if any(diff_t>max_dt) || any(diff_t<min_dt)
-%                     flag_jump_error_detected = 1;
-%                 end
-%
-
-
-
 % Loop through the sensor name list, checking each, and stopping
 % immediately if we hit a bad case.
 
 % Initialize all flags to 1 (default is that they are good)
-any_sensor_exists_results = ones(length(sensor_names),1);
-for i_data = 1:length(sensor_names)
+sensors_pass_test_flags = ones(length(sensor_names),1);
+for ith_sensor = 1:length(sensor_names)
     % Grab the sensor subfield name
-    sensor_name = sensor_names{i_data};
+    sensor_name = sensor_names{ith_sensor};
     sensor_data = dataStructure.(sensor_name);
     
     % Tell the user what is happening?
     if 0~=fid
-        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
+        fprintf(fid,'\t Checking sensor %d of %d: %s\n',ith_sensor,length(sensor_names),sensor_name);
     end
     
-    % Check the field to see if it exists, saving result in an array that
-    % represents the results for each sensor
-    flag_field_exists= 1;
+    % To detect jumps, the method is to calculate the difference in the field,
+    % take the mean and standard deviation of the differences, then use a
+    % threshold on standard deviations (default is 5). If any of the data fall
+    % outside of this threshold, a jump error flag is set.
+    
+    
+    flag_this_sensor_passes_test = 1;
     if ~isfield(sensor_data,field_name)
-        % If the field is not there, then fails
-        any_sensor_exists_results(i_data) = 0;
-    elseif isempty(sensor_data.(field_name))
-        % if field is empty, then fails
-        any_sensor_exists_results(i_data) = 0;
-    elseif any(isnan(sensor_data.(field_name)))        
-        % if field only filled with nan, it fails
-        any_sensor_exists_results(i_data) = 0;
-    end   
+        flag_this_sensor_passes_test = 0;
+    else
+        differences_in_field_data = diff(sensor_data.(field_name));
+        mean_differences = mean(differences_in_field_data);
+        std_differences = std(differences_in_field_data);
+        max_difference_threshold = mean_differences + threshold_in_standard_deviations*std_differences;
+        
+        if ~isempty(custom_lower_threshold)
+            min_differences_threshold = custom_lower_threshold;
+        else
+            min_differences_threshold = mean_differences - threshold_in_standard_deviations*std_differences;
+        end
+        
+        if any(differences_in_field_data>max_difference_threshold) || any(differences_in_field_data<min_differences_threshold)
+            flag_this_sensor_passes_test = 0;
+        end
+    end
+    sensors_pass_test_flags(ith_sensor,1) = flag_this_sensor_passes_test;
 
 end
 
+flag_field_passes_test = 1;
 % Check the all case
-if strcmp(string_any_or_all,'all') && any(any_sensor_exists_results==0)
+if strcmp(string_any_or_all,'all') && all(sensors_pass_test_flags==0)
     % If any sensors have to have the field, then if all are nan, this
     % flag fails
-    flag_field_exists = 0;
-    first_failure = find(any_sensor_exists_results==0,1,'first');
+    flag_field_passes_test = 0;
+    first_failure = 1;
     offending_sensor = sensor_names{first_failure};
 end
 
 % Check the any case
-if strcmp(string_any_or_all,'any') && all(any_sensor_exists_results==0)
+if strcmp(string_any_or_all,'any') && any(sensors_pass_test_flags==0)
     % If any sensors have to have the field, then if all are nan, this
     % flag fails
-    flag_field_exists = 0;
-    offending_sensor = sensor_names{1};
+    flag_field_passes_test = 0;
+    first_failure = find(sensors_pass_test_flags==0,1,'first');
+    offending_sensor = sensor_names{first_failure};
 end
 
 % Set the flag array and return accordingly
-flags.(flag_name) = flag_field_exists;
+flags.(flag_name) = flag_field_passes_test;
 if 0==flags.(flag_name)
     return_flag = 1; % Indicate that the return was forced
     return; % Exit the function immediately to avoid more processing

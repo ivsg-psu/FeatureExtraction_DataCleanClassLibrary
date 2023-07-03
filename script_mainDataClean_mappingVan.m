@@ -211,9 +211,10 @@
 
 %% Prep the workspace
 close all
+clear all % Comment out when make sure everything is working
 clc
 
-fid = 0; % The file ID to use for printing messages from the code below
+fid = 1; % The file ID to use for printing messages from the code below. FID = 1 prints to the screen
 
 %% Dependencies and Setup of the Code
 % The code requires several other libraries to work, namely the following
@@ -266,7 +267,8 @@ end
 
 %% Specify the data to use
 % bagFolderName = "mapping_van_2023-06-05-1Lap"; 
-bagFolderName = "mapping_van_2023-06-22-1Lap_0";
+% bagFolderName = "mapping_van_2023-06-22-1Lap_0";
+bagFolderName = "mapping_van_2023-06-29-5s";
 
 
 %% ======================= Load the raw data =========================
@@ -319,9 +321,7 @@ data_structure_sequence{N_max_loops} = struct;
 
 main_data_clean_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
 while 1==flag_stay_in_main_loop
-    if length(dataset)~=1
-        dataStructure = dataset{end};
-    end
+    dataStructure = dataset{end};
     
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     
@@ -331,6 +331,20 @@ while 1==flag_stay_in_main_loop
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
+    %% GPS_Time tests
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %    _____ _____   _____            _______ _                   _______        _
+    %   / ____|  __ \ / ____|          |__   __(_)                 |__   __|      | |
+    %  | |  __| |__) | (___               | |   _ _ __ ___   ___      | | ___  ___| |_ ___
+    %  | | |_ |  ___/ \___ \              | |  | | '_ ` _ \ / _ \     | |/ _ \/ __| __/ __|
+    %  | |__| | |     ____) |             | |  | | | | | | |  __/     | |  __/\__ \ |_\__ \
+    %   \_____|_|    |_____/              |_|  |_|_| |_| |_|\___|     |_|\___||___/\__|___/
+    %                          ______
+    %                         |______|
+    %
+    % See: http://patorjk.com/software/taag/#p=display&f=Big&t=GPS%20_%20Time%20%20Tests
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     %% Check if GPS_Time_exists_in_at_least_one_GPS_sensor
     %    ### ISSUES with this:
     %    * There is no absolute time base to use for the data
@@ -358,6 +372,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * If another GPS is available, use its time alongside the GPS data
     %    * Remove this GPS data field
+    
     if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_all_GPS_sensors)
         error('Catastrophic data error detected: the following GPS sensor is missing GPS_Time data: %s.',offending_sensor);        
     end
@@ -370,6 +385,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
+    
     if (1==flag_keep_checking) && (0==flags.centiSeconds_exists_in_all_GPS_sensors)
         disp(dataStructure.(offending_sensor))
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
@@ -411,6 +427,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
+    
     if (1==flag_keep_checking) && (0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
         error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
     end
@@ -435,7 +452,6 @@ while 1==flag_stay_in_main_loop
     %    to less than 5 seconds, then the fix worked. Otherwise, throw an
     %    error.
     
-    %% Check consistency between start and end times for GPS_Time
     if (1==flag_keep_checking) && (0==flags.start_time_GPS_sensors_agrees_to_within_5_seconds)
         fixed_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(dataStructure,fid);
         flag_keep_checking = 0;
@@ -456,31 +472,12 @@ while 1==flag_stay_in_main_loop
     %    * Check that they all agree
     %    ### FIXES:
     %    * Crop all data to same starting centi-second value
-    
-    %% Trim data to same start and end times for GPS_Time?
+
     if (1==flag_keep_checking) && (0==flags.consistent_start_and_end_times_across_GPS_sensors)
         fixed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,fid);
         flag_keep_checking = 0;
     end
-    
-    %% Check if Trigger_Time_exists_in_all_GPS_sensors
-    %    ### ISSUES with this:
-    %    * This field is used to assign data collection timings for all
-    %    non-GPS-triggered sensors, and to fill in GPS_Time data if there's a
-    %    short outage
-    %    * These sensors may be configured wrong
-    %    * These sensors may be faililng or operating incorrectly
-    %    ### DETECTION:
-    %    * Examine if Trigger_Time fields exist
-    %    ### FIXES:
-    %    * Recalculate Trigger_Time fields as needed, using centiSeconds
-    
-    %% Fix Trigger_Time field in GPS sensors?
-    if (1==flag_keep_checking) && (0==flags.Trigger_Time_exists_in_all_GPS_sensors)
-        fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
-        flag_keep_checking = 0;
-    end
-    
+
     %% Check if GPS_Time_strictly_ascends
     %    ### ISSUES with this:
     %    * This field is used to calibrate ROS time via interpolation, and must
@@ -494,7 +491,6 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
     
-    %% Check that GPS_Time data is strictly ascending
     if (1==flag_keep_checking) && (0==flags.GPS_Time_strictly_ascends)
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
@@ -503,6 +499,69 @@ while 1==flag_stay_in_main_loop
         flag_keep_checking = 0;
     end
     
+    %% Check if no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+    %    ### ISSUES with this:
+    %    * The GPS_Time may have small jumps which could occur if the sensor
+    %    pauses for a moment, then restarts
+    %    * If these jumps are large, the data from the sensor may be corrupted
+    %    ### DETECTION:
+    %    * Examine if the differences in GPS_Time are out of ordinary by
+    %    looking at the standard deviations of the differences relative to the
+    %    mean differences
+    %    ### FIXES:
+    %    * Interpolate time field if only a small segment is missing        
+    if (1==flag_keep_checking) && (0==flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
+        error('Large jump discontinuity detected in GPS_Time data');
+        flag_keep_checking = 0;
+    end
+
+    
+    %% Trigger_Time Tests
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %
+    %   _______   _                                  _______ _                   _______        _
+    %  |__   __| (_)                                |__   __(_)                 |__   __|      | |
+    %     | |_ __ _  __ _  __ _  ___ _ __              | |   _ _ __ ___   ___      | | ___  ___| |_ ___
+    %     | | '__| |/ _` |/ _` |/ _ \ '__|             | |  | | '_ ` _ \ / _ \     | |/ _ \/ __| __/ __|
+    %     | | |  | | (_| | (_| |  __/ |                | |  | | | | | | |  __/     | |  __/\__ \ |_\__ \
+    %     |_|_|  |_|\__, |\__, |\___|_|                |_|  |_|_| |_| |_|\___|     |_|\___||___/\__|___/
+    %                __/ | __/ |            ______
+    %               |___/ |___/            |______|
+    %
+    % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Trigger%20_%20Time%20%20Tests
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    %% Check if Trigger_Time_exists_in_all_GPS_sensors
+    %    ### ISSUES with this:
+    %    * This field is used to assign data collection timings for all
+    %    non-GPS-triggered sensors, and to fill in GPS_Time data if there's a
+    %    short outage
+    %    * These sensors may be configured wrong
+    %    * These sensors may be faililng or operating incorrectly
+    %    ### DETECTION:
+    %    * Examine if Trigger_Time fields exist
+    %    ### FIXES:
+    %    * Recalculate Trigger_Time fields as needed, using centiSeconds
+    if (1==flag_keep_checking) && (0==flags.Trigger_Time_exists_in_all_GPS_sensors)
+        fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
+        flag_keep_checking = 0;
+    end
+    
+    
+    %% ROS_Time Tests
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %
+    %   _____   ____   _____            _______ _                   _______        _
+    %  |  __ \ / __ \ / ____|          |__   __(_)                 |__   __|      | |
+    %  | |__) | |  | | (___               | |   _ _ __ ___   ___      | | ___  ___| |_ ___
+    %  |  _  /| |  | |\___ \              | |  | | '_ ` _ \ / _ \     | |/ _ \/ __| __/ __|
+    %  | | \ \| |__| |____) |             | |  | | | | | | |  __/     | |  __/\__ \ |_\__ \
+    %  |_|  \_\\____/|_____/              |_|  |_|_| |_| |_|\___|     |_|\___||___/\__|___/
+    %                          ______
+    %                         |______|
+    %
+    % See: http://patorjk.com/software/taag/#p=display&f=Big&t=ROS%20_%20Time%20%20Tests
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Check if ROS_Time_exists_in_all_GPS_sensors
     %    ### ISSUES with this:
     %    * If the sensor is recording data, all data is time-stamped to ROS
@@ -513,8 +572,6 @@ while 1==flag_stay_in_main_loop
     %    * Examine if ROS_Time fields exist on all sensors
     %    ### FIXES:
     %    * Catastrophic error. Sensor has failed and should be removed.
-    
-    %% Check existence of ROS_Time data in each sensor
     if (1==flag_keep_checking) && (0==flags.ROS_Time_exists_in_all_GPS_sensors)
         error('Catastrophic failure in one of the sensors in that it is missing ROS time. Stopping.');
     end
@@ -531,8 +588,6 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Divide ROS_Time on this sensor by 10^9, confirm that this fixes the
     %    problem
-    
-    %% Check to fix ROS_Time mis-scaling
     if (1==flag_keep_checking) && (0==flags.ROS_Time_scaled_correctly_as_seconds)
         fixed_dataStructure = fcn_DataClean_convertROSTimeToSeconds(dataStructure,'',fid);              
         flag_keep_checking = 0;
@@ -551,8 +606,6 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
-    
-    %% Check to fix ROS_Time sampling errors
     if (1==flag_keep_checking) && (0==flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
         error('ROS time is mis-sampled.\');            
         flag_keep_checking = 0;
@@ -572,8 +625,6 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
-    
-    %% Check that ROS_Time data is strictly ascending
     if (1==flag_keep_checking) && (0==flags.ROS_Time_strictly_ascends)
         error('ROS time is not strictly ascending.\');
         flag_keep_checking = 0;
@@ -626,7 +677,7 @@ while 1==flag_stay_in_main_loop
 
     
     %% Check that ROS_Time_rounds_correctly_to_Trigger_Time
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_rounds_correctly_to_Trigger_Time)
+    if (1==flag_keep_checking) && (0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
         error('ROS time does not round correctly to Trigger_Time. There is no code yet to fix this.');
         flag_keep_checking = 0;
     end
