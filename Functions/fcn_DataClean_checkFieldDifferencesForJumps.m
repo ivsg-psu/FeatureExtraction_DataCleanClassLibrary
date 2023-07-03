@@ -1,13 +1,20 @@
-function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSensors(dataStructure, field_name,varargin)
-% fcn_DataClean_checkIfFieldInSensors
-% Checks a given dataStructure to check, for each sensor, whether the field
-% is there. If so, it sets a flag = 1 whose name is customized by the input
-% settings. If not, it sets the flag = 0 and immediately exits.
+function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferencesForJumps(dataStructure, field_name,varargin)
+% fcn_DataClean_checkFieldDifferencesForJumps
+% Checks if the differences in data in a sub-field are larger than some
+% threshold. The input is a dataStructure with sensors as fields, and for
+% each sensor there are subfields. For a given sub-field, for example
+% position, this function takes differences in the position data (using
+% diff) and checks whether the differences are unexpected, which would
+% occur if there was a data drop. 
+
+% If no jumps (data is good), it sets a flag = 1 whose name is customized
+% by the input settings. If not, it sets the flag = 0 and immediately
+% exits.
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(...
-%          dataStructure,field_name,...
+%      [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(...
+%          dataStructure, field_name, threshold,...
 %          (flags),(string_any_or_all),(sensors_to_check),(fid))
 %
 % INPUTS:
@@ -16,14 +23,16 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %
 %      field_name: the field to be checked
 %
+%      threshold: the threshold for discontinuity
+%
 %      (OPTIONAL INPUTS)
 %
 %      flags: If a structure is entered, it will append the flag result
 %      into the structure to allow a pass-through of flags structure
 %
 %      string_any_or_all: a string consisting of 'any' or 'all' indicating
-%      whether the flag should be set if any sensor has the requested field
-%      ('any'), or to check that all sensors have the requested field
+%      whether the flag should be set if any sensor has no jumps
+%      ('any'), or to check that all sensors have no jumps
 %      ('all'). Default is 'all' if not specified or left empty ('');
 %
 %      sensors_to_check: a string listing the sensors to check. For
@@ -48,20 +57,17 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_checkIfFieldInSensors
+%     See the script: script_test_fcn_DataClean_checkFieldDifferencesForJumps
 %     for a full test suite.
 %
-% This function was written on 2023_06_19 by S. Brennan
+% This function was written on 2023_07_02 by S. Brennan
 % Questions or comments? sbrennan@psu.edu 
 
 % Revision history:
 %     
-% 2023_06_12: sbrennan@psu.edu
+% 2023_07_02: sbrennan@psu.edu
 % -- wrote the code originally 
-% 2023_06_24 - sbrennan@psu.edu
-% -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
-% 2023_06_30 - sbrennan@psu.edu
-% -- fixed verbose mode bug
+
 
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -83,12 +89,12 @@ flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    narginchk(2,6);
+    narginchk(2,7);
 end
 
 % Does the user want to specify the flags?
 flags = struct;
-if 3 <= nargin
+if 4 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
         flags = temp;
@@ -97,7 +103,7 @@ end
 
 % Does the user want to specify the string_any_or_all?
 string_any_or_all = 'all';
-if 4 <= nargin
+if 5 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
         string_any_or_all = temp;
@@ -107,7 +113,7 @@ end
 
 % Does the user want to specify the sensors_to_check?
 sensors_to_check = '';
-if 5 <= nargin
+if 6 <= nargin
     temp = varargin{3};
     if ~isempty(temp)
         sensors_to_check = temp;
@@ -118,7 +124,7 @@ end
 % Does the user want to specify the fid?
 fid = 0;
 % Check for user input
-if 6 <= nargin
+if 7 <= nargin
     temp = varargin{end};
     if ~isempty(temp)
         % Check that the FID works
@@ -161,13 +167,13 @@ end
 switch lower(string_any_or_all)
     case {'any'}
         if flag_check_all_sensors
-            flag_name = sprintf('%s_exists_in_at_least_one_sensor',field_name);
+            flag_name = sprintf('all_jumps_in_differences_of_%s_are_expected_in_all_sensors',field_name);
         else
-            flag_name = sprintf('%s_exists_in_at_least_one_%s_sensor',field_name,sensors_to_check);
+            flag_name = sprintf('all_jumps_in_differences_of_%s_are_expected_in_%s_sensors',field_name,sensors_to_check);
         end
     case {'all'}
         if flag_check_all_sensors
-            flag_name = sprintf('%s_exists_in_all_sensors',field_name);
+            flag_name = sprintf('no_jumps_in_differences_exist_in_%s_in_all_sensors',field_name);
         else
             flag_name = sprintf('%s_exists_in_all_%s_sensors',field_name, sensors_to_check);
         end
@@ -198,6 +204,22 @@ if 0~=fid
         fprintf(fid,'in %s %s sensors:\n', string_any_or_all, sensors_to_check);
     end
 end
+
+
+% 
+%                 % Check to see if there are time jumps out of the ordinary
+%                 diff_t = diff(t);
+%                 mean_dt = mean(diff_t);
+%                 std_dt = std(diff_t);
+%                 max_dt = mean_dt+5*std_dt;
+%                 min_dt = max(0.00001,mean_dt-5*std_dt);
+%                 flag_jump_error_detected = 0;
+%                 if any(diff_t>max_dt) || any(diff_t<min_dt)
+%                     flag_jump_error_detected = 1;
+%                 end
+%
+
+
 
 % Loop through the sensor name list, checking each, and stopping
 % immediately if we hit a bad case.

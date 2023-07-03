@@ -1,12 +1,11 @@
-function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSensors(dataStructure, field_name,varargin)
-% fcn_DataClean_checkIfFieldInSensors
+function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldHasNaN(dataStructure, field_name,varargin)
+ % fcn_DataClean_checkIfFieldHasNaN
 % Checks a given dataStructure to check, for each sensor, whether the field
-% is there. If so, it sets a flag = 1 whose name is customized by the input
-% settings. If not, it sets the flag = 0 and immediately exits.
+% contains NaN values (not a number). If so, it sets the flag = 0.
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(...
+%      [flags,offending_sensor] = fcn_DataClean_checkIfFieldHasNaN(...
 %          dataStructure,field_name,...
 %          (flags),(string_any_or_all),(sensors_to_check),(fid))
 %
@@ -22,9 +21,10 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %      into the structure to allow a pass-through of flags structure
 %
 %      string_any_or_all: a string consisting of 'any' or 'all' indicating
-%      whether the flag should be set if any sensor has the requested field
-%      ('any'), or to check that all sensors have the requested field
-%      ('all'). Default is 'all' if not specified or left empty ('');
+%      whether the flag should be set if any sensor has nan in the
+%      requested field ('any'), or to check that all sensors have nan in
+%      the requested field ('all'). Default is 'any' if not specified or
+%      left empty ('');
 %
 %      sensors_to_check: a string listing the sensors to check. For
 %      example, 'GPS' will check every sensor in the dataStructure whose
@@ -48,20 +48,18 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_checkIfFieldInSensors
+%     See the script: script_test_fcn_DataClean_checkIfFieldHasNaN
 %     for a full test suite.
 %
-% This function was written on 2023_06_19 by S. Brennan
+% This function was written on 2023_07_02 by S. Brennan, based on
+% fcn_DataClean_checkIfFieldInSensors as a template.
 % Questions or comments? sbrennan@psu.edu 
 
 % Revision history:
 %     
-% 2023_06_12: sbrennan@psu.edu
+% 2023_07_02: sbrennan@psu.edu
 % -- wrote the code originally 
-% 2023_06_24 - sbrennan@psu.edu
-% -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
-% 2023_06_30 - sbrennan@psu.edu
-% -- fixed verbose mode bug
+
 
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -96,7 +94,7 @@ if 3 <= nargin
 end
 
 % Does the user want to specify the string_any_or_all?
-string_any_or_all = 'all';
+string_any_or_all = 'any';
 if 4 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
@@ -161,15 +159,15 @@ end
 switch lower(string_any_or_all)
     case {'any'}
         if flag_check_all_sensors
-            flag_name = sprintf('%s_exists_in_at_least_one_sensor',field_name);
+            flag_name = sprintf('%s_has_no_nan_in_any_sensors',field_name);
         else
-            flag_name = sprintf('%s_exists_in_at_least_one_%s_sensor',field_name,sensors_to_check);
+            flag_name = sprintf('%s_has_no_nan_in_any_%s_sensors',field_name,sensors_to_check);
         end
     case {'all'}
         if flag_check_all_sensors
-            flag_name = sprintf('%s_exists_in_all_sensors',field_name);
+            flag_name = sprintf('%s_is_not_filled_with_nan_in_every_sensor',field_name);
         else
-            flag_name = sprintf('%s_exists_in_all_%s_sensors',field_name, sensors_to_check);
+            flag_name = sprintf('%s_is_not_filled_with_nan_in_every_%s_sensor',field_name, sensors_to_check);
         end
     otherwise
         error('Unrecognized setting on string_any_or_all when checking if fields are in sensors.');
@@ -191,7 +189,7 @@ end
 
 % Tell the user what is happening?
 if 0~=fid
-    fprintf(fid,'Checking existence of %s data ',field_name);
+    fprintf(fid,'Checking if NaN values are in %s data ',field_name);
     if flag_check_all_sensors
         fprintf(fid,':\n');
     else
@@ -217,34 +215,27 @@ for i_data = 1:length(sensor_names)
     % Check the field to see if it exists, saving result in an array that
     % represents the results for each sensor
     flag_field_exists= 1;
-    if ~isfield(sensor_data,field_name)
-        % If the field is not there, then fails
-        any_sensor_exists_results(i_data) = 0;
-    elseif isempty(sensor_data.(field_name))
-        % if field is empty, then fails
-        any_sensor_exists_results(i_data) = 0;
-    elseif any(isnan(sensor_data.(field_name)))        
-        % if field only filled with nan, it fails
+    if any(isnan(sensor_data.(field_name)))        
+        % if field has any nan values, it fails
         any_sensor_exists_results(i_data) = 0;
     end   
 
 end
 
 % Check the all case
-if strcmp(string_any_or_all,'all') && any(any_sensor_exists_results==0)
-    % If any sensors have to have the field, then if all are nan, this
+if strcmp(string_any_or_all,'all') && all(any_sensor_exists_results==0)
+    % If all are nan, this flag fails - just return the first one
+    flag_field_exists = 0;
+    offending_sensor = sensor_names{1};
+end
+
+% Check the any case
+if strcmp(string_any_or_all,'any') && any(any_sensor_exists_results==0)
+    % If any sensors have nan, this
     % flag fails
     flag_field_exists = 0;
     first_failure = find(any_sensor_exists_results==0,1,'first');
     offending_sensor = sensor_names{first_failure};
-end
-
-% Check the any case
-if strcmp(string_any_or_all,'any') && all(any_sensor_exists_results==0)
-    % If any sensors have to have the field, then if all are nan, this
-    % flag fails
-    flag_field_exists = 0;
-    offending_sensor = sensor_names{1};
 end
 
 % Set the flag array and return accordingly

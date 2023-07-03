@@ -1,14 +1,15 @@
-function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSensors(dataStructure, field_name,varargin)
-% fcn_DataClean_checkIfFieldInSensors
-% Checks a given dataStructure to check, for each sensor, whether the field
-% is there. If so, it sets a flag = 1 whose name is customized by the input
-% settings. If not, it sets the flag = 0 and immediately exits.
+function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldCountMatchesTimeCount(dataStructure, field_name,varargin)
+
+ % fcn_DataClean_checkFieldCountMatchesTimeCount
+% Checks a given dataStructure to check, for each sensor, whether all the
+% fields have the same vector length as a given time field. If the time
+% field is not specified, then the 'Trigger_Time' field is used.
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(...
+%      [flags,offending_sensor] = fcn_DataClean_checkFieldCountMatchesTimeCount(...
 %          dataStructure,field_name,...
-%          (flags),(string_any_or_all),(sensors_to_check),(fid))
+%          (flags),(time_field),(sensors_to_check),(fid))
 %
 % INPUTS:
 %
@@ -21,10 +22,9 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %      flags: If a structure is entered, it will append the flag result
 %      into the structure to allow a pass-through of flags structure
 %
-%      string_any_or_all: a string consisting of 'any' or 'all' indicating
-%      whether the flag should be set if any sensor has the requested field
-%      ('any'), or to check that all sensors have the requested field
-%      ('all'). Default is 'all' if not specified or left empty ('');
+%      time_field: a string listing the time field to use as reference. The
+%      default is 'Trigger_Time', but other common options are 'GPS_Time'
+%      and 'ROS_Time'.
 %
 %      sensors_to_check: a string listing the sensors to check. For
 %      example, 'GPS' will check every sensor in the dataStructure whose
@@ -48,20 +48,18 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_checkIfFieldInSensors
+%     See the script: script_test_fcn_DataClean_checkFieldCountMatchesTimeCount
 %     for a full test suite.
 %
-% This function was written on 2023_06_19 by S. Brennan
+% This function was written on 2023_07_02 by S. Brennan, based on
+% fcn_DataClean_checkIfFieldHasNaN as a template.
 % Questions or comments? sbrennan@psu.edu 
 
 % Revision history:
 %     
-% 2023_06_12: sbrennan@psu.edu
+% 2023_07_02: sbrennan@psu.edu
 % -- wrote the code originally 
-% 2023_06_24 - sbrennan@psu.edu
-% -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
-% 2023_06_30 - sbrennan@psu.edu
-% -- fixed verbose mode bug
+
 
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -96,11 +94,11 @@ if 3 <= nargin
 end
 
 % Does the user want to specify the string_any_or_all?
-string_any_or_all = 'all';
+time_field = 'Trigger_Time';
 if 4 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
-        string_any_or_all = temp;
+        time_field = temp;
     end
 end
 
@@ -149,7 +147,6 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 % Set up flags based on input conditions
 if isempty(sensors_to_check)
     flag_check_all_sensors = 1;    
@@ -158,25 +155,13 @@ else
 end
 
 % Set up output flag name string
-switch lower(string_any_or_all)
-    case {'any'}
-        if flag_check_all_sensors
-            flag_name = sprintf('%s_exists_in_at_least_one_sensor',field_name);
-        else
-            flag_name = sprintf('%s_exists_in_at_least_one_%s_sensor',field_name,sensors_to_check);
-        end
-    case {'all'}
-        if flag_check_all_sensors
-            flag_name = sprintf('%s_exists_in_all_sensors',field_name);
-        else
-            flag_name = sprintf('%s_exists_in_all_%s_sensors',field_name, sensors_to_check);
-        end
-    otherwise
-        error('Unrecognized setting on string_any_or_all when checking if fields are in sensors.');
+if flag_check_all_sensors
+    flag_name = sprintf('%s_has_same_length_as_%s_in_all_sensors',field_name,time_field);
+else
+    flag_name =  sprintf('%s_has_same_length_as_%s_in_%s_sensors',field_name,time_field,sensors_to_check);
 end
 
-
-% Initialize outputs of the function: offending_sensor and return flag
+% Initialize offending_sensor
 offending_sensor = '';
 return_flag = 0;
 
@@ -189,69 +174,53 @@ else
     [~,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, field_name,sensors_to_check);
 end
 
-% Tell the user what is happening?
 if 0~=fid
-    fprintf(fid,'Checking existence of %s data ',field_name);
-    if flag_check_all_sensors
-        fprintf(fid,':\n');
-    else
-        fprintf(fid,'in %s %s sensors:\n', string_any_or_all, sensors_to_check);
-    end
+    fprintf(fid,'Checking that %s field has same number of data points as %s:\n',field_name,time_field);
 end
 
-% Loop through the sensor name list, checking each, and stopping
-% immediately if we hit a bad case.
-
-% Initialize all flags to 1 (default is that they are good)
-any_sensor_exists_results = ones(length(sensor_names),1);
 for i_data = 1:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{i_data};
     sensor_data = dataStructure.(sensor_name);
     
-    % Tell the user what is happening?
     if 0~=fid
         fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
     end
+        
+    flags_sensor_field_has_correct_length = 1;
     
-    % Check the field to see if it exists, saving result in an array that
-    % represents the results for each sensor
-    flag_field_exists= 1;
-    if ~isfield(sensor_data,field_name)
-        % If the field is not there, then fails
-        any_sensor_exists_results(i_data) = 0;
-    elseif isempty(sensor_data.(field_name))
-        % if field is empty, then fails
-        any_sensor_exists_results(i_data) = 0;
-    elseif any(isnan(sensor_data.(field_name)))        
-        % if field only filled with nan, it fails
-        any_sensor_exists_results(i_data) = 0;
-    end   
-
-end
-
-% Check the all case
-if strcmp(string_any_or_all,'all') && any(any_sensor_exists_results==0)
-    % If any sensors have to have the field, then if all are nan, this
-    % flag fails
-    flag_field_exists = 0;
-    first_failure = find(any_sensor_exists_results==0,1,'first');
-    offending_sensor = sensor_names{first_failure};
-end
-
-% Check the any case
-if strcmp(string_any_or_all,'any') && all(any_sensor_exists_results==0)
-    % If any sensors have to have the field, then if all are nan, this
-    % flag fails
-    flag_field_exists = 0;
-    offending_sensor = sensor_names{1};
-end
-
-% Set the flag array and return accordingly
-flags.(flag_name) = flag_field_exists;
-if 0==flags.(flag_name)
-    return_flag = 1; % Indicate that the return was forced
-    return; % Exit the function immediately to avoid more processing
+    % Grab all the subfields
+    subfieldNames = fieldnames(sensor_data);
+    
+    % Loop through subfields
+    for i_subField = 1:length(subfieldNames)
+        % Grab the name of the ith subfield
+        subFieldName = subfieldNames{i_subField};
+        if strcmp(subFieldName,field_name)
+            
+            if 0~=fid
+                fprintf(fid,'\t\t Checking subfield: %s\n ',subFieldName);
+            end
+            
+            % Check to see if this subField has column length equal to the
+            % Target_Time vector
+            if length(sensor_data.(subFieldName)(:,1))~=length(sensor_data.(time_field)(:,1))
+                flags_sensor_field_has_correct_length = 0;
+                break;
+            end  % Ends if to check if the field is a cell
+        end % Ends if to check if field is a "Sigma" field
+        
+    end % Ends for loop through the subfields
+    
+    
+    
+    flags.(flag_name) = flags_sensor_field_has_correct_length;
+    if 0==flags.(flag_name)
+        offending_sensor = sensor_name; % cat(2,sensor_name, ' ' ,subFieldName); % Save the name of the sensor
+        return_flag = 1; % Indicate that the return was forced
+        return; % Exit the function immediately to avoid more processing
+    end    
+   
 end
 
 %% Plot the results (for debugging)?
@@ -291,6 +260,5 @@ end % Ends main function
 %
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
-
 
 

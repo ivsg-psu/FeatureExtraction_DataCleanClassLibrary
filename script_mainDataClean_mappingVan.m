@@ -279,7 +279,7 @@ flag.DBquery = false; %true; %set to true to query raw data from database
 flag.DBinsert = false; %set to true to insert cleaned data to cleaned data database
 flag.SaveQueriedData = true; % 
 
-clear dataset
+% clear dataset
 if ~exist('dataset','var')
     if flag.DBquery == true
         % Load the raw data from the database
@@ -319,7 +319,10 @@ data_structure_sequence{N_max_loops} = struct;
 
 main_data_clean_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
 while 1==flag_stay_in_main_loop
-    dataStructure = dataset{end};
+    if length(dataset)~=1
+        dataStructure = dataset{end};
+    end
+    
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     
     %% Check data for errors in Time data related to GPS-enabled sensors
@@ -328,7 +331,7 @@ while 1==flag_stay_in_main_loop
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
-    %% Check if there are no data collected that have GPS time (UTC time) recorded
+    %% Check if GPS_Time_exists_in_at_least_one_GPS_sensor
     %    ### ISSUES with this:
     %    * There is no absolute time base to use for the data
     %    * The tracking of vehicle data relative to external sourses is no
@@ -341,12 +344,12 @@ while 1==flag_stay_in_main_loop
     %    Time as stand-in
     %    * Otherwise, complete failure of sensor recordings
     
-    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_at_least_one_sensor)
+    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_at_least_one_GPS_sensor)
         error('Catastrophic data error detected: no GPS_Time data detected in any sensor.');
     end
     
     
-    %% Check if at least one GPS sensor is missing GPS time
+    %% Check if GPS_Time_exists_in_all_GPS_sensors
     %    ### ISSUES with this:
     %    * There is no absolute time base to use for the sensor
     %    * This usually indicates back lock for the GPS
@@ -355,11 +358,11 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * If another GPS is available, use its time alongside the GPS data
     %    * Remove this GPS data field
-    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_all_GPS_sensors)
         error('Catastrophic data error detected: the following GPS sensor is missing GPS_Time data: %s.',offending_sensor);        
     end
     
-    %% Check if the centiSeconds field is missing on one of the GPS sensors
+    %% Check if centiSeconds_exists_in_all_GPS_sensors
     %    ### ISSUES with this:
     %    * This field defines the expected sample rate for each sensor
     %    ### DETECTION:
@@ -367,14 +370,14 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
-    if (1==flag_keep_checking) && (0==flags.centiSeconds_exists_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==flags.centiSeconds_exists_in_all_GPS_sensors)
         disp(dataStructure.(offending_sensor))
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
     end
     
     fid = 1;
 
-    %% Repeated GPS_Time values
+    %% Check if GPS_Time_has_no_repeats_in_GPS_sensors
     %    ### ISSUES with this:
     %    * If there are many repeated time values, the calculation of sampling
     %    time in the future steps produces incorrect results
@@ -393,7 +396,7 @@ while 1==flag_stay_in_main_loop
 
 
 
-    %% Check if inconsistency between expected and actual time sampling for GPS_Time
+    %% Check if GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
     %    * This field is used to confirm GPS sampling rates for all
     %    GPS-triggered sensors
@@ -413,7 +416,7 @@ while 1==flag_stay_in_main_loop
     end
     
     
-    %% Severe inconsistency between start times for GPS_Time
+    %% Check if start_time_GPS_sensors_agrees_to_within_5_seconds
     %    ### ISSUES with this:
     %    * The start times of all sensors in general should be the same,
     %    within a few seconds, as this is the boot-up time for sensors
@@ -434,11 +437,11 @@ while 1==flag_stay_in_main_loop
     
     %% Check consistency between start and end times for GPS_Time
     if (1==flag_keep_checking) && (0==flags.start_time_GPS_sensors_agrees_to_within_5_seconds)
-        fixed_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(BadDataStructure,fid);
+        fixed_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(dataStructure,fid);
         flag_keep_checking = 0;
     end
     
-    %% Inconsistency between start and end times for GPS_Time
+    %% Check if consistent_start_and_end_times_across_GPS_sensors
     %    ### ISSUES with this:
     %    * The start times and end times of all data collection assumes all GPS
     %    systems are operating simultaneously
@@ -460,7 +463,7 @@ while 1==flag_stay_in_main_loop
         flag_keep_checking = 0;
     end
     
-    %% The Trigger_Time field is missing on a GPS sensor
+    %% Check if Trigger_Time_exists_in_all_GPS_sensors
     %    ### ISSUES with this:
     %    * This field is used to assign data collection timings for all
     %    non-GPS-triggered sensors, and to fill in GPS_Time data if there's a
@@ -473,12 +476,12 @@ while 1==flag_stay_in_main_loop
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
     
     %% Fix Trigger_Time field in GPS sensors?
-    if (1==flag_keep_checking) && (0==flags.Trigger_Time_exists_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==flags.Trigger_Time_exists_in_all_GPS_sensors)
         fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
         flag_keep_checking = 0;
     end
     
-    %% GPS_Time data is not strictly ascending on a GPS sensor
+    %% Check if GPS_Time_strictly_ascends
     %    ### ISSUES with this:
     %    * This field is used to calibrate ROS time via interpolation, and must
     %    be STRICTLY increasing
@@ -496,11 +499,11 @@ while 1==flag_stay_in_main_loop
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
         fid = 1;
-        fixed_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(BadDataStructure, field_name,sensors_to_check,fid);               
+        fixed_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(dataStructure, field_name,sensors_to_check,fid);               
         flag_keep_checking = 0;
     end
     
-    %% There are missing ROS_Time fields in one of the sensors
+    %% Check if ROS_Time_exists_in_all_GPS_sensors
     %    ### ISSUES with this:
     %    * If the sensor is recording data, all data is time-stamped to ROS
     %    time
@@ -512,13 +515,11 @@ while 1==flag_stay_in_main_loop
     %    * Catastrophic error. Sensor has failed and should be removed.
     
     %% Check existence of ROS_Time data in each sensor
-    % [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkIfFieldInAllSensors(fid, dataStructure, flags, 'ROS_Time');
-    
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_exists_in_all_sensors)
+    if (1==flag_keep_checking) && (0==flags.ROS_Time_exists_in_all_GPS_sensors)
         error('Catastrophic failure in one of the sensors in that it is missing ROS time. Stopping.');
     end
     
-    %% The ROS_Time fields are in wrong units
+    %% Check if ROS_Time_scaled_correctly_as_seconds
     %    ### ISSUES with this:
     %    * ROS records time in posix nanoseconds, whereas GPS units records in
     %    posix seconds
@@ -533,11 +534,11 @@ while 1==flag_stay_in_main_loop
     
     %% Check to fix ROS_Time mis-scaling
     if (1==flag_keep_checking) && (0==flags.ROS_Time_scaled_correctly_as_seconds)
-        fixed_dataStructure = fcn_DataClean_convertROSTimeToSeconds(BadDataStructure,'',fid);              
+        fixed_dataStructure = fcn_DataClean_convertROSTimeToSeconds(dataStructure,'',fid);              
         flag_keep_checking = 0;
     end
     
-    %% Inconsistency between expected and actual time sampling for ROS_Time
+    %% Check if ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
     %    * The ROS time and GPS time should both have approximately the same
     %    sampling rates, and we use this alignment to calibrate ROS time to GPS
@@ -559,7 +560,7 @@ while 1==flag_stay_in_main_loop
     
     
 
-    %% ROS_Time data is not strictly ascending on a GPS sensor
+    %% Check if ROS_Time_strictly_ascends
     %    ### ISSUES with this:
     %    * This field is used to calibrate ROS to GPS time via interpolation, and must
     %    be STRICTLY increasing for the interpolation function to work
@@ -577,9 +578,22 @@ while 1==flag_stay_in_main_loop
         error('ROS time is not strictly ascending.\');
         flag_keep_checking = 0;
     end
-
     
-    %% ROS_Time data has same length as Trigger_Time
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %    _____      _ _ _               _           _____   ____   _____            _______ _                     _             _____ _____   _____            _______ _
+    %   / ____|    | (_) |             | |         |  __ \ / __ \ / ____|          |__   __(_)                   | |           / ____|  __ \ / ____|          |__   __(_)
+    %  | |     __ _| |_| |__  _ __ __ _| |_ ___    | |__) | |  | | (___               | |   _ _ __ ___   ___     | |_ ___     | |  __| |__) | (___               | |   _ _ __ ___   ___
+    %  | |    / _` | | | '_ \| '__/ _` | __/ _ \   |  _  /| |  | |\___ \              | |  | | '_ ` _ \ / _ \    | __/ _ \    | | |_ |  ___/ \___ \              | |  | | '_ ` _ \ / _ \
+    %  | |___| (_| | | | |_) | | | (_| | ||  __/   | | \ \| |__| |____) |             | |  | | | | | | |  __/    | || (_) |   | |__| | |     ____) |             | |  | | | | | | |  __/
+    %   \_____\__,_|_|_|_.__/|_|  \__,_|\__\___|   |_|  \_\\____/|_____/              |_|  |_|_| |_| |_|\___|     \__\___/     \_____|_|    |_____/              |_|  |_|_| |_| |_|\___|
+    %                                                                      ______                                                                     ______
+    %                                                                     |______|                                                                   |______|
+    % See http://patorjk.com/software/taag/#p=display&f=Big&t=Calibrate%20%20%20ROS%20_%20Time%20%20%20%20to%20%20%20GPS%20_%20Time
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
+    %% Check if ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
     %    ### ISSUES with this:
     %    * The Trigger_Time represents, for many sensors, when they were
     %    commanded to collect data. If the number of data in the ROS time list
@@ -592,25 +606,28 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictly increasing
     
     %% Check that ROS_Time data has expected count
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_has_correct_length)
+    if (1==flag_keep_checking) && (0==flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
         error('ROS time does not have expected count.\');
         flag_keep_checking = 0;
     end
     
-    %% ROS_Time data has same length as Trigger_Time
+    %% Check ROS_Time_rounds_correctly_to_Trigger_Time
+    % Check that the ROS Time, when rounded to the nearest sampling interval,
+    % matches the Trigger time.
     %    ### ISSUES with this:
-    %    * The Trigger_Time represents, for many sensors, when they were
-    %    commanded to collect data. If the ROS Time does not round to the
-    %    correct centiSecond value, then there can be ambiguous alignment of
-    %    data
+    %    * The data on some sensors are triggered, inlcuding the GPS sensors
+    %    which are self-triggered
+    %    * If the rounding does not work, this indicates a problem in the ROS
+    %    master
     %    ### DETECTION:
     %    * Round the ROS Time and compare to the Trigger_Times
     %    ### FIXES:
     %    * Remove and interpolate time field if not strictly increasing
+
     
-    %% Check that ROS_Time data would round to correct centiSeconds
+    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time
     if (1==flag_keep_checking) && (0==flags.ROS_Time_rounds_correctly_to_Trigger_Time)
-        error('ROS time does not round correctly to Trigger_Time.\');
+        error('ROS time does not round correctly to Trigger_Time. There is no code yet to fix this.');
         flag_keep_checking = 0;
     end
 
@@ -623,6 +640,11 @@ while 1==flag_stay_in_main_loop
     end
     
     %% Exiting conditions
+    if length(dataset)==1
+        temp = dataset;
+        clear dataset
+        dataset{1} = temp;
+    end
     dataset{end+1} = fixed_dataStructure; %#ok<SAGROW>
     
     % Check if all the flags work, so we can exit!

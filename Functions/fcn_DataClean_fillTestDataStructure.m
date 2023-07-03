@@ -109,7 +109,10 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %          find the missing data, then resampling over the gap.
 %
 %          2^20 bit = 1: The GPS_Time field in a GPS sensor has repeated
-%          entries.
+%          but ordered entries.
+%
+%          2^21 bit = 1: The ROS_Time field in a GPS sensor has repeated
+%          but ordered entries.
 %
 %      fid: a file ID to print results of analysis. If not entered, no
 %      printing is done. Set fid to 1 to print to the console.%
@@ -257,7 +260,7 @@ dataStructure.LIDAR2D_Sick.centiSeconds              = 10; % 10 Hz
 
 
 numSeconds = 5; % Simulate 5 seconds of data
-ROS_time_offset = 23.821;
+ROS_time_offset = 0.00123; % It will be just a very small bit off
 
 % Fill in time data
 fields_to_calculate_times_for = [...
@@ -509,8 +512,9 @@ for i_data = 1:length(names)
                     sensor_structure.GeoSep = onesSensor;
                 case{'SpdOverGrndKmph'}
                     sensor_structure.SpdOverGrndKmph = onesSensor;
-                    
-                    
+                case{'TrueTrack'}
+                    sensor_structure.SpdOverGrndKmph = onesSensor;
+                                                          
                     
                     % ENCODER fields
                 case {'CountsPerRev'}
@@ -663,7 +667,7 @@ if time_corruption_type>1
     % Use decimal to binary to convert the input flags into binary, and pad
     % the bits that were not specified with zeros
     binary_time_corruption = de2bi(time_corruption_type);       
-    num_bits = 21;
+    num_bits = 22;
     if length(binary_time_corruption)<num_bits
         binary_time_corruption(end+1:num_bits) = 0;
     end
@@ -784,8 +788,8 @@ if time_corruption_type>1
         time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time is not increasing, ');
  
         % Swap order of first two time elements
-        BadDataStructure.ENCODER_RearLeft.ROS_Time(1,:) = dataStructure.ENCODER_RearLeft.ROS_Time(2,:);
-        BadDataStructure.ENCODER_RearLeft.ROS_Time(2,:) = dataStructure.ENCODER_RearLeft.ROS_Time(1,:);
+        BadDataStructure.GPS_Hemisphere.ROS_Time(1,:) = dataStructure.GPS_Hemisphere.ROS_Time(2,:);
+        BadDataStructure.GPS_Hemisphere.ROS_Time(2,:) = dataStructure.GPS_Hemisphere.ROS_Time(1,:);
     end
 
     % Bad time ordering test - the ROS_Time has a repeat
@@ -793,7 +797,7 @@ if time_corruption_type>1
         time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time has a repeat, ');
  
         % Swap order of first two time elements
-        BadDataStructure.TRIGGER.ROS_Time(2,:) = dataStructure.TRIGGER.ROS_Time(1,:);
+        BadDataStructure.GPS_Hemisphere.ROS_Time(2,:) = dataStructure.GPS_Hemisphere.ROS_Time(1,:);
     end
 
     % Bad time length test - the ROS_Time has wrong length
@@ -801,10 +805,10 @@ if time_corruption_type>1
         time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time has wrong length, ');
  
         % Add one more tiny data point to end
-        BadDataStructure.ENCODER_RearLeft.ROS_Time(end+1,:) = dataStructure.ENCODER_RearLeft.ROS_Time(end,:)+0.001;
+        BadDataStructure.GPS_Hemisphere.ROS_Time(end+1,:) = dataStructure.GPS_Hemisphere.ROS_Time(end,:)+0.001;
     end
     
-    % The GPS_Time field in a GPS sensor has repeated entries.
+    %% 2^20 bit = 1: The GPS_Time field in a GPS sensor has repeated but ordered entries.
     if binary_time_corruption(21)
         time_corruption_type_string = cat(2,time_corruption_type_string,'GPS_Time has repeated entries, ');
         
@@ -838,6 +842,23 @@ if time_corruption_type>1
         BadDataStructure.GPS_Hemisphere = dataStructureToCorrupt;
     end
     
+    %% 2^21 bit = 1: The ROS_Time field in a GPS sensor does not align with the others
+    if binary_time_corruption(22)
+        time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time has bad entries and will not round to Trigger_Time, on GPS_Hemisphere, ');
+        
+        dataStructureToCorrupt = dataStructure.GPS_Hemisphere;
+        
+        % Nudge one point so that it rounds to the same point
+        dataStructureToCorrupt.ROS_Time(2,1) = dataStructureToCorrupt.ROS_Time(3,1)+0.000001;
+        dataStructureToCorrupt.ROS_Time(3,1) = dataStructureToCorrupt.ROS_Time(3,1)+0.000002;
+        
+        % FOR DEBUGGING:
+        % disp((dataStructureToCorrupt.ROS_Time(1:10)-dataStructureToCorrupt.ROS_Time(1,1)));
+        
+        % Put data into the BadDataStructure
+        BadDataStructure.GPS_Hemisphere = dataStructureToCorrupt;
+    end
+
     dataStructure = BadDataStructure;
 end % Ends if statement on time_corruption
 
