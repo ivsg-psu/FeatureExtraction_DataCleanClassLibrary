@@ -209,7 +209,7 @@ all_end_times_centiSeconds = floor(100*array_GPS_Time_end/max_sampling_period_ce
 if (max(all_end_times_centiSeconds)-min(all_end_times_centiSeconds))>100
     error('The end times on different GPS sensors appear to be untrimmed to same value. The Trigger_Time calculations will give incorrect results if the data are not trimmed first.');
 end
-centitime_all_sensors_have_ended_GPS_Time = max(all_end_times_centiSeconds);
+centitime_all_sensors_have_ended_GPS_Time = min(all_end_times_centiSeconds);
 
 % Show the results?
 if fid
@@ -238,6 +238,9 @@ end
 
 
 %% Step 2: Fill all Trigger_Time data to common start/end times
+% and fix GPS_Time
+
+[cell_array_GPS_Time,sensor_names_GPS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time',sensor_type);
 
 % Initialize the result:
 fixed_dataStructure = dataStructure;
@@ -256,6 +259,52 @@ for ith_sensor = 1:length(sensor_names_GPS_Time)
     new_Trigger_Time = (centitime_all_sensors_have_started_GPS_Time:centiSeconds:centitime_all_sensors_have_ended_GPS_Time)'/100;
     fixed_dataStructure.(sensor_name).Trigger_Time = new_Trigger_Time;
 
+    % Calculate new GPS_Time
+    GPS_Time_original = cell_array_GPS_Time{ith_sensor};
+    original_vector_size = size(GPS_Time_original);
+
+    % Find the start index
+    rounded_centiSecond_GPS_Time = round(100*GPS_Time_original/centiSeconds)*centiSeconds;
+    start_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_started_GPS_Time,1,'first');
+    if isempty(start_index)
+        error('Unable to match GPS_Time to Trigger_Time for start time calculation');
+    end
+
+    % Find the end index
+    end_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_ended_GPS_Time,1,'first');
+    if isempty(end_index)
+        error('Unable to match GPS_Time to Trigger_Time for end time calculation');
+    end
+    GPS_Time_in_Trigger = GPS_Time_original(start_index:end_index,:);
+    fixed_dataStructure.(sensor_name).GPS_Time = GPS_Time_in_Trigger;
+
+    if length(GPS_Time_in_Trigger)~=length(new_Trigger_Time)
+        error('The GPS time calculated to match the Trigger_Time duration does not have same length. This is typically caused by GPS rounding errors, but it must be resolved to continue.\n');
+    end
+
+    % Loop through subfields
+    sensor_data = fixed_dataStructure.(sensor_name);
+    subfieldNames = fieldnames(sensor_data);
+    for i_subField = 1:length(subfieldNames)
+        % Grab the name of the ith subfield
+        subFieldName = subfieldNames{i_subField};
+        
+        if ~iscell(sensor_data.(subFieldName)) % Is it a cell? If yes, skip it
+            if length(sensor_data.(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
+                % It's an array, make sure it has right length
+                if isequal(size(sensor_data.(subFieldName)),original_vector_size)
+                    if strcmp(sensor_name,'LIDAR_Sick_Rear') 
+                        warning('SICK lidar data processing not yet tested.');
+                    else
+                        % Resize the data to exact same indicies as trimmed
+                        % GPS_Time field, to align with the Trigger_Time
+                        fixed_dataStructure.(sensor_name).(subFieldName) = sensor_data.(subFieldName)(start_index:end_index,:);
+                    end
+                end
+            end
+        end
+       
+    end % Ends for loop through the subfields
 end
 
 %% Plot the results (for debugging)?

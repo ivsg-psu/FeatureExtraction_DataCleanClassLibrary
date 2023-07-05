@@ -14,23 +14,8 @@ fid = 1;
 dataStructure = fcn_DataClean_fillTestDataStructure;
 
 
-%% Fix the data using default call
-dataStructure = fcn_DataClean_trimRepeatsFromField(BadDataStructure);
+%% Example call - grab the names and data from each, and show data is unique
 
-% Make sure it worked
-[data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
-for i_data = 1:length(sensorNames)
-    unique_values = unique(data{i_data});
-    assert(isequal(unique_values,data{i_data}));
-end % Ends for loop
-
-%% Fix the data using specific call
-fid = 1;
-field_name = 'GPS_Time';
-sensors_to_check = 'GPS';
-dataStructure = fcn_DataClean_trimRepeatsFromField(BadDataStructure,fid, field_name,sensors_to_check);
-
-% Make sure it worked
 [data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
 for i_data = 1:length(sensorNames)
     unique_values = unique(data{i_data});

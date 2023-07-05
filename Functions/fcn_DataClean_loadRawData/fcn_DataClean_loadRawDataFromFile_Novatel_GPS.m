@@ -27,6 +27,24 @@ function GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(file_path,d
 % 3. Hemisphere = d_out;  %%update the interpolated values to raw data?
 %%
 
+% UPDATES:
+% 2023_07_04 sbrennan@psu.edu
+% -- fixed return at end of function to be 'end', keeping in function
+% format
+% -- added fid to fprint to allow printing to file
+% -- added entry and exit debugging prints
+% -- removed variable clearing at end of function because this is automatic
+
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
 if strcmp(datatype,'gps')
     
     % % Note: the Novatel and Hemisphere are almost perfectly time aligned, if
@@ -87,16 +105,8 @@ else
 end
 
 
-clear datatable %clear temp variable
-
-
 % Close out the loading process
 if flag_do_debug
-    % Show what we are doing
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
-
-return
+end

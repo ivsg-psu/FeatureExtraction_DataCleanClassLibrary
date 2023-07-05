@@ -1,4 +1,4 @@
-function diagnostic_structure = fcn_DataClean_loadRawDataFromFile_Diagnostic(file_path,datatype,flag_do_debug,topic_name)
+function diagnostic_structure = fcn_DataClean_loadRawDataFromFile_Diagnostic(file_path,datatype,fid,topic_name)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the parse diagnostic data, whose data type is diagnostic
@@ -23,11 +23,28 @@ function diagnostic_structure = fcn_DataClean_loadRawDataFromFile_Diagnostic(fil
 % 'diagnostic_encoder' are replaced with 'Trigger_diag' and 'Encoder_diag'
 % 2023_06_29 - S. Brennan
 % -- fixed bug where centiSeconds is being filled with NaNs
+% 2023_07_04 sbrennan@psu.edu
+% -- fixed return at end of function to be 'end', keeping in function
+% format
+% -- added fid to fprint to allow printing to file
 
 % To do lists:
 % 
 % Reference:
 % 
+
+
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
+
 %%
 if strcmp(datatype, 'diagnostic')
     
@@ -118,15 +135,9 @@ else
 
 end
 
-clear datatable %clear temp variable
-
 % Close out the loading process
 if flag_do_debug
-    % Show what we are doing
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
-return
+end

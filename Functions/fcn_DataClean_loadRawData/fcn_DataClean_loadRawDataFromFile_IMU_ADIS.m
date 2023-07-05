@@ -1,4 +1,4 @@
-function IMU_data_structure = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(file_path,datatype,flag_do_debug,topic_name)
+function IMU_data_structure = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(file_path,datatype,fid,topic_name)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the parse Encoder data, whose data type is imu
@@ -22,13 +22,25 @@ function IMU_data_structure = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(file_pa
 % 2023_06_22 sbrennan@psu.edu
 % -- fixed type error for imu (it was listed as ins, which is deprecated)
 % -- fixed error in datatype (typo in variable name)
+% 2023_07_04 sbrennan@psu.edu
+% -- fixed return at end of function to be 'end', keeping in function
+% format
+% -- added fid to fprint to allow printing to file
 
 % To do lists:
 % -- Need test script to catch errors
 % -- Need to functionalize code into standard form
-% 
-% Reference:
-% 
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  %#ok<NASGU> % % Flag to plot the final results
+flag_check_inputs = 1; %#ok<NASGU> % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
+
 %%
 if strcmp(datatype, 'imu')
     
@@ -218,15 +230,10 @@ else
 
 end
 
-clear datatable %clear temp variable
 
 % Close out the loading process
 if flag_do_debug
-    % Show what we are doing
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
-return
+end

@@ -1,4 +1,4 @@
-function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(file_path,datatype,flag_do_debug)
+function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(file_path,datatype,fid)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the parse Encoder data, whose data type is encoder
@@ -16,14 +16,26 @@ function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(file_pat
 % 
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
-%
+
+
 % Updates:
-%
-% To do lists:
-% 
-% Reference:
-% 
-%%
+% 2023_07_04 sbrennan@psu.edu
+% -- fixed return at end of function to be 'end', keeping in function
+% format
+% -- added fid to fprint to allow printing to file
+% -- added entry and exit debugging prints
+% -- removed variable clearing at end of function because this is automatic
+
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
 
 if strcmp(datatype,'encoder')
     opts = detectImportOptions(file_path);
@@ -51,15 +63,10 @@ else
 end
 
 
-clear datatable %clear temp variable
 
 % Close out the loading process
 if flag_do_debug
-    % Show what we are doing
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
-return
+end

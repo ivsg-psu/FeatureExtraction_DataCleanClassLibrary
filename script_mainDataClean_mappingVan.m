@@ -289,7 +289,7 @@ if ~exist('dataset','var')
         [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
         % Load the raw data from file
-        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,fid);
     end
 else
     if length(dataset)>1
@@ -321,16 +321,95 @@ data_structure_sequence{N_max_loops} = struct;
 
 main_data_clean_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
 while 1==flag_stay_in_main_loop
-    dataStructure = dataset{end};
-    
+    dataStructure = dataset{end};    
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
-    
-    %% Check data for errors in Time data related to GPS-enabled sensors
-    [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
-    
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
+    
+    %% Name consistency checks start here
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %
+    %   _   _                         _____                _     _                           _____ _               _
+    %  | \ | |                       / ____|              (_)   | |                         / ____| |             | |
+    %  |  \| | __ _ _ __ ___   ___  | |     ___  _ __  ___ _ ___| |_ ___ _ __   ___ _   _  | |    | |__   ___  ___| | _____
+    %  | . ` |/ _` | '_ ` _ \ / _ \ | |    / _ \| '_ \/ __| / __| __/ _ \ '_ \ / __| | | | | |    | '_ \ / _ \/ __| |/ / __|
+    %  | |\  | (_| | | | | | |  __/ | |___| (_) | | | \__ \ \__ \ ||  __/ | | | (__| |_| | | |____| | | |  __/ (__|   <\__ \
+    %  |_| \_|\__,_|_| |_| |_|\___|  \_____\___/|_| |_|___/_|___/\__\___|_| |_|\___|\__, |  \_____|_| |_|\___|\___|_|\_\___/
+    %                                                                                __/ |
+    %                                                                               |___/
+    % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Name%20Consistency%20Checks
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
+    %% Check name flags
+    [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(dataStructure,fid);
+    
+    %% Check if sensor outputs are merged
+    %    ### ISSUES with this:
+    %    * The Sparkfun GPS unit requires several different datagrams to fully
+    %    capture its output
+    %    * The data grams are spread across different sensor datasets
+    %    corresponding to each topic, but are actually one
+    %    * If they are kept separate, the data are not correlated correctly
+    %    ### DETECTION:
+    %    * Examine if the Sparkfun sensors are fields within the current
+    %    datastructure
+    %    ### FIXES:
+    %    * Merge the data from the fields together
+
+    % Check Sparkfun_GPS_RearRight_sensors_are_merged
+    if (1==flag_keep_checking) && (0==name_flags.Sparkfun_GPS_RearRight_sensors_are_merged)
+        sensors_to_merge = 'Sparkfun_GPS_RearRight';
+        merged_sensor_name = 'GPS_SparkFun_RearRight';
+        method_name = 'keep_unique';
+        fid = 1;
+        fixed_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        flag_keep_checking = 0;
+    end
+    
+    % Check Sparkfun_GPS_RearRight_sensors_are_merged
+    if (1==flag_keep_checking) && (0==name_flags.Sparkfun_GPS_RearLeft_sensors_are_merged)
+        sensors_to_merge = 'Sparkfun_GPS_RearLeft';
+        merged_sensor_name = 'GPS_SparkFun_RearLeft';
+        method_name = 'keep_unique';
+        fid = 1;
+        fixed_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        flag_keep_checking = 0;
+    end
+    
+    % Check ADIS_sensors_are_merged 
+    if (1==flag_keep_checking) && (0==name_flags.ADIS_sensors_are_merged)
+        sensors_to_merge = 'ADIS';
+        merged_sensor_name = 'IMU_Adis_TopCenter';
+        method_name = 'keep_unique';
+        fid = 1;
+        fixed_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        flag_keep_checking = 0;
+    end
+    
+    %% Check if sensor_naming_standards_are_used
+    %    ### ISSUES with this:
+    %    * The sensors used on the mapping van follow a standard naming
+    %    convention, such as:
+    %    ### DETECTION:
+    %    * Examine if the sensor core names appear outside of the standard
+    %    convention
+    %    ### FIXES:
+    %    * Rename the fields
+    
+    % Check if sensor_naming_standards_are_used
+    if (1==flag_keep_checking) && (0==name_flags.sensor_naming_standards_are_used)
+        fixed_dataStructure = fcn_DataClean_renameSensorsToStandardNames(dataStructure,fid);
+        flag_keep_checking = 0;
+    end
+
+    
+    %% Check data for errors in Time data related to GPS-enabled sensors
+    if (1==flag_keep_checking)
+        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
+    end
+
     %% GPS_Time tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %    _____ _____   _____            _______ _                   _______        _
@@ -358,7 +437,7 @@ while 1==flag_stay_in_main_loop
     %    Time as stand-in
     %    * Otherwise, complete failure of sensor recordings
     
-    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_at_least_one_GPS_sensor)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_exists_in_at_least_one_GPS_sensor)
         error('Catastrophic data error detected: no GPS_Time data detected in any sensor.');
     end
     
@@ -373,7 +452,7 @@ while 1==flag_stay_in_main_loop
     %    * If another GPS is available, use its time alongside the GPS data
     %    * Remove this GPS data field
     
-    if (1==flag_keep_checking) && (0==flags.GPS_Time_exists_in_all_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_exists_in_all_GPS_sensors)
         error('Catastrophic data error detected: the following GPS sensor is missing GPS_Time data: %s.',offending_sensor);        
     end
     
@@ -386,7 +465,7 @@ while 1==flag_stay_in_main_loop
     %    * Manually fix, or
     %    * Remove this sensor
     
-    if (1==flag_keep_checking) && (0==flags.centiSeconds_exists_in_all_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.centiSeconds_exists_in_all_GPS_sensors)
         disp(dataStructure.(offending_sensor))
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
     end
@@ -402,7 +481,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Remove repeats
 
-    if (1==flag_keep_checking) && (0==flags.GPS_Time_has_no_repeats_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_no_repeats_in_GPS_sensors)
         % Fix the data
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
@@ -428,7 +507,7 @@ while 1==flag_stay_in_main_loop
     %    * Manually fix, or
     %    * Remove this sensor
     
-    if (1==flag_keep_checking) && (0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
         error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
     end
     
@@ -452,7 +531,7 @@ while 1==flag_stay_in_main_loop
     %    to less than 5 seconds, then the fix worked. Otherwise, throw an
     %    error.
     
-    if (1==flag_keep_checking) && (0==flags.start_time_GPS_sensors_agrees_to_within_5_seconds)
+    if (1==flag_keep_checking) && (0==time_flags.start_time_GPS_sensors_agrees_to_within_5_seconds)
         fixed_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(dataStructure,fid);
         flag_keep_checking = 0;
     end
@@ -473,7 +552,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Crop all data to same starting centi-second value
 
-    if (1==flag_keep_checking) && (0==flags.consistent_start_and_end_times_across_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.consistent_start_and_end_times_across_GPS_sensors)
         fixed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,fid);
         flag_keep_checking = 0;
     end
@@ -491,7 +570,7 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
     
-    if (1==flag_keep_checking) && (0==flags.GPS_Time_strictly_ascends)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_strictly_ascends)
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
         fid = 1;
@@ -510,7 +589,7 @@ while 1==flag_stay_in_main_loop
     %    mean differences
     %    ### FIXES:
     %    * Interpolate time field if only a small segment is missing        
-    if (1==flag_keep_checking) && (0==flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
         error('Large jump discontinuity detected in GPS_Time data');
         flag_keep_checking = 0;
     end
@@ -542,11 +621,10 @@ while 1==flag_stay_in_main_loop
     %    * Examine if Trigger_Time fields exist
     %    ### FIXES:
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
-    if (1==flag_keep_checking) && (0==flags.Trigger_Time_exists_in_all_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
         fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
         flag_keep_checking = 0;
     end
-    
     
     %% ROS_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -572,7 +650,7 @@ while 1==flag_stay_in_main_loop
     %    * Examine if ROS_Time fields exist on all sensors
     %    ### FIXES:
     %    * Catastrophic error. Sensor has failed and should be removed.
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_exists_in_all_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_exists_in_all_GPS_sensors)
         error('Catastrophic failure in one of the sensors in that it is missing ROS time. Stopping.');
     end
     
@@ -588,7 +666,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Divide ROS_Time on this sensor by 10^9, confirm that this fixes the
     %    problem
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_scaled_correctly_as_seconds)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_scaled_correctly_as_seconds)
         fixed_dataStructure = fcn_DataClean_convertROSTimeToSeconds(dataStructure,'',fid);              
         flag_keep_checking = 0;
     end
@@ -606,7 +684,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
         error('ROS time is mis-sampled.\');            
         flag_keep_checking = 0;
     end
@@ -625,7 +703,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_strictly_ascends)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends)
         error('ROS time is not strictly ascending.\');
         flag_keep_checking = 0;
     end
@@ -657,11 +735,54 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictly increasing
     
     %% Check that ROS_Time data has expected count
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
         error('ROS time does not have expected count.\');
         flag_keep_checking = 0;
     end
     
+
+
+    %% TO-DO - Create a time analysis function - and add it here
+    % Fix the x-axes to match the time duration, e.g. index*centiSeconds*0.01
+
+    % Examine the offset deviations between the different time sources
+    [cell_array_centiSeconds,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds','GPS');
+    [cell_array_GPS_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
+    [cell_array_Trigger_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS');
+    [cell_array_ROS_Time,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS');
+    
+    % Calculate ROS_Time - Trigger_time, plot this versus duration
+    figure(1818);
+    clf;
+    hold on;
+    grid on;
+    xlabel('Duration of Data Collection (seconds)');
+    ylabel('Deviations in Time (seconds)');
+    title('Differences, ROS Time - Trigger Time');
+
+    for ith_sensor = 1:length(sensor_names)
+        xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
+        deviations_in_time = (cell_array_ROS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
+        plot(xdata,deviations_in_time);
+    end
+    legend(sensor_names,'Interpreter','none')
+
+    % Calculate GPS_Time - Trigger_time, plot this versus duration
+    figure(1819);
+    clf;
+    hold on;
+    grid on;
+    xlabel('Duration of Data Collection (seconds)');
+    ylabel('Deviations in Time (seconds)');
+    title('Differences, GPS Time - Trigger Time');
+
+    for ith_sensor = 1:length(sensor_names)
+        xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
+        deviations_in_time = (cell_array_GPS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
+        plot(xdata,deviations_in_time);
+    end
+    legend(sensor_names,'Interpreter','none')
+
     %% Check ROS_Time_rounds_correctly_to_Trigger_Time
     % Check that the ROS Time, when rounded to the nearest sampling interval,
     % matches the Trigger time.
@@ -677,8 +798,8 @@ while 1==flag_stay_in_main_loop
 
     
     %% Check that ROS_Time_rounds_correctly_to_Trigger_Time
-    if (1==flag_keep_checking) && (0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
-        error('ROS time does not round correctly to Trigger_Time. There is no code yet to fix this.');
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
+        warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
         flag_keep_checking = 0;
     end
 
@@ -698,14 +819,15 @@ while 1==flag_stay_in_main_loop
     end
     dataset{end+1} = fixed_dataStructure; %#ok<SAGROW>
     
-    % Check if all the flags work, so we can exit!
-    flag_fields = fieldnames(flags); % Grab all the flags
-    flag_array = zeros(length(flag_fields),1);
-    for ith_field = 1:length(flag_fields)
-        flag_array(ith_field,1) = flags.(flag_fields{ith_field});
-    end
-    if all(flag_array==1)
-        flag_stay_in_main_loop = 0;
+       
+    % Check if all the name_flags work, so we can exit!
+    name_flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(name_flags);
+    
+    if 0 == name_flag_stay_in_main_loop
+        % Check if all the time_flags work, so we can exit!
+        flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(time_flags);
+    else
+        flag_stay_in_main_loop = 1;
     end
     
     % Have we done too many loops?
@@ -1582,3 +1704,17 @@ end
 
 end % Ends function fcn_DebugTools_installDependencies
 
+%% fcn_INTERNAL_checkFlagsForExit
+function flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(flags)
+flag_fields = fieldnames(flags); % Grab all the flags
+flag_array = zeros(length(flag_fields),1);
+for ith_field = 1:length(flag_fields)
+    flag_array(ith_field,1) = flags.(flag_fields{ith_field});
+end
+
+flag_stay_in_main_loop = 1;
+if all(flag_array==1)
+    flag_stay_in_main_loop = 0;
+end
+end % Ends fcn_INTERNAL_checkFlagsForExit
+    

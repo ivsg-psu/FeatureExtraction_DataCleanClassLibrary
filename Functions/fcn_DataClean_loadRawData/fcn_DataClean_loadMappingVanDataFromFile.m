@@ -1,4 +1,4 @@
-function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName)
+function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,fid)
 % fcn_DataClean_loadMappingVanDataFromFile
 % imports raw data from mapping van bag files
 %
@@ -55,9 +55,10 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName)
 % -- modified fcn_DataClean_loadRawDataFromFile_SparkFun_GPS
 % -- each sparkfun gps has three topics, sparkfun_gps_GGA, sparkfun_gps_VTG
 % and sparkfun_gps_GST. 
-% TO DO
-% -- Discuss how to merge the sparkfun gps topics into one topic for each
-% SparkFun GPS receiver
+% 2023_07_04 - S. Brennan
+% -- added FID to fprint to allow printing to file
+% -- moved loading print statements to this file, not subfiles
+
 
 flag_do_debug = 1;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -82,13 +83,15 @@ end
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if isempty(fid)
+    fid = 1;
+end
+
 dataFolder = fullfile(pwd, 'LargeData', bagFolderName);
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    if nargin < 1 || nargin > 1
-        error('Incorrect number of input arguments')
-    end
+    narginchk(1,2);
         
     % Check if dataFolder is a directory. If directory is not there, warn
     % the user.
@@ -124,10 +127,13 @@ end
 % This part will be functionalized later
 file_list = dir(dataFolder);
 num_files = length(file_list);
-flag_do_debug = 1;
 
 % Initialize an empty structure
 rawdata = struct;
+
+if fid
+    fprintf(fid,'Loading data from files in folder: %s\n',dataFolder);
+end
 
 % Search the contents of the directory for data files
 for file_idx = 1:num_files
@@ -142,147 +148,154 @@ for file_idx = 1:num_files
         file_name_noext = extractBefore(file_name,'.');
 
         topic_name = strrep(file_name_noext,'_slash_','/');
+        
 
 
         datatype = fcn_DataClean_determineDataType(topic_name);
+        
+        % Tell the user what we are doing
+        if fid
+            fprintf(fid,'\t Loading file: %s, with topic name: %s, with datatype: %s \n',file_name, topic_name,datatype);
+        end
+        
         full_file_path = fullfile(dataFolder,file_name);
         % topic name is used to decide the sensor
 %         topic sicm_,ms500/sick_time 
         if contains(topic_name,'sick_lms500/scan')
 
-            SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,flag_do_debug);
+            SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,fid);
             rawdata.SickLiDAR = SickLiDAR;
 
         else
             if contains(topic_name, 'Bin1')
-                Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(full_file_path,datatype,flag_do_debug);
+                Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(full_file_path,datatype,fid);
                 rawdata.Hemisphere_DGPS = Hemisphere_DGPS;
 
             elseif contains(topic_name, 'GPS_Novatel')
 
 
-                GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(full_file_path,datatype,flag_do_debug);
+                GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(full_file_path,datatype,fid);
 
                 rawdata.GPS_Novatel = GPS_Novatel;
 
             elseif contains(topic_name, 'Garmin_GPS')
 
 
-                GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(full_file_path,datatype,flag_do_debug);
+                GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(full_file_path,datatype,fid);
                 rawdata.Garmin_GPS = GPS_Garmin;
 
             elseif contains(topic_name, 'Novatel_IMU')
 
-                Novatel_IMU = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(full_file_path,datatype,flag_do_debug);
+                Novatel_IMU = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(full_file_path,datatype,fid);
                 rawdata.Novatel_IMU = Novatel_IMU;
 
             elseif contains(topic_name, 'parseEncoder')
 
-                parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(full_file_path,datatype,flag_do_debug);
+                parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(full_file_path,datatype,fid);
                 rawdata.Raw_Encoder = parseEncoder;
 
             elseif contains(topic_name, 'imu/data_raw')
 
-                adis_IMU_dataraw = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                adis_IMU_dataraw = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
                 rawdata.adis_IMU_dataraw = adis_IMU_dataraw;
 
 
             elseif contains(topic_name, 'imu/rpy/filtered')
 
-                adis_IMU_filtered_rpy = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                adis_IMU_filtered_rpy = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
                 rawdata.adis_IMU_filtered_rpy = adis_IMU_filtered_rpy;
 
             elseif contains(topic_name, 'imu/data')
 
-                adis_IMU_data = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                adis_IMU_data = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
                 rawdata.adis_IMU_data = adis_IMU_data;
             
             elseif contains(topic_name, 'imu/mag')
 
-                adis_IMU_mag = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                adis_IMU_mag = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
                 rawdata.adis_IMU_mag = adis_IMU_mag;
 
             elseif contains(topic_name, 'adis_msg')
 
-                adis_msg = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                adis_msg = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
                 rawdata.adis_msg = adis_msg;
 
 
             elseif contains(topic_name, 'adis_temp')
 
-                adis_temp = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                adis_temp = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
                 rawdata.adis_temp = adis_temp;
 
             elseif contains(topic_name, 'adis_press')
 
-                adis_press = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,flag_do_debug,topic_name);
+                adis_press = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
                 rawdata.adis_press = adis_press;
            
 
             elseif contains(topic_name,'parseTrigger')
 
-                parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(full_file_path,datatype,flag_do_debug);
+                parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(full_file_path,datatype,fid);
                 rawdata.RawTrigger = parseTrigger;
 
             elseif contains(topic_name, 'sparkfun_gps_rear_left_GGA')
 
-                SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.SparkFun_GPS_RearLeft_GGA = SparkFun_GPS_RearLeft_GGA;
             
             elseif contains(topic_name, 'sparkfun_gps_rear_left_VTG')
 
-                SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.SparkFun_GPS_RearLeft_VTG = SparkFun_GPS_RearLeft_VTG;
 
             elseif contains(topic_name, 'sparkfun_gps_rear_left_GST')
 
-                SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.SparkFun_GPS_RearLeft_GST = SparkFun_GPS_RearLeft_GST;
 
             elseif contains(topic_name, 'sparkfun_gps_rear_right_GGA')
-                sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.SparkFun_GPS_RearRight_GGA = sparkfun_gps_rear_right_GGA;
             
             elseif contains(topic_name, 'sparkfun_gps_rear_right_VTG')
-                sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.SparkFun_GPS_RearRight_VTG = sparkfun_gps_rear_right_VTG;
             
             elseif contains(topic_name, 'sparkfun_gps_rear_right_GST')
-                sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,flag_do_debug,topic_name);
+                sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.SparkFun_GPS_RearRight_GST = sparkfun_gps_rear_right_GST;
 
             elseif contains(topic_name, 'Trigger_diag')
-                diagnostic_trigger = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                diagnostic_trigger = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
                 rawdata.diagnostic_trigger = diagnostic_trigger;
     
             elseif contains(topic_name, 'Encoder_diag')
-                diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
                 rawdata.diagnostic_encoder = diagnostic_encoder;
             
             elseif contains(topic_name, 'sparkfun_gps_diag_rear_left')
-                sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
                 rawdata.sparkfun_gps_diag_rear_left = sparkfun_gps_diag_rear_left;
     
             elseif contains(topic_name, 'sparkfun_gps_diag_rear_right')
-                sparkfun_gps_diag_rear_right = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,flag_do_debug,topic_name);
+                sparkfun_gps_diag_rear_right = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
                 rawdata.sparkfun_gps_diag_rear_right = sparkfun_gps_diag_rear_right;
 
 
             elseif contains(topic_name,'ntrip_info')
-                ntrip_info = fcn_DataClean_loadRawDataFromFile_NTRIP(full_file_path,datatype,flag_do_debug);
+                ntrip_info = fcn_DataClean_loadRawDataFromFile_NTRIP(full_file_path,datatype,fid);
                 rawdata.ntrip_info = ntrip_info;
 %           Comment out due to format error with detectImportOptions
 %             elseif (contains(topic_name,'rosout') && ~contains(topic_name,'agg'))
 % 
-%                 ROSOut = fcn_DataClean_loadRawDataFromFile_ROSOut(full_file_path,datatype,flag_do_debug);
+%                 ROSOut = fcn_DataClean_loadRawDataFromFile_ROSOut(full_file_path,datatype,fid);
 %                 rawdata.ROSOut = ROSOut;
 
             elseif contains(topic_name,'tf')
-                transform_struct = fcn_DataClean_loadRawDataFromFile_Transform(full_file_path,datatype,flag_do_debug);
+                transform_struct = fcn_DataClean_loadRawDataFromFile_Transform(full_file_path,datatype,fid);
                 rawdata.transform = transform_struct;
 
             else
-                fprintf(1,'WARNING: Topic not processed: %s\n',topic_name)
+                fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',topic_name);
             end
         end
     end % Ends check if the directory list is a file

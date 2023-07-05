@@ -1,4 +1,4 @@
-function NTRIP_data_structure = fcn_DataClean_loadRawDataFromFile_NTRIP(file_path,datatype,flag_do_debug)
+function NTRIP_data_structure = fcn_DataClean_loadRawDataFromFile_NTRIP(file_path,datatype,fid)
 
 %% History
 % Created by Xinyu Cao on 6/20/2023
@@ -12,7 +12,22 @@ function NTRIP_data_structure = fcn_DataClean_loadRawDataFromFile_NTRIP(file_pat
 % Returned Results:
 %      Sparkfun_rear_left
 
+% 2023_07_04 sbrennan@psu.edu
+% -- fixed return at end of function to be 'end', keeping in function
+% format
+% -- added fid to fprint to allow printing to file
+% -- added entry and exit debugging prints
+% -- removed variable clearing at end of function because this is automatic
 
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
 
 if strcmp(datatype,'ntrip')
     opts = detectImportOptions(file_path);
@@ -38,15 +53,9 @@ else
     error('Wrong data type requested: %s',dataType)
 end
 
-clear datatable %clear temp variable
-
 % Close out the loading process
 if flag_do_debug
-    % Show what we are doing
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
-return
+end

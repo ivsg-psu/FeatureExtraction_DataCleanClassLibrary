@@ -1,5 +1,4 @@
-function SparkFun_GPS_data_structure = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(file_path,datatype,flag_do_debug,topic_name)
-
+function SparkFun_GPS_data_structure = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(file_path,datatype,fid,topic_name)
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 
 % This is the SparkFun GPS data, whose data type is gps
@@ -11,25 +10,35 @@ function SparkFun_GPS_data_structure = fcn_DataClean_loadRawDataFromFile_Sparkfu
 %      SparkFun_GPS_data_structure
 % Author: Xinyu Cap
 % Created Date: 2023_06_16
-%
+
 % Updates:
 % 2023_06_26 - X. Cao
 % -- Each sparkfun gps has three topics, sparkfun_gps_GGA, sparkfun_gps_VTG
 % and sparkfun_gps_GST. An if else statement was added to load different
 % topics.
+% 2023_07_04 sbrennan@psu.edu
+% -- fixed return at end of function to be 'end', keeping in function
+% format
+% -- added fid to fprint to allow printing to file
+% -- added entry and exit debugging prints
+% -- removed variable clearing at end of function because this is automatic
 
-% To do lists:
-% 
-% Reference:
-% 
 
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
 
 if strcmp(datatype,'gps')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
     Npoints = height(datatable);
-    SparkFun_GPS_data_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
+    SparkFun_GPS_data_structure = struct; % fcn_DataClean_initializeDataByType(datatype,Npoints);
     if contains(topic_name,"GGA")
 
         secs = datatable.GPSSecs; % For data collected after 2023-06-06, new fields GPSSecs are added
@@ -96,15 +105,10 @@ else
     error('Wrong data type requested: %s',dataType)
 end
 
-clear datatable %clear temp variable
 
 % Close out the loading process
 if flag_do_debug
-    % Show what we are doing
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
-return
+end

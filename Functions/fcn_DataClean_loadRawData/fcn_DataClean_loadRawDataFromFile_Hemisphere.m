@@ -1,4 +1,4 @@
-function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_path,datatype,flag_do_debug)
+function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_path,datatype,fid)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the Hemisphere GPS data, whose data type is gps
@@ -13,11 +13,14 @@ function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_pat
 % Created Date: 2020_11_15
 
 % Revisions:
-% Modify Date: 2023_06_16 by Xinyu Cao, Aneesh Batchu and Mariam
-% Abdellatief
+% 2023_06_16 by Xinyu Cao, Aneesh Batchu and Mariam Abdellatief
+% -- Edited for new GPS systems (Sparkfun)
 % 2023_006_25 by Sean Brennan
 % -- Fixed centiSeconds to 5, not 10, to agree with the data.
-% 
+% 2023_07_04 sbrennan@psu.edu
+% -- fixed return at end of function to be 'end', keeping in function
+% format
+% -- added fid to fprint to allow printing to file
 
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
@@ -28,6 +31,17 @@ function Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(file_pat
 % 
 % Reference:
 % To be added
+
+
+flag_do_debug = 0;  % Flag to show the results for debugging
+flag_do_plots = 0;  % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
 
 %%
 
@@ -86,18 +100,9 @@ else
     error('Wrong data type requested: %s',dataType)
 end
 
-clear datatable %clear temp variable
-
-
-
 % Close out the loading process
 if flag_do_debug
-    % Show what we are doing
-    % Grab function name
-    st = dbstack;
-    namestr = st.name;
-    fprintf(1,'\nFinished processing function: %s\n',namestr);
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
-
-return
+end

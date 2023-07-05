@@ -44,49 +44,43 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataS
 %
 % OUTPUTS:
 %
-%      flags: a data structure containing subfields that define the results
-%      of each verification check. These include:
+% Time inconsistencies include situations where the time vectors on data
+% are fundamentally flawed, and are checked in order of flaws. 
 %
-%            flags.GPS_time_exists - this is set to 1 if all the sensors
-%            have a field called "GPS_Time", which is the core time
-%            assigned to the data from each sensor. If the field is
-%            missing, exists but is empty, or exists and filled with only
-%            NaN values, the flag is set to zero and the function returns.
+% Many consistency tests later in the sequence depend on a sensor passing
+% consistency tests early in the sequence. For example, the consistency
+% check for inconsistent time sampling of ROS_Time on a particular sensor
+% cannot be performed unless that same sensor has a recorded value for its
+% sampling time in the 'centiSeconds' field.
 %
-%            flags.centiSeconds_exists - this is set to 1 if all the sensors
-%            have a field called "centiSeconds", which is the core time
-%            sampling interval for a sensor, in hundreths of a second. If
-%            the field is missing, exists but is empty, or exists and
-%            filled with only NaN values, the flag is set to zero and the
-%            function returns.
+% For timing data to be consistent, the following must be true, and
+% correspond directly to the names of flags being set. For some tests, if
+% they are not true, there are procedures to fix these errors and these are
+% typically performed via other functions in the DataClean library.
 %
-%            flags.dataTimeIntervalMatchesIntendedSamplingRate - this is
-%            set to 1 if the average of the time difference as measured in
-%            the GPS_time, multiplied by 100 and rounded to the nearest
-%            integer, matches the centiSeconds value. In other words, it is
-%            1 if the commanded sample time interval in centiSeconds matches
-%            the average observed time sampling interval in the data. If
-%            the values do not match, the flag is set to zero and the
-%            function returns.
+% # GPS_Time tests include:
+%     ## GPS_Time_exists_in_at_least_one_GPS_sensor
+%     ## GPS_Time_exists_in_all_GPS_sensors
+%     ## centiSeconds_exists_in_all_GPS_sensors
+%     ## GPS_Time_has_no_repeats_in_GPS_sensors
+%     ## GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+%     ## start_time_GPS_sensors_agrees_to_within_5_seconds
+%     ## consistent_start_and_end_times_across_GPS_sensors
+%     ## GPS_Time_strictly_ascends
+% 
+% # Trigger_Time tests include:
+%     ## Trigger_Time_exists_in_all_GPS_sensors
+% 
+% # ROS_Time tests include:GPS
+%     ## ROS_Time_exists_in_all_GPS_sensors
+%     ## ROS_Time_scaled_correctly_as_seconds
+%     ## ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+%     ## ROS_Time_strictly_ascends
+%     ## ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
+%     ## ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
 %
-%            flags.Trigger_Time_exist - this is set to 1 if all the sensors
-%            have a field called "Trigger_Time", which is the expected time
-%            assigned to the data from each sensor. If the field is
-%            missing, exists but is empty, or exists and filled with only
-%            NaN values, the flag is set to zero and the function returns.
-%
-%            flags.GPS_Time_strictly_ascends - this is set to 1 if GPS_Time
-%            is strictly ascending, e.g. increases with no repeated times.
-%            If not, the flag is set to zero and the function returns.
-%
-%            flags.ROS_time_exists - this is set to 1 if all the sensors
-%            have a field called "ROS_time", which is the ROS time
-%            assigned to the data from each sensor. If the field is
-%            missing, exists but is empty, or exists and filled with only
-%            NaN values, the flag is set to zero and the function returns.
-%
-%     offending_sensor: this is the string corresponding to the sensor
-%     field in the data structure that caused a flag to become zero. 
+% The above issues are explained in more detail in the following
+% sub-sections of code.
 % 
 % DEPENDENCIES:
 %
@@ -110,11 +104,8 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataS
 % -- fixed verbose mode bug
 % 2023_07_02 - sbrennan@psu.edu
 % -- fixed bug when GPS_Time and ROS_Time are different lengths
-
-
-% TO DO
-% -- As of 2023_06_25, Finish header comments for every flag
-
+% 2023_07_03 - sbrennan@psu.edu
+% -- added diff check on time
 
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -193,43 +184,7 @@ flags = struct;
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Time%20Consistency%20Checks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Time inconsistencies include situations where the time vectors on data
-% are fundamentally flawed, and are checked in order of flaws. 
-%
-% Many consistency tests later in the sequence depend on a sensor passing
-% consistency tests early in the sequence. For example, the consistency
-% check for inconsistent time sampling of ROS_Time on a particular sensor
-% cannot be performed unless that same sensor has a recorded value for its
-% sampling time in the 'centiSeconds' field.
-%
-% For timing data to be consistent, the following must be true, and
-% correspond directly to the names of flags being set. For some tests, if
-% they are not true, there are procedures to fix these errors and these are
-% typically performed via other functions in the DataClean library.
-%
-% # GPS_Time tests include:
-% ## GPS_Time_exists_in_at_least_one_GPS_sensor
-% ## GPS_Time_exists_in_all_GPS_sensors
-% ## centiSeconds_exists_in_all_GPS_sensors
-% ## GPS_Time_has_no_repeats_in_GPS_sensors
-% ## GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
-% ## start_time_GPS_sensors_agrees_to_within_5_seconds
-% ## consistent_start_and_end_times_across_GPS_sensors
-% ## GPS_Time_strictly_ascends
-%
-% # Trigger_Time tests include:
-% ## Trigger_Time_exists_in_all_GPS_sensors
-%
-% # ROS_Time tests include:GPS
-% ## ROS_Time_exists_in_all_GPS_sensors
-% ## ROS_Time_scaled_correctly_as_seconds
-% ## ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
-% ## ROS_Time_strictly_ascends
-% ## ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
-% ## ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
-%
-% The above issues are explained in more detail in the following
-% sub-sections
+
 
 %% GPS_Time tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
