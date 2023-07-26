@@ -164,56 +164,56 @@ for file_idx = 1:num_files
         if contains(topic_name,'sick_lms500/scan')
 
             SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,fid);
-            rawdata.SickLiDAR = SickLiDAR;
+            rawdata.Lidar_Sick_Rear = SickLiDAR;
 
         else
             if contains(topic_name, 'Bin1')
                 Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(full_file_path,datatype,fid);
-                rawdata.Hemisphere_DGPS = Hemisphere_DGPS;
+                rawdata.GPS_Hemisphere_SensorPlatform = Hemisphere_DGPS;
 
             elseif contains(topic_name, 'GPS_Novatel')
 
 
                 GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(full_file_path,datatype,fid);
 
-                rawdata.GPS_Novatel = GPS_Novatel;
+                rawdata.GPS_Novatel_SensorPlatform = GPS_Novatel;
 
             elseif contains(topic_name, 'Garmin_GPS')
 
 
                 GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(full_file_path,datatype,fid);
-                rawdata.Garmin_GPS = GPS_Garmin;
+                rawdata.GPS_Garmin_TopCenter = GPS_Garmin;
 
             elseif contains(topic_name, 'Novatel_IMU')
 
                 Novatel_IMU = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(full_file_path,datatype,fid);
-                rawdata.Novatel_IMU = Novatel_IMU;
+                rawdata.IMU_Novatel_TopCenter = Novatel_IMU;
 
             elseif contains(topic_name, 'parseEncoder')
 
                 parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(full_file_path,datatype,fid);
-                rawdata.Raw_Encoder = parseEncoder;
+                rawdata.Encoder_Raw = parseEncoder;
 
             elseif contains(topic_name, 'imu/data_raw')
 
                 adis_IMU_dataraw = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
-                rawdata.adis_IMU_dataraw = adis_IMU_dataraw;
+                rawdata.IMU_adis_dataraw = adis_IMU_dataraw;
 
 
             elseif contains(topic_name, 'imu/rpy/filtered')
 
                 adis_IMU_filtered_rpy = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
-                rawdata.adis_IMU_filtered_rpy = adis_IMU_filtered_rpy;
+                rawdata.IMU_adis_filtered_rpy = adis_IMU_filtered_rpy;
 
             elseif contains(topic_name, 'imu/data')
 
                 adis_IMU_data = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
-                rawdata.adis_IMU_data = adis_IMU_data;
+                rawdata.IMU_adis_data = adis_IMU_data;
             
             elseif contains(topic_name, 'imu/mag')
 
                 adis_IMU_mag = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
-                rawdata.adis_IMU_mag = adis_IMU_mag;
+                rawdata.IMU_adis_mag = adis_IMU_mag;
 
             elseif contains(topic_name, 'adis_msg')
 
@@ -235,50 +235,50 @@ for file_idx = 1:num_files
             elseif contains(topic_name,'parseTrigger')
 
                 parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(full_file_path,datatype,fid);
-                rawdata.RawTrigger = parseTrigger;
+                rawdata.Trigger_Raw = parseTrigger;
 
             elseif contains(topic_name, 'sparkfun_gps_rear_left_GGA')
 
                 SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-                rawdata.SparkFun_GPS_RearLeft_GGA = SparkFun_GPS_RearLeft_GGA;
+                rawdata.GPS_SparkFun_LeftRear_GGA = SparkFun_GPS_RearLeft_GGA;
             
             elseif contains(topic_name, 'sparkfun_gps_rear_left_VTG')
 
                 SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-                rawdata.SparkFun_GPS_RearLeft_VTG = SparkFun_GPS_RearLeft_VTG;
+                rawdata.GPS_SparkFun_LeftRear_VTG = SparkFun_GPS_RearLeft_VTG;
 
             elseif contains(topic_name, 'sparkfun_gps_rear_left_GST')
 
                 SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-                rawdata.SparkFun_GPS_RearLeft_GST = SparkFun_GPS_RearLeft_GST;
+                rawdata.GPS_SparkFun_LeftRear_GST = SparkFun_GPS_RearLeft_GST;
 
             elseif contains(topic_name, 'sparkfun_gps_rear_right_GGA')
                 sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-                rawdata.SparkFun_GPS_RearRight_GGA = sparkfun_gps_rear_right_GGA;
+                rawdata.GPS_SparkFun_RightRear_GGA = sparkfun_gps_rear_right_GGA;
             
             elseif contains(topic_name, 'sparkfun_gps_rear_right_VTG')
                 sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-                rawdata.SparkFun_GPS_RearRight_VTG = sparkfun_gps_rear_right_VTG;
+                rawdata.GPS_SparkFun_RightRear_VTG = sparkfun_gps_rear_right_VTG;
             
             elseif contains(topic_name, 'sparkfun_gps_rear_right_GST')
                 sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-                rawdata.SparkFun_GPS_RearRight_GST = sparkfun_gps_rear_right_GST;
+                rawdata.GPS_SparkFun_RightRear_GST = sparkfun_gps_rear_right_GST;
 
             elseif contains(topic_name, 'Trigger_diag')
                 diagnostic_trigger = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
-                rawdata.diagnostic_trigger = diagnostic_trigger;
+                rawdata.Diag_Trigger = diagnostic_trigger;
     
             elseif contains(topic_name, 'Encoder_diag')
                 diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
-                rawdata.diagnostic_encoder = diagnostic_encoder;
+                rawdata.Diag_Encoder = diagnostic_encoder;
             
             elseif contains(topic_name, 'sparkfun_gps_diag_rear_left')
                 sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
-                rawdata.sparkfun_gps_diag_rear_left = sparkfun_gps_diag_rear_left;
+                rawdata.Diag_GPS_SparkFun_LeftRear = sparkfun_gps_diag_rear_left;
     
             elseif contains(topic_name, 'sparkfun_gps_diag_rear_right')
                 sparkfun_gps_diag_rear_right = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
-                rawdata.sparkfun_gps_diag_rear_right = sparkfun_gps_diag_rear_right;
+                rawdata.Diag_GPS_SparkFun_RightRear = sparkfun_gps_diag_rear_right;
 
 
             elseif contains(topic_name,'ntrip_info')
@@ -292,7 +292,11 @@ for file_idx = 1:num_files
 
             elseif contains(topic_name,'tf')
                 transform_struct = fcn_DataClean_loadRawDataFromFile_Transform(full_file_path,datatype,fid);
-                rawdata.transform = transform_struct;
+                rawdata.Transform = transform_struct;
+
+            elseif contains(topic_name,'velodyne_points')
+                Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
+                rawdata.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
 
             else
                 fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',topic_name);

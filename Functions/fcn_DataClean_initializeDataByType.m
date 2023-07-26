@@ -352,11 +352,24 @@ switch lower(dataType)
         
     case 'lidar3d'
         % Xinyu - fill this in
+        dataStructure.Seq                = default_value;  % This is the sequence of the data, start with 0
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
+        dataStructure.Height             = default_value; 
+        dataStructure.Width              = default_value;
+        dataStructure.isbig_endian       = default_value; 
+        dataStructure.point_step         = default_value;
+        dataStructure.row_step           = default_value;
+        dataStructure.is_dense           = default_value;
+        dataStructure.X                  = default_value;
+        dataStructure.Y                  = default_value;
+        dataStructure.Z                  = default_value;
+        dataStructure.Intensity          = default_value;
+        dataStructure.Ring               = default_value;
+        dataStructure.Time_Offset        = default_value;
 
         % Event functions
         dataStructure.LIDAR3D_EventFunctions = {}; % These are the functions to determine if something went wrong
