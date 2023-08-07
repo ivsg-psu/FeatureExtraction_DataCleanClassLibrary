@@ -735,6 +735,7 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictly increasing
     
     %% Check that ROS_Time data has expected count
+    flag_keep_checking = 1;
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
         error('ROS time does not have expected count.\');
         flag_keep_checking = 0;
@@ -761,6 +762,7 @@ while 1==flag_stay_in_main_loop
     title('Differences, ROS Time - Trigger Time');
 
     for ith_sensor = 1:length(sensor_names)
+        
         xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
         deviations_in_time = (cell_array_ROS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
         plot(xdata,deviations_in_time);

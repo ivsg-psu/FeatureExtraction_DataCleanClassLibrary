@@ -237,30 +237,30 @@ for file_idx = 1:num_files
                 parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(full_file_path,datatype,fid);
                 rawdata.Trigger_Raw = parseTrigger;
 
-            elseif contains(topic_name, 'sparkfun_gps_rear_left_GGA')
+            elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GGA')
 
                 SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.GPS_SparkFun_LeftRear_GGA = SparkFun_GPS_RearLeft_GGA;
             
-            elseif contains(topic_name, 'sparkfun_gps_rear_left_VTG')
+            elseif contains(topic_name, 'GPS_SparkFun_RearLeft_VTG')
 
                 SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.GPS_SparkFun_LeftRear_VTG = SparkFun_GPS_RearLeft_VTG;
 
-            elseif contains(topic_name, 'sparkfun_gps_rear_left_GST')
+            elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GST')
 
                 SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.GPS_SparkFun_LeftRear_GST = SparkFun_GPS_RearLeft_GST;
 
-            elseif contains(topic_name, 'sparkfun_gps_rear_right_GGA')
+            elseif contains(topic_name, 'GPS_SparkFun_RearRight_GGA')
                 sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.GPS_SparkFun_RightRear_GGA = sparkfun_gps_rear_right_GGA;
             
-            elseif contains(topic_name, 'sparkfun_gps_rear_right_VTG')
+            elseif contains(topic_name, 'GPS_SparkFun_RearRight_VTG')
                 sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.GPS_SparkFun_RightRear_VTG = sparkfun_gps_rear_right_VTG;
             
-            elseif contains(topic_name, 'sparkfun_gps_rear_right_GST')
+            elseif contains(topic_name, 'GPS_SparkFun_RearRight_GST')
                 sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
                 rawdata.GPS_SparkFun_RightRear_GST = sparkfun_gps_rear_right_GST;
 
@@ -272,18 +272,18 @@ for file_idx = 1:num_files
                 diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
                 rawdata.Diag_Encoder = diagnostic_encoder;
             
-            elseif contains(topic_name, 'sparkfun_gps_diag_rear_left')
-                sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
-                rawdata.Diag_GPS_SparkFun_LeftRear = sparkfun_gps_diag_rear_left;
-    
-            elseif contains(topic_name, 'sparkfun_gps_diag_rear_right')
-                sparkfun_gps_diag_rear_right = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
-                rawdata.Diag_GPS_SparkFun_RightRear = sparkfun_gps_diag_rear_right;
+%             elseif contains(topic_name, 'DIAG_SparkFun_RearLeft')
+%                 sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
+%                 rawdata.Diag_GPS_SparkFun_LeftRear = sparkfun_gps_diag_rear_left;
+%     
+%             elseif contains(topic_name, 'DIAG_SparkFun_RearRight')
+%                 sparkfun_gps_diag_rear_right = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
+%                 rawdata.Diag_GPS_SparkFun_RightRear = sparkfun_gps_diag_rear_right;
 
 
-            elseif contains(topic_name,'ntrip_info')
-                ntrip_info = fcn_DataClean_loadRawDataFromFile_NTRIP(full_file_path,datatype,fid);
-                rawdata.ntrip_info = ntrip_info;
+%             elseif contains(topic_name,'ntrip_info')
+%                 ntrip_info = fcn_DataClean_loadRawDataFromFile_NTRIP(full_file_path,datatype,fid);
+%                 rawdata.ntrip_info = ntrip_info;
 %           Comment out due to format error with detectImportOptions
 %             elseif (contains(topic_name,'rosout') && ~contains(topic_name,'agg'))
 % 
@@ -294,9 +294,9 @@ for file_idx = 1:num_files
                 transform_struct = fcn_DataClean_loadRawDataFromFile_Transform(full_file_path,datatype,fid);
                 rawdata.Transform = transform_struct;
 
-            elseif contains(topic_name,'velodyne_points')
-                Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
-                rawdata.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
+%             elseif contains(topic_name,'velodyne_points')
+%                 Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
+%                 rawdata.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
 
             else
                 fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',topic_name);
