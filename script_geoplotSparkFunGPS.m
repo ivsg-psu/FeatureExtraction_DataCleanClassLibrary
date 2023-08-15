@@ -81,7 +81,7 @@ end
 % bagFolderName = "mapping_van_2023-06-22-1Lap_0";
 % bagFolderName = "mapping_van_2023-06-27-10s-Curve
 bagFolderName = "mapping_van_2023-06-29-5s";
-rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,1);
 %% Grab sparkfun gps fields from raw data
 sparkfun_gps_rear_left = rawdata.SparkFun_GPS_RearLeft_GGA;
 sparkfun_gps_rear_right = rawdata.SparkFun_GPS_RearRight_GGA;

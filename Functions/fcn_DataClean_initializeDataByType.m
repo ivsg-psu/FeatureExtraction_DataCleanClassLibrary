@@ -364,6 +364,8 @@ switch lower(dataType)
         dataStructure.point_step         = default_value;
         dataStructure.row_step           = default_value;
         dataStructure.is_dense           = default_value;
+        dataStructure.MD5Hash            = default_value;
+        dataStructure.PointCloud         = default_value;
         dataStructure.X                  = default_value;
         dataStructure.Y                  = default_value;
         dataStructure.Z                  = default_value;

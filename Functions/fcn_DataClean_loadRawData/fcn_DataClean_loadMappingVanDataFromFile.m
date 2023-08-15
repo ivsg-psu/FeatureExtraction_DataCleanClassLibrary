@@ -294,9 +294,9 @@ for file_idx = 1:num_files
                 transform_struct = fcn_DataClean_loadRawDataFromFile_Transform(full_file_path,datatype,fid);
                 rawdata.Transform = transform_struct;
 
-%             elseif contains(topic_name,'velodyne_points')
-%                 Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
-%                 rawdata.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
+            elseif contains(topic_name,'velodyne_packets')
+                Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,bagFolderName,datatype,fid);
+                rawdata.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
 
             else
                 fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',topic_name);
