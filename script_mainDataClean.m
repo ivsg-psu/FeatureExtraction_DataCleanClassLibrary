@@ -207,9 +207,6 @@
 % close all
 %
 % % % Make sure we can see the utilities folder
-addpath '../Utilities';
-addpath '../data'; % add the data path
-addpath('./fcn_DataClean_loadRawData/'); % all the functions and wrapper class
 %
 % %% Dependencies and Setup of the Code
 % % The code requires several other libraries to work, namely the following
@@ -299,10 +296,9 @@ library_folders{ith_library} = {'Functions','Data'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2023_04_22.zip';
 
 ith_library = ith_library+1;
-library_name{ith_library}    = 'PathClass_v2023_02_01';
+library_name{ith_library}    = 'PathClass_v2023_08_11';
 library_folders{ith_library} = {'Functions'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/blob/main/Releases/PathClass_v2023_02_01.zip?raw=true';
-
+library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/archive/refs/tags/PathClass_v2023_08_11.zip';
 ith_library = ith_library+1;
 library_name{ith_library}    = 'GPSClass_v2023_04_21';
 library_folders{ith_library} = {'Functions'};
@@ -335,7 +331,7 @@ end
 %flag.DBquery = true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 %flag.DBinsert = true; %set to true if you want to insert cleaned data to cleaned data database
 
-flag.DBquery = false; %true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
+flag.DBquery = true; %true; %set to true if you want to query raw data from database insteading of loading from default *.mat file
 flag.DBinsert = false; %set to true if you want to insert cleaned data to cleaned data database
 % flag.LoadToWorkspace = false; % set to true if you want to load variables directly to workspace
 flag.SaveQueriedData = true;
