@@ -122,7 +122,8 @@ if strcmp(queryCondition(1:4),'trip') % query by trip
     options.sensors.front_left_camera = queryFlag.sensors.front_left_camera; % default is 0
     options.sensors.front_center_camera = queryFlag.sensors.front_center_camera; % default is 0
     options.sensors.front_right_camera = queryFlag.sensors.front_right_camera; % default is 0
-    
+    options.sensors.GPS_SparkFun_LeftRear = queryFlag.sensors.GPS_SparkFun_LeftRear;
+    options.sensors.GPS_SparkFun_RightRear = queryFlag.sensors.GPS_SparkFun_RightRear;
     options.ENU_ref = queryFlag.ENU_ref; % 0 use default setting in database, 1 test track, 2 LTI, Larson  Transportation Institute
     
     % NOTE: we need to first check the total size of data we are trying to

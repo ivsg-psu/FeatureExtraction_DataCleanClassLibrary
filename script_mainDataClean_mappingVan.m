@@ -277,7 +277,7 @@ bagFolderName = "mapping_van_2023-06-29-5s";
 % raw data. It can be loaded either from a database or a file - details are
 % in the function below.
 
-flag.DBquery = false; %true; %set to true to query raw data from database 
+flag.DBquery = true; %true; %set to true to query raw data from database 
 flag.DBinsert = false; %set to true to insert cleaned data to cleaned data database
 flag.SaveQueriedData = true; % 
 
