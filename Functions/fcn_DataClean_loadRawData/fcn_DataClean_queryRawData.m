@@ -68,10 +68,9 @@ if DBqueryFlag == true
     queryFlag.sensors.front_left_camera = 0; % default is 0
     queryFlag.sensors.front_center_camera = 0; % default is 0
     queryFlag.sensors.front_right_camera = 0; % default is 0
-    queryFlag.sensors.GPS_SparkFun_LeftRear = 1; % default is 1
-    queryFlag.sensors.GPS_SparkFun_RightRear = 1; % default is 1
-    queryFlag.sensors.Lidar_Velodyne = 0; % default is 0
-    
+    queryFlag.sensors.gps_sparkfun_leftrear = 1;
+    queryFlag.seneors.gps_sparkfun_rightrear = 1;
+    queryFlag.sensors.lidar_velodyne = 1;
     % run query function
     [result,trip_name,~,trip_id_cleaned] = fcn_DataClean_mappingVanRawDataQuery(database_name,queryCondition,queryFlag);
        

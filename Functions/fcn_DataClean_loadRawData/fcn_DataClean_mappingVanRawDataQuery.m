@@ -109,21 +109,23 @@ if strcmp(queryCondition(1:4),'trip') % query by trip
     
     % Pick sensors you want to query. 1 means query data from that sensor
     options = {};
-    options.sensors.base_station = queryFlag.sensors.base_station;  % default is 1
-    options.sensors.hemisphere_gps = queryFlag.sensors.hemisphere_gps; % default is 1
-    options.sensors.NovAtel_gps = queryFlag.sensors.NovAtel_gps; % default is 1
-    options.sensors.garmin_gps = queryFlag.sensors.garmin_gps; % default is 1
-    options.sensors.garmin_velocity = queryFlag.sensors.garmin_velocity; % default is 0
-    options.sensors.steering_angle =queryFlag.sensors.steering_angle; % default is 1
-    options.sensors.NovAtel_imu = queryFlag.sensors.NovAtel_imu;% default is 1
-    options.sensors.adis_imu = queryFlag.sensors.adis_imu;% default is 1
-    options.sensors.encoder_left_right = queryFlag.sensors.encoder_left_right;% default is 1
-    options.sensors.laser = queryFlag.sensors.laser; % default is 1, laser = Lidar in this code , it take mush longer(50 times) time to query than GPS. 
-    options.sensors.front_left_camera = queryFlag.sensors.front_left_camera; % default is 0
-    options.sensors.front_center_camera = queryFlag.sensors.front_center_camera; % default is 0
-    options.sensors.front_right_camera = queryFlag.sensors.front_right_camera; % default is 0
-    options.sensors.GPS_SparkFun_LeftRear = queryFlag.sensors.GPS_SparkFun_LeftRear;
-    options.sensors.GPS_SparkFun_RightRear = queryFlag.sensors.GPS_SparkFun_RightRear;
+    options.sensors = queryFlag.sensors;
+    % options.sensors.base_station = queryFlag.sensors.base_station;  % default is 1
+    % options.sensors.hemisphere_gps = queryFlag.sensors.hemisphere_gps; % default is 1
+    % options.sensors.NovAtel_gps = queryFlag.sensors.NovAtel_gps; % default is 1
+    % options.sensors.garmin_gps = queryFlag.sensors.garmin_gps; % default is 1
+    % options.sensors.garmin_velocity = queryFlag.sensors.garmin_velocity; % default is 0
+    % options.sensors.steering_angle =queryFlag.sensors.steering_angle; % default is 1
+    % options.sensors.NovAtel_imu = queryFlag.sensors.NovAtel_imu;% default is 1
+    % options.sensors.adis_imu = queryFlag.sensors.adis_imu;% default is 1
+    % options.sensors.encoder_left_right = queryFlag.sensors.encoder_left_right;% default is 1
+    % options.sensors.laser = queryFlag.sensors.laser; % default is 1, laser = Lidar in this code , it take mush longer(50 times) time to query than GPS. 
+    % options.sensors.front_left_camera = queryFlag.sensors.front_left_camera; % default is 0
+    % options.sensors.front_center_camera = queryFlag.sensors.front_center_camera; % default is 0
+    % options.sensors.front_right_camera = queryFlag.sensors.front_right_camera; % default is 0
+    % options.sensors.GPS_SparkFun_LeftRear = queryFlag.sensors.GPS_SparkFun_LeftRear;
+    % options.sensors.GPS_SparkFun_RightRear = queryFlag.sensors.GPS_SparkFun_RightRear;
+    
     options.ENU_ref = queryFlag.ENU_ref; % 0 use default setting in database, 1 test track, 2 LTI, Larson  Transportation Institute
     
     % NOTE: we need to first check the total size of data we are trying to
