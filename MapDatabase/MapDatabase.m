@@ -614,7 +614,7 @@ classdef MapDatabase < handle
                 end
                 
             end
-             % 3. GPS (SparkFun_LeftRear)
+             % 13 GPS (SparkFun_LeftRear)
             if nargin == 2 || (nargin == 3 && isfield(options.sensors,'gps_sparkfun_leftrear') && options.sensors.gps_sparkfun_leftrear == 1)
                 
                 if obj.verbose == 1
@@ -660,7 +660,7 @@ classdef MapDatabase < handle
                     fprintf(1,'Load GPS (Rear Left SparkFun) data Done! \n\n')
                 end
             end
-
+            % 14. GPS (SparkFun_RightRear)
             if nargin == 2 || (nargin == 3 && isfield(options.sensors,'gps_sparkfun_rightrear') && options.sensors.gps_sparkfun_rightrear == 1)
                 
                 if obj.verbose == 1
@@ -707,7 +707,7 @@ classdef MapDatabase < handle
                 end
             end
             
-            % 13. Lidar (Velodyne)
+            % 15. Lidar (Velodyne)
             if nargin == 2 || (nargin == 3 && isfield(options.sensors,'lidar_velodyne') && options.sensors.lidar_velodyne == 1)
                 
                 if obj.verbose == 1
@@ -719,7 +719,7 @@ classdef MapDatabase < handle
              
                 % {'id','sensors_id','bag_files_id','status','service','latitude','longitude','altitude','geography',
                 %  'roll','pitch','yaw','seconds','nanoseconds','position_covariance','position_covariance_type','time','timestamp','date_added'}
-                fields = {'sensors_id', 'bag_files_id', 'seq' ,'timestamp', 'seconds', 'nanoseconds', 'time', 'scanhash'};
+                fields = {'sensors_id', 'bag_files_id', 'seq' ,'timestamp', 'seconds', 'nanoseconds', 'time', 'file_name'};
       
                 result_lidar = fetchSensor(obj, table, fields, where, orderby);
              
@@ -739,6 +739,83 @@ classdef MapDatabase < handle
                 % end
                 if obj.verbose == 1
                     fprintf(1,'Load Velodyne Lidar data Done! \n\n')
+                end
+            end
+
+             % 15. Trigger Box
+            if nargin == 2 || (nargin == 3 && isfield(options.sensors,'trigger_box') && options.sensors.trigger_box == 1)
+                
+                if obj.verbose == 1
+                    fprintf('Loading trigger box data...\n')
+                end
+                
+                %sensor_id = 8;
+                table = 'trigger';
+             
+                % {'id','sensors_id','bag_files_id','status','service','latitude','longitude','altitude','geography',
+                %  'roll','pitch','yaw','seconds','nanoseconds','position_covariance','position_covariance_type','time','timestamp','date_added'}
+                fields = {'sensors_id', 'bag_files_id', 'timestamp', 'seconds',...
+                    'nanoseconds', 'time', 'mode', 'mode_counts', 'adjone', 'adjtwo',...
+                    'adjthree', 'err_failed_mode_count', 'err_failed_XI_format',...
+                    'err_failed_checkInformation', 'err_trigger_unknown_error_occured',...
+                    'err_bad_uppercase_character', 'err_bad_lowercase_character',...
+                    'err_bad_three_adj_element', 'err_bad_first_element','err_bad_character','err_wrong_element_length'};
+      
+                result_trigger_box = fetchSensor(obj, table, fields, where, orderby);
+             
+                result.parseTrigger = result_trigger_box;
+        
+                % if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
+                % 
+                %     [xEast, yNorth,zUp] = geodetic2enu(result.Garmin_GPS.latitude,result.Garmin_GPS.longitude ,result.Garmin_GPS.altitude,...
+                %         result.base_station.latitude,result.base_station.longitude,result.base_station.altitude,obj.spheroid);
+                %     station = obj.calculateStation(xEast, yNorth,zUp);
+                % 
+                %     result.Garmin_GPS.xEast = xEast;
+                %     result.Garmin_GPS.yNorth = yNorth;
+                %     result.Garmin_GPS.zUp = zUp;
+                %     result.Garmin_GPS.station = station;
+                % 
+                % end
+                if obj.verbose == 1
+                    fprintf(1,'Load trigger box data Done! \n\n')
+                end
+            end
+            % Encoder box
+            if nargin == 2 || (nargin == 3 && isfield(options.sensors,'encoder_box') && options.sensors.encoder_box == 1)
+                
+                if obj.verbose == 1
+                    fprintf('Loading encoder box data...\n')
+                end
+                
+                %sensor_id = 8;
+                table = 'encoder_new';
+             
+                % {'id','sensors_id','bag_files_id','status','service','latitude','longitude','altitude','geography',
+                %  'roll','pitch','yaw','seconds','nanoseconds','position_covariance','position_covariance_type','time','timestamp','date_added'}
+                fields = {'sensors_id', 'bag_files_id', 'timestamp', 'seconds', 'nanoseconds',...
+                        'time', 'c1', 'c2', 'c3', 'c4', 'e1', 'p1', 'err_bad_character',...
+                        'err_bad_element_structure', 'err_bad_lowercase_character', 'err_bad_uppercase_character',...
+                        'err_failed_time', 'err_wrong_element_length'};
+      
+                result_encoder_box = fetchSensor(obj, table, fields, where, orderby);
+             
+                result.parseTrigger = result_encoder_box;
+        
+                % if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
+                % 
+                %     [xEast, yNorth,zUp] = geodetic2enu(result.Garmin_GPS.latitude,result.Garmin_GPS.longitude ,result.Garmin_GPS.altitude,...
+                %         result.base_station.latitude,result.base_station.longitude,result.base_station.altitude,obj.spheroid);
+                %     station = obj.calculateStation(xEast, yNorth,zUp);
+                % 
+                %     result.Garmin_GPS.xEast = xEast;
+                %     result.Garmin_GPS.yNorth = yNorth;
+                %     result.Garmin_GPS.zUp = zUp;
+                %     result.Garmin_GPS.station = station;
+                % 
+                % end
+                if obj.verbose == 1
+                    fprintf(1,'Load encoder box data Done! \n\n')
                 end
             end
             % Zero all the timestamps.
