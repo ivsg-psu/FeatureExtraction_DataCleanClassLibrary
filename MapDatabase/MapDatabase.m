@@ -1,4 +1,3 @@
-
 %%%%%%%%%%%%%%%%%%%%%  class MapDatabase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Purpose:
 %      wrapper class of query functions
@@ -100,7 +99,7 @@ classdef MapDatabase < handle
         %               orderby = orderby, format: cell array
         % output:       result = struct format of query result with table format element
         function result = fetchSensor(obj, table, fields, where, orderby)
-            
+            fields = 'all';
             [result,~, column_names] = obj.db.select(table, fields, where, orderby);
             
             result = obj.db.convertFromTableToStruct(column_names, result);
@@ -442,7 +441,7 @@ classdef MapDatabase < handle
                 result.encoder_parameters = result_encoder_parameters;
                 
                 if obj.verbose == 1
-                    fprintf(1,'Load encoders data Done! \n\n')
+                    fprintf(1,'Load encoders data Done 22! \n\n')
                 end
                 
             end
@@ -615,7 +614,7 @@ classdef MapDatabase < handle
                 end
                 
             end
-            % 13. GPS (SparkFun_LeftRear)
+             % 3. GPS (SparkFun_LeftRear)
             if nargin == 2 || (nargin == 3 && isfield(options.sensors,'gps_sparkfun_leftrear') && options.sensors.gps_sparkfun_leftrear == 1)
                 
                 if obj.verbose == 1
@@ -626,6 +625,8 @@ classdef MapDatabase < handle
                 table_gga = 'gps_sparkfun_leftrear_gga';
                 table_vtg = 'gps_sparkfun_leftrear_vtg';
                 table_gst = 'gps_sparkfun_leftrear_gst';
+                % {'id','sensors_id','bag_files_id','status','service','latitude','longitude','altitude','geography',
+                %  'roll','pitch','yaw','seconds','nanoseconds','position_covariance','position_covariance_type','time','timestamp','date_added'}
                 fields_gga = {'sensors_id', 'bag_files_id', 'timestamp', 'seconds', 'nanoseconds',...
                         'time', 'gpssecs', 'gpsmicrosecs', 'gpstime', 'latitude', 'longitude', 'altitude',...
                         'geosep', 'navmode', 'numofsats', 'hdop', 'ageofdiff', 'lockstatus', 'basestationid'};
@@ -643,23 +644,23 @@ classdef MapDatabase < handle
                 %                 result_pose = fetchSensorPose(obj, sensor_pose_trip_id, sensor_id);
                 %                 result.Garmin_GPS.pose = result_pose;
                 
-                if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
-                    
-                    [xEast, yNorth,zUp] = geodetic2enu(result.Garmin_GPS.latitude,result.Garmin_GPS.longitude ,result.Garmin_GPS.altitude,...
-                        result.base_station.latitude,result.base_station.longitude,result.base_station.altitude,obj.spheroid);
-                    station = obj.calculateStation(xEast, yNorth,zUp);
-                    
-                    result.Garmin_GPS.xEast = xEast;
-                    result.Garmin_GPS.yNorth = yNorth;
-                    result.Garmin_GPS.zUp = zUp;
-                    result.Garmin_GPS.station = station;
-                    
-                end
+%                 if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
+%                     
+%                     [xEast, yNorth,zUp] = geodetic2enu(result.Garmin_GPS.latitude,result.Garmin_GPS.longitude ,result.Garmin_GPS.altitude,...
+%                         result.base_station.latitude,result.base_station.longitude,result.base_station.altitude,obj.spheroid);
+%                     station = obj.calculateStation(xEast, yNorth,zUp);
+%                     
+%                     result.Garmin_GPS.xEast = xEast;
+%                     result.Garmin_GPS.yNorth = yNorth;
+%                     result.Garmin_GPS.zUp = zUp;
+%                     result.Garmin_GPS.station = station;
+%                     
+%                 end
                 if obj.verbose == 1
-                    fprintf(1,'Load GPS (Garmin) data Done! \n\n')
+                    fprintf(1,'Load GPS (Rear Left SparkFun) data Done! \n\n')
                 end
             end
-            % 13. GPS (SparkFun_RightRear)
+
             if nargin == 2 || (nargin == 3 && isfield(options.sensors,'gps_sparkfun_rightrear') && options.sensors.gps_sparkfun_rightrear == 1)
                 
                 if obj.verbose == 1
@@ -689,24 +690,23 @@ classdef MapDatabase < handle
                 %                 result_pose = fetchSensorPose(obj, sensor_pose_trip_id, sensor_id);
                 %                 result.Garmin_GPS.pose = result_pose;
                 
-                if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
-                    
-                    [xEast, yNorth,zUp] = geodetic2enu(result.Garmin_GPS.latitude,result.Garmin_GPS.longitude ,result.Garmin_GPS.altitude,...
-                        result.base_station.latitude,result.base_station.longitude,result.base_station.altitude,obj.spheroid);
-                    station = obj.calculateStation(xEast, yNorth,zUp);
-                    
-                    result.Garmin_GPS.xEast = xEast;
-                    result.Garmin_GPS.yNorth = yNorth;
-                    result.Garmin_GPS.zUp = zUp;
-                    result.Garmin_GPS.station = station;
-                    
-                end
+%                 if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
+%                     
+%                     [xEast, yNorth,zUp] = geodetic2enu(result.Garmin_GPS.latitude,result.Garmin_GPS.longitude ,result.Garmin_GPS.altitude,...
+%                         result.base_station.latitude,result.base_station.longitude,result.base_station.altitude,obj.spheroid);
+%                     station = obj.calculateStation(xEast, yNorth,zUp);
+%                     
+%                     result.Garmin_GPS.xEast = xEast;
+%                     result.Garmin_GPS.yNorth = yNorth;
+%                     result.Garmin_GPS.zUp = zUp;
+%                     result.Garmin_GPS.station = station;
+%                     
+%                 end
                 if obj.verbose == 1
-                    fprintf(1,'Load GPS (Garmin) data Done! \n\n')
+                    fprintf(1,'Load GPS (SparkFun Rear Right) data Done! \n\n')
                 end
             end
-
-
+            
             % 13. Lidar (Velodyne)
             if nargin == 2 || (nargin == 3 && isfield(options.sensors,'lidar_velodyne') && options.sensors.lidar_velodyne == 1)
                 
@@ -715,7 +715,7 @@ classdef MapDatabase < handle
                 end
                 
                 %sensor_id = 8;
-                table = 'velodyne_packets';
+                table = 'Lidar_Velodyne';
              
                 % {'id','sensors_id','bag_files_id','status','service','latitude','longitude','altitude','geography',
                 %  'roll','pitch','yaw','seconds','nanoseconds','position_covariance','position_covariance_type','time','timestamp','date_added'}
@@ -738,7 +738,7 @@ classdef MapDatabase < handle
                 % 
                 % end
                 if obj.verbose == 1
-                    fprintf(1,'Load GPS (Garmin) data Done! \n\n')
+                    fprintf(1,'Load Velodyne Lidar data Done! \n\n')
                 end
             end
             % Zero all the timestamps.
@@ -1225,5 +1225,5 @@ classdef MapDatabase < handle
         end
         
     end
-
+    
 end

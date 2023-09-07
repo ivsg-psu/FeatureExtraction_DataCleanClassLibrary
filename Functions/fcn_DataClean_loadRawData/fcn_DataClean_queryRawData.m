@@ -64,13 +64,14 @@ if DBqueryFlag == true
     queryFlag.sensors.NovAtel_imu = 1;% default is 1
     queryFlag.sensors.adis_imu = 1;% default is 1
     queryFlag.sensors.encoder_left_right = 1;% default is 1
-    queryFlag.sensors.laser = 0; % default is 1
+    queryFlag.sensors.laser = 1; % default is 1
     queryFlag.sensors.front_left_camera = 0; % default is 0
     queryFlag.sensors.front_center_camera = 0; % default is 0
     queryFlag.sensors.front_right_camera = 0; % default is 0
-    queryFlag.sensors.gps_sparkfun_leftrear = 1;
-    queryFlag.seneors.gps_sparkfun_rightrear = 1;
-    queryFlag.sensors.lidar_velodyne = 1;
+    queryFlag.sensors.gps_sparkfun_leftrear = 1; % default is 1
+    queryFlag.sensors.gps_sparkfun_rightrear = 1; % default is 1
+    queryFlag.sensors.lidar_velodyne = 1; % default is 0
+    
     % run query function
     [result,trip_name,~,trip_id_cleaned] = fcn_DataClean_mappingVanRawDataQuery(database_name,queryCondition,queryFlag);
        
