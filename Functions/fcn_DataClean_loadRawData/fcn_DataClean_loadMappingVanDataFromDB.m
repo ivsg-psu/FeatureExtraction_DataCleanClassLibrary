@@ -64,24 +64,24 @@ if isempty(fid)
     fid = 1;
 end
 
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(1,2);
-        
-    % Check if dataFolder is a directory. If directory is not there, warn
-    % the user.
-    try
-        fcn_DebugTools_checkInputsToFunctions(dataFolder, 'DoesDirectoryExist');
-    catch ME
-        warning(['It appears that data was not pushed into a folder: ' ...
-            '\\DataCleanClassLibrary\LargeData ' ...
-            'which is the folder where large data is imported for processing. ' ...
-            'Note that this folder is too large to include in the code repository, ' ...
-            'so it must be copied over from a data storage location. Within IVSG, ' ...
-            'this storage location is the OndeDrive folder called GitHubMirror.']);
-        rethrow(ME)
-    end
-end
+% if flag_check_inputs
+%     % Are there the right number of inputs?
+%     narginchk(1,3);
+%         
+%     % Check if dataFolder is a directory. If directory is not there, warn
+%     % the user.
+%     try
+%         fcn_DebugTools_checkInputsToFunctions(dataFolder, 'DoesDirectoryExist');
+%     catch ME
+%         warning(['It appears that data was not pushed into a folder: ' ...
+%             '\\DataCleanClassLibrary\LargeData ' ...
+%             'which is the folder where large data is imported for processing. ' ...
+%             'Note that this folder is too large to include in the code repository, ' ...
+%             'so it must be copied over from a data storage location. Within IVSG, ' ...
+%             'this storage location is the OndeDrive folder called GitHubMirror.']);
+%         rethrow(ME)
+%     end
+% end
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -115,23 +115,24 @@ for field_idx = 1:num_fields
 
     % Check that the list is the file. If it is a directory, the isdir flag
     % will be 1.
-    field_name = fields{field};
+    field_name = fields{field_idx};
+  
     datatype = fcn_DataClean_determineDataType(field_name);
         
         % Tell the user what we are doing
     if fid
        fprintf(fid,'\t Loading database: %s, with field name: %s, with datatype: %s \n',database_name, field_name, datatype);
     end
-        
+
   % topic name is used to decide the sensor
 %         topic sicm_,ms500/sick_time 
     if contains(field_name,'Hemisphere_DGPS')
         Hemisphere = fcn_DataClean_loadRawDataFromDB_Hemisphere(result.Hemisphere_DGPS,datatype,fid);
         rawData.GPS_Hemisphere = Hemisphere;
 
-    elseif contains(field_name,'Lidar')
+    elseif contains(field_name,'Lidar_Sick')
 
-        SickLiDAR = fcn_DataClean_loadRawDataFromDB_sickLIDAR(result.Lidar,datatype,fid);
+        SickLiDAR = fcn_DataClean_loadRawDataFromDB_sickLIDAR(result.Lidar_Sick,datatype,fid);
         rawData.Lidar_Sick_Rear = SickLiDAR;
   
     elseif contains(field_name, 'GPS_SparkFun_LeftRear_GGA')
@@ -162,7 +163,7 @@ for field_idx = 1:num_fields
     elseif contains(field_name, 'GPS_SparkFun_RightRear_GST')
 
         SparkFun_GPS_RearRight_GST = fcn_DataClean_loadRawDataFromDB_Sparkfun_GPS(result.GPS_SparkFun_RightRear_GST,datatype,field_name,fid);
-        rawData.GPS_SparkFun_LeftRear_VTG = SparkFun_GPS_RearRight_GST;
+        rawData.GPS_SparkFun_RightRear_GST = SparkFun_GPS_RearRight_GST;
             
     elseif contains(field_name,'parseTrigger')
         parseTrigger = fcn_DataClean_loadRawDataFromDB_parseTrigger(result.parseTrigger,datatype,fid);
@@ -178,26 +179,28 @@ for field_idx = 1:num_fields
 
     elseif contains(field_name, 'GPS_Novatel')
 
-        GPS_Novatel = fcn_DataClean_loadRawDataFromDB_Novatel_GPS(full_file_path,datatype,fid);
+        GPS_Novatel = fcn_DataClean_loadRawDataFromDB_Novatel_GPS(result.GPS_Novatel,datatype,fid);
         rawData.GPS_Novatel_SensorPlatform = GPS_Novatel;
    
-    elseif contains(topic_name, 'Garmin_GPS')
+    elseif contains(field_name, 'Garmin_GPS')
 
-        GPS_Garmin = fcn_DataClean_loadRawDataFromDB_Garmin_GPS(full_file_path,datatype,fid);
+        GPS_Garmin = fcn_DataClean_loadRawDataFromDB_Garmin_GPS(result.Garmin_GPS,datatype,fid);
         rawData.GPS_Garmin_TopCenter = GPS_Garmin;
 
-    elseif contains(topic_name, 'Novatel_IMU')
+    elseif contains(field_name,'Lidar_Velodyne')
+        Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromDB_velodyneLIDAR(result.Lidar_Velodyne,datatype,fid);
+        rawData.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
 
-        Novatel_IMU = fcn_DataClean_loadRawDataFromDB_IMU_Novatel(full_file_path,datatype,fid);
-        rawData.IMU_Novatel_TopCenter = Novatel_IMU;
+%     elseif contains(field_name, 'Novatel_IMU')
+% 
+%         Novatel_IMU = fcn_DataClean_loadRawDataFromDB_IMU_Novatel(result.Novatel_IMU,datatype,fid);
+%         rawData.IMU_Novatel_TopCenter = Novatel_IMU;
 
 %     elseif contains(topic_name,'tf')
 %         transform_struct = fcn_DataClean_loadRawDataFromDB_Transform(full_file_path,datatype,fid);
 %         rawData.Transform = transform_struct;
 
-    elseif contains(topic_name,'velodyne_packets')
-        Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromDB_velodyneLIDAR(full_file_path,bagFolderName,datatype,fid);
-        rawData.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
+    
 
     else
         fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',field_name);

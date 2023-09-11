@@ -57,12 +57,13 @@ if strcmp(datatype,'gps')
     % % ans =
     % %              242007.248687
     % % This is why all the vectors below start at 2, not 1
+    GPS_Novatel = fcn_DataClean_initializeDataByType(datatype);
     if isempty(field_data_struct.id)
         warning('Novatel GPS table is empty')
 
     else
         Npoints = length(field_data_struct.id);
-        GPS_Novatel = fcn_DataClean_initializeDataByType(datatype,Npoints);
+        
 
         % GPS_Novatel.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         % GPS_Novatel.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample

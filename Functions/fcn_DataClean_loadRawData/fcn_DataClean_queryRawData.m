@@ -80,7 +80,8 @@ if DBqueryFlag == true
     % load and pre-process the data
     % rawData = fcn_preProcessQueryResult(result); % no longer use
     flag_do_debug = 1;
-    rawData = fcn_DataClean_loadRawData(flag_do_debug,result); %% try to use the anonymous function https://www.youtube.com/watch?v=kE4SUA392_I&feature=youtu.be
+    rawData = fcn_DataClean_loadMappingVanDataFromDB(result,database_name,1);
+%     rawData = fcn_DataClean_loadRawData(flag_do_debug,result); %% try to use the anonymous function https://www.youtube.com/watch?v=kE4SUA392_I&feature=youtu.be
     varargout{1} = trip_name; % output trip name
     varargout{2} = trip_id_cleaned; % trip id will be used at the data database  
     varargout{3} = result.base_station; % used for LLA and ENU conversion

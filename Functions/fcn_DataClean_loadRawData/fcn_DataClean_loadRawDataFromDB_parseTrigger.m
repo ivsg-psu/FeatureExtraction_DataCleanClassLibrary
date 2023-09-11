@@ -38,12 +38,13 @@ end
 
 
 if strcmp(datatype,'trigger')
+    % Npoints = length(field_data_struct.id);
+    parseTrigger = fcn_DataClean_initializeDataByType(datatype);
     if isempty(field_data_struct.id)
         warning('Trigger box table is empty!')
     else
 
-        Npoints = length(field_data_struct.id);
-        parseTrigger = fcn_DataClean_initializeDataByType(datatype,Npoints);
+        
         secs = field_data_struct.seconds;
         nsecs = field_data_struct.nanoseconds;
         parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit
@@ -58,8 +59,8 @@ if strcmp(datatype,'trigger')
         parseTrigger.adjthree                          = field_data_struct.adjthree; % This is phase adjustment magnitude relative to the calculated period of the output pulse
         % Data below are error monitoring messages
         parseTrigger.err_failed_mode_count             = field_data_struct.err_failed_mode_count;
-        parseTrigger.err_failed_XI_format              = field_data_struct.err_failed_XI_format;
-        parseTrigger.err_failed_checkInformation       = field_data_struct.err_failed_checkInformation;
+        parseTrigger.err_failed_XI_format              = field_data_struct.err_failed_xi_format;
+        parseTrigger.err_failed_checkInformation       = field_data_struct.err_failed_checkinformation;
         parseTrigger.err_trigger_unknown_error_occured = field_data_struct.err_trigger_unknown_error_occured;
         parseTrigger.err_bad_uppercase_character       = field_data_struct.err_bad_uppercase_character;
         parseTrigger.err_bad_lowercase_character       = field_data_struct.err_bad_lowercase_character;

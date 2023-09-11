@@ -87,7 +87,7 @@ if strcmp(datatype,'gps')
             SparkFun_GPS_data_structure.Npoints            = length(field_data_struct.id);  % This is the number of data points in the array
             SparkFun_GPS_data_structure.SpdOverGrndKmph    = field_data_struct.spdovergrndkmph;
         elseif contains(field_name,"GST")
-            secs = field_data_struct.gpsecs; % For data collected after 2023-06-06, new fields GPSSecs are added
+            secs = field_data_struct.gpssecs; % For data collected after 2023-06-06, new fields GPSSecs are added
             microsecs = field_data_struct.gpsmicrosecs; % For data collected after 2023-06-06, new fields GPSMicroSecs are added
 
             SparkFun_GPS_data_structure.GPS_Time           = secs + microsecs*10^-6;  % This is the GPS time, UTC, as reported by the unit

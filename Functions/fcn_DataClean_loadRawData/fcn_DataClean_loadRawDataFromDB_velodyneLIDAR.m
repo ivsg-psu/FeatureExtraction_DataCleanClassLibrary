@@ -32,13 +32,10 @@ end
 
 
 if strcmp(datatype,'lidar3d')
+    Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
     if isempty(field_data_struct.id)
         warning('Velodyne Lidar Table is Empty!')
     else
-        
-
-
-        Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
         secs = field_data_struct.seconds;
         nsecs = field_data_struct.nanoseconds;
         % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit

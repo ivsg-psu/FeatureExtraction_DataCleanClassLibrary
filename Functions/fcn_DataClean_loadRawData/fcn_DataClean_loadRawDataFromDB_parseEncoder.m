@@ -38,11 +38,12 @@ end
 
 
 if strcmp(datatype,'encoder')
+    Npoints = length(field_data_struct.id);
+    parseEncoder = fcn_DataClean_initializeDataByType(datatype,Npoints);
     if isempty(field_data_struct.id)
         warning('Encoder box table is empty!')
     else
-        Npoints = length(field_data_struct.id);
-        parseEncoder = fcn_DataClean_initializeDataByType(datatype,Npoints);
+        
         secs = field_data_struct.seconds;
         nsecs = field_data_struct.nanoseconds;
         %     parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit

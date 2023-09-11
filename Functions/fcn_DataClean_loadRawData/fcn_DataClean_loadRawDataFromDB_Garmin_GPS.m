@@ -35,12 +35,10 @@ end
 
 
 if strcmp(datatype,'gps')
+    GPS_Garmin = fcn_DataClean_initializeDataByType(datatype);
     if isempty(field_data_struct.id)
         warning('Garmin GPS table is empty!')
     else
-
-        GPS_Garmin = fcn_DataClean_initializeDataByType(datatype);
-
         % GPS_Garmin.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         % GPS_Garmin.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
         % GPS_Garmin.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag

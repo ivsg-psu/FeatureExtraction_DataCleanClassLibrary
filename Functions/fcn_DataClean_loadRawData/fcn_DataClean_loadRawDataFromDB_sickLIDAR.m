@@ -40,20 +40,19 @@ end
 
 
 if strcmp(datatype,'lidar2d')
+    Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
     sick_lidar_data = field_data_struct;
     if isempty(field_data_struct.id)
         warning('Sick Lidar Table is empty!')
     else
-        Npoints = size(sick_lidar_data,1);
-        Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
 
         secs = sick_lidar_data.seconds;
         nsecs = sick_lidar_data.nanoseconds;
         % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
         % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        Sick_Lidar_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
+        Sick_Lidar_structure.ROS_Time           = sick_lidar_data.time;  % This is the ROS time that the data arrived into the bag
         Sick_Lidar_structure.centiSeconds       = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        Sick_Lidar_structure.Npoints            = length(secs);  % This is the number of data points in the array
+        Sick_Lidar_structure.Npoints            = length(sick_lidar_data.id);  % This is the number of data points in the array
         Sick_Lidar_structure.angle_min          = sick_lidar_data.parameters.angle_min;  % This is the start angle of scan [rad]
         Sick_Lidar_structure.angle_max          = sick_lidar_data.parameters.angle_max;  % This is the end angle of scan [rad]
         Sick_Lidar_structure.angle_increment    = sick_lidar_data.parameters.angle_increment;  % This is the angle increment between each measurements [rad]
