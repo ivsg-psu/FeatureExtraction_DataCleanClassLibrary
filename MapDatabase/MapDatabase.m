@@ -800,7 +800,7 @@ classdef MapDatabase < handle
       
                 result_encoder_box = fetchSensor(obj, table, fields, where, orderby);
              
-                result.parseTrigger = result_encoder_box;
+                result.parseEncoder = result_encoder_box;
         
                 % if obj.convert_GPS_to_ENU == 1 && (nargin == 3 && isfield(options.sensors,'base_station') && options.sensors.base_station == 1)
                 % 

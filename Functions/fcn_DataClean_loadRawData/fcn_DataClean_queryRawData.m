@@ -71,8 +71,8 @@ if DBqueryFlag == true
     queryFlag.sensors.gps_sparkfun_leftrear = 1; % default is 1
     queryFlag.sensors.gps_sparkfun_rightrear = 1; % default is 1
     queryFlag.sensors.lidar_velodyne = 1; % default is 0
-    queryFlag.sensors.trigger_box = 1;
-    queryFlag.sensors.encoder_box = 1;
+    queryFlag.sensors.trigger_box = 1; % default is 0
+    queryFlag.sensors.encoder_box = 1; % default is 0
     
     % run query function
     [result,trip_name,~,trip_id_cleaned] = fcn_DataClean_mappingVanRawDataQuery(database_name,queryCondition,queryFlag);
