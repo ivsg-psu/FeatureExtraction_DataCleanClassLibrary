@@ -34,10 +34,10 @@ end
 if strcmp(datatype,'lidar3d')
     opts = detectImportOptions(file_path);
     velodyne_lidar_table = readtable(file_path, opts);
-    velodyne_lidar_table.Properties.VariableNames = {'seq','secs','nsecs','MD5Hash'};
+    velodyne_lidar_table.Properties.VariableNames = {'seq','secs','nsecs','scan_filename'};
     % The number of rows in the file, also the number of scans
     Nscans = height(velodyne_lidar_table);
-    MD5Hash_array = string(velodyne_lidar_table.MD5Hash);
+    scan_filenames_array = string(velodyne_lidar_table.scan_filename);
     Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
     secs = velodyne_lidar_table.secs;
     nsecs = velodyne_lidar_table.nsecs;
@@ -58,13 +58,16 @@ if strcmp(datatype,'lidar3d')
     % Velodyne_Lidar_structure.point_step    = velodyne_lidar_table.point_step;  % This is the length of a point in bytes
     % Velodyne_Lidar_structure.row_step        = velodyne_lidar_table.row_step;  % This is the length of a row in bytes
     % Velodyne_Lidar_structure.is_dense         = velodyne_lidar_table.is_dense;  %  True if there are no invalid points
-    Velodyne_Lidar_structure.MD5Hash        = MD5Hash_array;
+    Velodyne_Lidar_structure.scan_filename        = scan_filenames_array;
     points_cell = {};
-    pointcloud_folder = "velodyne_pointcloud";
+    folder = erase(file_path, '_slash_velodyne_packets.txt');
+    pointcloud_folder = "velodyne_pointcloud/";
     
     for idx_scan = 1:Nscans
-        pointsMD5Hash = MD5Hash_array(idx_scan);
-        points_file = bagFolderName+"/"+pointcloud_folder+"/"+pointsMD5Hash + ".txt";
+        scan_filename = scan_filenames_array(idx_scan);
+        scan_filename_char = char(scan_filename);
+        points_file = pointcloud_folder+scan_filename_char(1:2)+"/"+scan_filename_char(3:4)+"/"+scan_filename+".txt";
+        % points_file = scan_filename;
         opts_scan = detectImportOptions(points_file);
         points = readmatrix(points_file,opts_scan);
         points_cell{idx_scan,1} = points;
