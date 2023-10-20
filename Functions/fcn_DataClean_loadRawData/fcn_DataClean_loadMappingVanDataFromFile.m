@@ -1,4 +1,4 @@
-function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,fid)
+function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,date,fid)
 % fcn_DataClean_loadMappingVanDataFromFile
 % imports raw data from mapping van bag files
 %
@@ -87,11 +87,11 @@ if isempty(fid)
     fid = 1;
 end
 
-dataFolder = fullfile(pwd, 'LargeData', bagFolderName);
+dataFolder = fullfile(pwd, 'LargeData', date, bagFolderName);
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    narginchk(1,2);
+    narginchk(2,3);
         
     % Check if dataFolder is a directory. If directory is not there, warn
     % the user.
@@ -271,6 +271,24 @@ for file_idx = 1:num_files
             elseif contains(topic_name, 'Encoder_diag')
                 diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
                 rawdata.Diag_Encoder = diagnostic_encoder;
+               
+            elseif contains(topic_name, 'GPS_SparkFun_Front_GGA')
+                SparkFun_GPS_Front_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+                rawdata.GPS_SparkFun_Front_GGA = SparkFun_GPS_Front_GGA;
+
+           elseif contains(topic_name, 'GPS_SparkFun_Front_VTG')
+                SparkFun_GPS_Front_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+                rawdata.GPS_SparkFun_Front_VTG = SparkFun_GPS_Front_VTG;
+
+
+           elseif contains(topic_name, 'GPS_SparkFun_Front_GST')
+                SparkFun_GPS_Front_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+                rawdata.GPS_SparkFun_Front_GST = SparkFun_GPS_Front_GST;
+
+
+            elseif contains(topic_name, 'GPS_SparkFun_Temp_GGA')
+                SparkFun_GPS_Temp_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+                rawdata.GPS_SparkFun_Temp_GGA = SparkFun_GPS_Temp_GGA;
             
 %             elseif contains(topic_name, 'DIAG_SparkFun_RearLeft')
 %                 sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
