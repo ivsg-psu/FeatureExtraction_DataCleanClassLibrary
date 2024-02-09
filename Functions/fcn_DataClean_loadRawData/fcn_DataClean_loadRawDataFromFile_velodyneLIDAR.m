@@ -1,12 +1,12 @@
-function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(file_path,bagFolderName,datatype,fid)
+function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(file_path,datatype,fid)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
-% This is the Sick Lidar data, whose data type is lidar2d
+% This is the Velodyne Lidar data, whose data type is lidar3d
 % Input Variables:
 %      file_path = file path of the Velodyne Lidar data (format txt)
 %      datatype  = the datatype should be lidar3d
 % Returned Results:
-%      Sick_Lidar_structure
+%      Velodyne_Lidar_structure
 
 % Author: Xinyu Cao
 % Created Date: 2023_07_18
@@ -17,7 +17,11 @@ function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLI
 % the Penn State Mapping Van.
 % Reference:
 % Document/Velodyne LiDAR Point Cloud Message Info.txt
-%%
+%% Revision history:
+% 2023_07_18 by X. Cao
+% -- start writing function
+% 2024-02-09 by X. Cao
+% -- fix a small bug, remove one useless input
 
 
 flag_do_debug = 0;  % Flag to show the results for debugging

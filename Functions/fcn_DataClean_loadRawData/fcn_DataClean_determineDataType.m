@@ -108,6 +108,8 @@ elseif contains(topic_name_lower,'rosout')
     datatype = 'rosout';
 elseif contains(topic_name_lower,'tf')
     datatype = 'transform';
+elseif contains(topic_name_lower,'camera')
+    datatype = 'camera';
 else
     datatype = 'other';
 end

@@ -177,10 +177,13 @@ flags = struct;
 %    * Merge the data from the fields together
 
 % Check if Sparkfun_GPS_RearRight_sensors_are_merged
-[flags,~] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,'Sparkfun_GPS_RearRight',fid);
+[flags,~] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,'GPS_SparkFun_RearRight',fid);
 
 % Check if Sparkfun_GPS_RearLeft_sensors_are_merged
-[flags,~] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,'Sparkfun_GPS_RearLeft',fid);
+[flags,~] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,'GPS_SparkFun_RearLeft',fid);
+
+% Check if Sparkfun_GPS_RearLeft_sensors_are_merged
+[flags,~] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,'GPS_SparkFun_Front',fid);
 
 % Check if ADIS_sensors_are_merged
 [flags,~] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,'ADIS',fid);

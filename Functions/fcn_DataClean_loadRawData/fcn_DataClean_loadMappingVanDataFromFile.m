@@ -313,8 +313,39 @@ for file_idx = 1:num_files
                 rawdata.Transform = transform_struct;
 
             elseif contains(topic_name,'velodyne_packets')
-                Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,bagFolderName,datatype,fid);
+                Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
                 rawdata.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
+
+            elseif contains(topic_name,'/rear_left_camera/image_color/compressed')
+                rear_left_camera_folder = 'images/rear_left_camera/';
+                Camera_Rear_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_left_camera_folder,datatype,fid);
+                rawdata.Camera_Rear_Left = Camera_Rear_Left_struct;
+
+            elseif contains(topic_name,'/rear_center_camera/image_color/compressed')
+                rear_center_camera_folder = 'images/rear_center_camera/';
+                Camera_Rear_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_center_camera_folder,datatype,fid);
+                rawdata.Camera_Rear_Center = Camera_Rear_Center_struct;
+
+            elseif contains(topic_name,'/rear_right_camera/image_color/compressed')
+                rear_right_camera_folder = 'images/rear_right_camera/';
+                Camera_Rear_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_right_camera_folder,datatype,fid);
+                rawdata.Camera_Rear_Right = Camera_Rear_Right_struct;
+
+            elseif contains(topic_name,'/front_left_camera/image_color/compressed')
+                front_left_camera_folder = 'images/front_left_camera/';
+                Camera_Front_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_left_camera_folder,datatype,fid);
+                rawdata.Camera_Front_Left = Camera_Front_Left_struct;
+
+            elseif contains(topic_name,'/front_center_camera/image_color/compressed')
+                front_center_camera_folder = 'images/front_center_camera/';
+                Camera_Front_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_center_camera_folder,datatype,fid);
+                rawdata.Camera_Front_Center = Camera_Front_Center_struct;
+
+            elseif contains(topic_name,'/front_right_camera/image_color/compressed')
+                front_right_camera_folder = 'images/front_right_camera/';
+                Camera_Front_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_right_camera_folder,datatype,fid);
+                rawdata.Camera_Front_Right = Camera_Front_Right_struct;
+
 
             else
                 fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',topic_name);

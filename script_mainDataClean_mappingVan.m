@@ -240,14 +240,29 @@ library_folders{ith_library} = {'Functions','Data'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2023_04_22.zip';
 
 ith_library = ith_library+1;
-library_name{ith_library}    = 'PathClass_v2023_02_01';
+library_name{ith_library}    = 'PathClass_v2023_10_13';
 library_folders{ith_library} = {'Functions'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/blob/main/Releases/PathClass_v2023_02_01.zip?raw=true';
+library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/archive/refs/tags/PathClass_v2023_10_13.zip';
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'GPSClass_v2023_06_29';
 library_folders{ith_library} = {'Functions'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_GPSRelatedCodes_GPSClass/archive/refs/tags/GPSClass_v2023_06_29.zip';
+
+ith_library = ith_library+1;
+library_name{ith_library}    = 'LineFitting_v2023_07_24';
+library_folders{ith_library} = {'Functions'};
+library_url{ith_library}     = 'https://github.com/ivsg-psu/FeatureExtraction_Association_LineFitting/archive/refs/tags/LineFitting_v2023_07_24.zip';
+
+ith_library = ith_library+1;
+library_name{ith_library}    = 'FindCircleRadius_v2023_08_02';
+library_folders{ith_library} = {'Functions'};                                
+library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_GeomTools_FindCircleRadius/archive/refs/tags/FindCircleRadius_v2023_08_02.zip';
+
+ith_library = ith_library+1;
+library_name{ith_library}    = 'BreakDataIntoLaps_v2023_08_25';
+library_folders{ith_library} = {'Functions'};                                
+library_url{ith_library}     = 'https://github.com/ivsg-psu/FeatureExtraction_DataClean_BreakDataIntoLaps/archive/refs/tags/BreakDataIntoLaps_v2023_08_25.zip';
 
 
 %% Clear paths and folders, if needed
@@ -268,7 +283,8 @@ end
 %% Specify the data to use
 % bagFolderName = "mapping_van_2023-06-05-1Lap"; 
 % bagFolderName = "mapping_van_2023-06-22-1Lap_0";
-bagFolderName = "mapping_van_2023-06-29-5s";
+date = "2023-11-03";
+bagFolderName = "mapping_van_2023-11-03-16-21-38_0";
 
 
 %% ======================= Load the raw data =========================
@@ -277,10 +293,10 @@ bagFolderName = "mapping_van_2023-06-29-5s";
 % raw data. It can be loaded either from a database or a file - details are
 % in the function below.
 
-flag.DBquery = true; %true; %set to true to query raw data from database 
+flag.DBquery = false; %true; %set to true to query raw data from database 
 flag.DBinsert = false; %set to true to insert cleaned data to cleaned data database
 flag.SaveQueriedData = true; % 
-
+fid = 1;
 % clear dataset
 if ~exist('dataset','var')
     if flag.DBquery == true
@@ -289,7 +305,7 @@ if ~exist('dataset','var')
         [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
         % Load the raw data from file
-        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,fid);
+        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,date,fid);
     end
 else
     if length(dataset)>1
