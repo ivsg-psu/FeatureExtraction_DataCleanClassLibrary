@@ -96,7 +96,7 @@ elseif contains(topic_name_lower,'parsetrigger')
     datatype = 'trigger';
 elseif contains(topic_name_lower,'parseencoder')
     datatype = 'encoder';
-elseif contains(topic_name_lower,'sick_lms500/scan')
+elseif any([contains(topic_name,'sick_lms500/scan') contains(topic_name,'sick_lms_5xx/scan')])
     datatype = 'lidar2d';
 elseif contains(topic_name_lower,'velodyne')
     datatype = 'lidar3d';

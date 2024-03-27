@@ -43,6 +43,13 @@ if strcmp(datatype,'lidar2d')
     opts = detectImportOptions(file_path);
     sick_lidar_data = readmatrix(file_path, opts);
     Npoints = size(sick_lidar_data,1);
+    data_length = size(sick_lidar_data,2);
+    lidar_spec_length = 10;
+    single_scan_length = (data_length-lidar_spec_length)/2;
+    range_data_start = lidar_spec_length + 1;
+    range_data_end = lidar_spec_length + single_scan_length;
+    intensity_data_start = range_data_end + 1;
+    intensity_data_end = range_data_end + single_scan_length;
     Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
     
     secs = sick_lidar_data(:,2);
@@ -59,22 +66,23 @@ if strcmp(datatype,'lidar2d')
     Sick_Lidar_structure.scan_time          = sick_lidar_data(:,8);  % This is the time between scans [s]
     Sick_Lidar_structure.range_min          = sick_lidar_data(:,9);  % This is the minimum range value [m]
     Sick_Lidar_structure.range_max          = sick_lidar_data(:,10);  % This is the maximum range value [m]
-    Sick_Lidar_structure.ranges             = sick_lidar_data(:,11:1151);  % This is the range data of scans [m]
-    Sick_Lidar_structure.intensities        = sick_lidar_data(:,1152:2292);  % This is the intensities data of scans (Ranging from 0 to 255)
+    Sick_Lidar_structure.ranges             = sick_lidar_data(:,range_data_start:range_data_end);  % This is the range data of scans [m]
+    Sick_Lidar_structure.intensities        = sick_lidar_data(:,intensity_data_start:intensity_data_end);  % This is the intensities data of scans (Ranging from 0 to 255)
     
 
     % Process Sick Time topics
     dataFolder = fileparts(file_path);
     sick_time_file_name = '_slash_sick_lms500_slash_sicktime.csv';
     sick_time_file_path = fullfile(dataFolder,sick_time_file_name);
-    sick_time_opts = detectImportOptions(sick_time_file_path);
-    sick_time_opts.PreserveVariableNames = true;
-    sick_time_table = readtable(sick_time_file_path,sick_time_opts);
+    if isfile(sick_time_file_path)
+        sick_time_opts = detectImportOptions(sick_time_file_path);
+        sick_time_opts.PreserveVariableNames = true;
+        sick_time_table = readtable(sick_time_file_path,sick_time_opts);
 
-    sick_time_secs = sick_time_table.secs_1;
-    sick_time_nsecs = sick_time_table.nsecs_1;
-    Sick_Lidar_structure.Sick_Time = sick_time_secs + sick_time_nsecs*10^-9;
-    
+        sick_time_secs = sick_time_table.secs_1;
+        sick_time_nsecs = sick_time_table.nsecs_1;
+        Sick_Lidar_structure.Sick_Time = sick_time_secs + sick_time_nsecs*10^-9;
+    end
 
 else
     error('Wrong data type requested: %s',dataType)

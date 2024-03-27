@@ -1,4 +1,4 @@
-function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,date,fid)
+function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder,fid)
 % fcn_DataClean_loadMappingVanDataFromFile
 % imports raw data from mapping van bag files
 %
@@ -14,7 +14,7 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,date,f
 %
 %      (OPTIONAL INPUTS)
 %
-%      (none)
+%      lane_folder: the sub-folder where the bag files are located
 %
 % OUTPUTS:
 %
@@ -87,11 +87,16 @@ if isempty(fid)
     fid = 1;
 end
 
-dataFolder = fullfile(pwd, 'LargeData', date, bagFolderName);
+% if nargin <= 3
+%     dataFolder = fullfile(pwd, 'LargeData',date, bagFolderName);
+% else
+%     laneName = varargin{1};
+%     dataFolder = fullfile(pwd, 'LargeData', date,laneName,bagFolderName);
+% end
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    narginchk(2,3);
+    narginchk(2,4);
         
     % Check if dataFolder is a directory. If directory is not there, warn
     % the user.
@@ -107,6 +112,7 @@ if flag_check_inputs
         rethrow(ME)
     end
 end
+
 
 
 %% Main code starts here
@@ -161,7 +167,7 @@ for file_idx = 1:num_files
         full_file_path = fullfile(dataFolder,file_name);
         % topic name is used to decide the sensor
 %         topic sicm_,ms500/sick_time 
-        if contains(topic_name,'sick_lms500/scan')
+        if any([contains(topic_name,'sick_lms500/scan') contains(topic_name,'sick_lms_5xx/scan')])
 
             SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,fid);
             rawdata.Lidar_Sick_Rear = SickLiDAR;
