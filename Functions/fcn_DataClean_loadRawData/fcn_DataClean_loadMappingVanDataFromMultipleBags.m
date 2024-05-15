@@ -130,6 +130,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 folder_list = dir(dataFolder);
 num_folders = length(folder_list);
+% num_folders = 3;
 rawdata_cell = {};
 skip_count = 0;
 for folder_idx = 1:num_folders

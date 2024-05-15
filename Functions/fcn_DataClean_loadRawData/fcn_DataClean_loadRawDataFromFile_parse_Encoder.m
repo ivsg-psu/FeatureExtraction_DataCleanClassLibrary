@@ -51,7 +51,8 @@ if strcmp(datatype,'encoder')
     % parseEncoder.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     parseEncoder.Npoints            = height(datatable);  % This is the number of data points in the array
     % parseEncoder.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
-    % parseEncoder.Counts             = default_value;  % A vector of the counts measured by the encoder, Npoints long
+    parseEncoder.C1Counts             = datatable.C1;  % A vector of the counts measured by the encoder, Npoints long
+     parseEncoder.C2Counts             = datatable.C2;   % A vector of the counts measured by the encoder, Npoints long
     % parseEncoder.DeltaCounts        = default_value;  % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
     % parseEncoder.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
     % parseEncoder.AngularVelocity    = default_value;  % Angular velocity of the encoder

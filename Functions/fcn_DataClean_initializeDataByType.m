@@ -241,7 +241,8 @@ switch lower(dataType)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
 
         dataStructure.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
-        dataStructure.Counts             = default_value;  % A vector of the counts measured by the encoder, Npoints long
+        dataStructure.C1Counts           = default_value;  % A vector of the counts measured by the encoder, Npoints long
+        dataStructure.C2Counts           = default_value;  % A vector of the counts measured by the encoder, Npoints long
         dataStructure.DeltaCounts        = default_value;  % A vector of the change in counts measured by the encoder, with first value of zero, Npoints long
         dataStructure.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
         dataStructure.AngularVelocity    = default_value;  % Angular velocity of the encoder

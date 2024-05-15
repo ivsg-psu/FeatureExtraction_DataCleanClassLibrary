@@ -51,7 +51,10 @@ if strcmp(datatype,'lidar2d')
     intensity_data_start = range_data_end + 1;
     intensity_data_end = range_data_end + single_scan_length;
     Sick_Lidar_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
-    
+    % if iscell(sick_lidar_data)
+    % 
+    %     sick_lidar_data = cell2mat(sick_lidar_data);
+    % end
     secs = sick_lidar_data(:,2);
     nsecs = sick_lidar_data(:,3);
     % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
