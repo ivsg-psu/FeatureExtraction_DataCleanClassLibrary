@@ -45,9 +45,9 @@ if strcmp(datatype,'encoder')
     parseEncoder = fcn_DataClean_initializeDataByType(datatype,Npoints);
     secs = datatable.secs;
     nsecs = datatable.nsecs;
-    parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
-    % parseEncoder.Trigger_Time         = default_value;  % This is the Trigger time, UTC, as calculated by sample
-    parseEncoder.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+%     parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
+    parseEncoder.Trigger_Time         = datatable.time;  % This is the Trigger time, UTC, as calculated by sample
+    parseEncoder.ROS_Time           = secs + nsecs * 10^-9;  % This is the ROS time that the data arrived into the bag
     % parseEncoder.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     parseEncoder.Npoints            = height(datatable);  % This is the number of data points in the array
     % parseEncoder.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
@@ -57,7 +57,7 @@ if strcmp(datatype,'encoder')
     % parseEncoder.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
     % parseEncoder.AngularVelocity    = default_value;  % Angular velocity of the encoder
     % parseEncoder.AngularVelocity_Sigma    = default_value; 
-    
+    parseEncoder.Mode = string(datatable.mode); % A vector of the mode of the encoder box, T indicates triggered.
 
 else
     error('Wrong data type requested: %s',dataType)

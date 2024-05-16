@@ -239,7 +239,7 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-
+        dataStructure.Mode = default_value; % This is the mode of the encoder box
         dataStructure.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
         dataStructure.C1Counts           = default_value;  % A vector of the counts measured by the encoder, Npoints long
         dataStructure.C2Counts           = default_value;  % A vector of the counts measured by the encoder, Npoints long
@@ -247,6 +247,7 @@ switch lower(dataType)
         dataStructure.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
         dataStructure.AngularVelocity    = default_value;  % Angular velocity of the encoder
         dataStructure.AngularVelocity_Sigma    = default_value; 
+        
         % Event functions
         dataStructure.ENCODER_EventFunctions = {}; % These are the functions to determine if something went wrong
     
