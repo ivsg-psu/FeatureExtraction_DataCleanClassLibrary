@@ -57,7 +57,7 @@ if strcmp(datatype,'encoder')
     % parseEncoder.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
     % parseEncoder.AngularVelocity    = default_value;  % Angular velocity of the encoder
     % parseEncoder.AngularVelocity_Sigma    = default_value; 
-    parseEncoder.Mode = string(datatable.mode); % A vector of the mode of the encoder box, T indicates triggered.
+    parseEncoder.Mode = string(erase((datatable.mode),"""")); % A vector of the mode of the encoder box, T indicates triggered.
 
 else
     error('Wrong data type requested: %s',dataType)
