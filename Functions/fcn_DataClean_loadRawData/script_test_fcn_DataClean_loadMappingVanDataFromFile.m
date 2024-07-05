@@ -56,14 +56,30 @@ clc
 % mapping_van_2023-06-26-Parking5s folder will also be placed in the Data
 % folder and will be pushed to GitHub repo.
 
-% bagFolderName = "mapping_van_2023-06-22-1Lap_0";
-bagFolderName = "mapping_van_2023-06-26-Parking5s";
-rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+%% Test 1: Load the entire bag file
+fid = 1;
+dataFolder = "LargeData";
+date = '2024-06-20';
+bagName = "mapping_van_2024-06-20-15-21-04_0";
+bagPath = fullfile(pwd, 'LargeData',date, bagName);
+rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
 
+%% Test 2: Load part of the bag file
+fid = 1;
+dataFolder = "LargeData";
+date = '2024-06-20';
+bagName = "mapping_van_2024-06-20-15-21-04_0";
+bagPath = fullfile(pwd, 'LargeData',date, bagName);
+Flags = struct;
+Flags.flag_do_load_sick = 0;
+Flags.flag_do_load_velodyne = 1;
+Flags.flag_do_load_cameras = 0;
+rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid,Flags);
+%%
 
 %% Fail conditions
 if 1==0
     %% ERROR for bad data folder
-    bagFolderName = "badData";
-    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+    bagName = "badData";
+    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName);
 end

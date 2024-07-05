@@ -87,11 +87,16 @@ if isempty(fid)
     fid = 1;
 end
 if nargin <= 2
-    dataFolder = fullfile(pwd, 'LargeData', date);
+    dataFolder = fullfile(pwd, 'LargeData', date); % No sub-folder
     
-else
+elseif nargin == 3
     laneName = varargin{1};
     dataFolder = fullfile(pwd, 'LargeData', date,laneName);
+elseif nargin == 4
+    laneName = varargin{1};
+    dataFolder = fullfile(pwd, 'LargeData', date,laneName);
+    flag_do_load_all_data = 0;
+    Flags = varargin{2};
 end
 
 
@@ -142,7 +147,11 @@ for folder_idx = 1:num_folders
         bagFolderName = folder_list(folder_idx).name;
         bagFolderPath = fullfile(dataFolder,bagFolderName);
         % date = 'none';
-        rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,fid);
+        if flag_do_load_all_data
+            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,fid);
+        else
+            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,fid,Flags);
+        end
         % Remove the extension
         rawdata_cell{folder_idx - skip_count} = rawdata_temp;
     else

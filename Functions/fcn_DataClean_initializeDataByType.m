@@ -121,6 +121,7 @@ switch lower(dataType)
         dataStructure.centiSeconds                      = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints                           = default_value;  % This is the number of data points in the array
         dataStructure.mode                              = default_value;  % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
+        dataStructure.modeCount                         = default_value;  % This is the count of the current mode
         dataStructure.adjone                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
         dataStructure.adjtwo                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
         dataStructure.adjthree                          = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse

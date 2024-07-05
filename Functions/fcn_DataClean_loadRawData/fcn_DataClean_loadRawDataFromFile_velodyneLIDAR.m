@@ -1,4 +1,4 @@
-function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(file_path,datatype,fid)
+function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(file_path,datatype,fid,varargin)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the Velodyne Lidar data, whose data type is lidar3d
@@ -22,7 +22,8 @@ function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLI
 % -- start writing function
 % 2024-02-09 by X. Cao
 % -- fix a small bug, remove one useless input
-
+% 2024-07-02 by X. Cao
+% -- added varagin to select the duration of scan that will be loaded
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -32,6 +33,18 @@ if flag_do_debug
     st = dbstack; %#ok<*UNRCH>
     fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
+
+if flag_check_inputs
+    % Are there the right number of inputs?
+    narginchk(3,4);
+end
+
+if 4 == nargin
+    flag_select_scan_duration = varargin{1};
+else
+    flag_select_scan_duration = 0;
+end
+
 
 
 
@@ -64,14 +77,21 @@ if strcmp(datatype,'lidar3d')
     % Velodyne_Lidar_structure.is_dense         = velodyne_lidar_table.is_dense;  %  True if there are no invalid points
     Velodyne_Lidar_structure.scan_filename        = scan_filenames_array;
     points_cell = {};
-    folder = erase(file_path, '_slash_velodyne_packets.txt');
     pointcloud_folder = "velodyne_pointcloud/";
-    
-    for idx_scan = 1:Nscans
+ 
+    if flag_select_scan_duration == 1
+        user_input_txt = sprintf('There are %d scans, please enter the scan duration you want to load. [idx_start:idx_end]', Nscans);
+        user_input = input(user_input_txt);
+        scan_duration = user_input;
+    else
+        scan_duration = 1:Nscans;
+    end
+           
+    for idx_scan = scan_duration
         scan_filename = scan_filenames_array(idx_scan);
         scan_filename_char = char(scan_filename);
         points_file = pointcloud_folder+scan_filename_char(1:2)+"/"+scan_filename_char(3:4)+"/"+scan_filename+".txt";
-        % points_file = scan_filename;
+
         opts_scan = detectImportOptions(points_file);
         points = readmatrix(points_file,opts_scan);
         points_cell{idx_scan,1} = points;

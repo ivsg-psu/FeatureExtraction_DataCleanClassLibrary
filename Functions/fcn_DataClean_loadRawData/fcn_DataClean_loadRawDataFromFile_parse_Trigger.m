@@ -25,6 +25,8 @@ function parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(file_pat
 % -- added fid to fprint to allow printing to file
 % -- added entry and exit debugging prints
 % -- removed variable clearing at end of function because this is automatic
+% 2024_07_03 xfc5113@psu.edu
+% -- added modeCount to the struct array
 
 
 flag_do_debug = 0;  % Flag to show the results for debugging
@@ -46,12 +48,13 @@ if strcmp(datatype,'trigger')
     secs = datatable.secs;
     nsecs = datatable.nsecs;
     parseTrigger.mode = datatable.mode;
-    parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit
+    % parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit
     % parseTrigger.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample
-    parseTrigger.ROS_Time                          = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+    parseTrigger.ROS_Time                          = secs + nsecs*(10^-9);  % This is the ROS time that the data arrived into the bag
     % parseTrigger.centiSeconds                      = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     parseTrigger.Npoints                           = height(datatable);  % This is the number of data points in the array
     parseTrigger.mode                              = datatable.mode;     % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
+    parseTrigger.modeCount                         = datatable.mode_counts; % This is the count of the Locked mode (empty for other mode)
     parseTrigger.adjone                            = datatable.adjone;   % This is phase adjustment magnitude relative to the calculated period of the output pulse
     parseTrigger.adjtwo                            = datatable.adjtwo;   % This is phase adjustment magnitude relative to the calculated period of the output pulse
     parseTrigger.adjthree                          = datatable.adjthree; % This is phase adjustment magnitude relative to the calculated period of the output pulse
