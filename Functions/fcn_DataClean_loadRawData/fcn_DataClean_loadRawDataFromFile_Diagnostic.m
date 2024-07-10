@@ -55,11 +55,11 @@ if strcmp(datatype, 'diagnostic')
     diagnostic_structure = fcn_DataClean_initializeDataByType(datatype,Npoints);
     switch topic_name
         case '/Trigger_diag'
-            % secs = datatable.secs;
-            % nsecs = datatable.nsecs;
+            secs = datatable.secs;
+            nsecs = datatable.nsecs;
             % diagnostic_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % diagnostic_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-            diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+            diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.centiSeconds       = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             diagnostic_structure.Seq                = datatable.seq;
@@ -75,11 +75,11 @@ if strcmp(datatype, 'diagnostic')
             diagnostic_structure.err_wrong_element_length          = datatable.err_wrong_element_length;
 
         case '/Encoder_diag'
-            % secs = datatable.secs;
-            % nsecs = datatable.nsecs;
+            secs = datatable.secs;
+            nsecs = datatable.nsecs;
             % diagnostic_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % diagnostic_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-            diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+            diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.centiSeconds       = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             diagnostic_structure.Seq                = datatable.seq;
@@ -93,9 +93,9 @@ if strcmp(datatype, 'diagnostic')
         case '/sparkfun_gps_diag_rear_left'
             secs = datatable.secs;
             nsecs = datatable.nsecs;
-            diagnostic_structure.GPS_Time    = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
+            % diagnostic_structure.GPS_Time    = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-            diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+            diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % Data related to trigger box and encoder box
@@ -111,9 +111,9 @@ if strcmp(datatype, 'diagnostic')
         case '/sparkfun_gps_diag_rear_right'
             secs = datatable.secs;
             nsecs = datatable.nsecs;
-            diagnostic_structure.GPS_Time    = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
+            % diagnostic_structure.GPS_Time    = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
             % dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-            diagnostic_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
+            diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
             diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % Data related to trigger box and encoder box

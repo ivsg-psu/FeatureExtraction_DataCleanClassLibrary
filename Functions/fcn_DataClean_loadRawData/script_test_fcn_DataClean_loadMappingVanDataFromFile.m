@@ -64,6 +64,8 @@ bagName = "mapping_van_2024-06-20-15-21-04_0";
 bagPath = fullfile(pwd, 'LargeData',date, bagName);
 rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
 
+%%
+time_range = fcn_DataClean_FindMaxAndMinTime(rawdata);
 %% Test 2: Load part of the bag file
 fid = 1;
 dataFolder = "LargeData";

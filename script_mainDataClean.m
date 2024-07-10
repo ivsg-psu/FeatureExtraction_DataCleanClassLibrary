@@ -314,7 +314,7 @@ end
 
 %% Do we need to set up the work space?
 if ~exist('flag_DataClean_Folders_Initialized','var')
-    this_project_folders = {'Functions','Data'};
+    this_project_folders = {'Functions','LargeData'};
     fcn_INTERNAL_initializeUtilities(library_name,library_folders,library_url,this_project_folders);
     flag_DataClean_Folders_Initialized = 1;
 end
