@@ -199,7 +199,6 @@ switch entry_location
     otherwise
         error('unrecognized position requested for data retrieval');
 end
-
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   _____       _

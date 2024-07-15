@@ -1,4 +1,4 @@
-function valid_struct = fcn_DataClean_trimDatabyTime(rawDataStructure,time_range)
+function trimedDataStructure = fcn_DataClean_trimDatabyTime(rawDataStructure)
 
 % fcn_DataPreprocessing_FindMaxAndMinTime finds the start and end time for
 % each sensor
@@ -61,7 +61,7 @@ end
 flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_check_inputs == 1
-    if ~isstruct(rawdata)
+    if ~isstruct(rawDataStructure)
         error('The input of the function should be a structure array')
     end
 
@@ -78,9 +78,12 @@ end
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+time_range = fcn_DataClean_FindMaxAndMinTime(rawDataStructure);
 sensorfields = fieldnames(rawDataStructure);
 trimedDataStructure = rawDataStructure;
+sensor_type = 'Trigger_Raw';
+LockMode_ROS_Time = fcn_DataClean_grabTriggerLockedTime(rawdata);
+
 for idx_field = 1:length(sensorfields)
     current_field_struct = rawDataStructure.(sensorfields{idx_field});
     trimmed_field_struct = current_field_struct;

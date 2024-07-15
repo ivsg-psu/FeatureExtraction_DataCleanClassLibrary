@@ -46,7 +46,7 @@ maxSigmas.('ZAccel')=velUncertainty;
 maxSigmas.('XGyro')=angleUncertainty*pi/180; 
 maxSigmas.('YGyro')=angleUncertainty*pi/180; 
 maxSigmas.('VelocityR')=velUncertainty;
-
+maxSigmas.('AngularVelocity') = angleUncertainty*pi/180; 
 
 
 
@@ -66,7 +66,10 @@ fields_to_calculate_timegaps_for = [...
     {'GPS_Time'}...
     ];
 
-
+fields_not_array = [...
+    {'centiSeconds'},...
+    {'Npoints'},...
+    ];
 
 names = fieldnames(rawData); % Grab all the fields that are in rawData structure
 for i_data = 1:length(names)
@@ -179,7 +182,7 @@ for i_data = 1:length(names)
                         bad_indices = [];
 
                         for i_time=2:length(t)
-                            tolerance = centiSeconds*0.5;
+                            tolerance = centiSeconds*0.2;
                             t_diff = (t(i_time)-t(i_time-1))*100;
                             if t_diff>(centiSeconds+tolerance) || t_diff<(centiSeconds-tolerance)
                                 flag_delta_errors_detected = 1;
@@ -253,7 +256,7 @@ for i_data = 1:length(names)
                                 % Check to see if this subField is in the list that
                                 % does NOT include the time information and is
                                 % not a sigma field
-                                if ~any(strcmp(subFieldName2,fields_to_calculate_timegaps_for)) && ~contains(subFieldName2,'_Sigma')
+                                if ~any(strcmp(subFieldName2,fields_to_calculate_timegaps_for)) && ~any(strcmp(subFieldName2,fields_not_array)) && ~contains(subFieldName2,'_Sigma') && ~contains(subFieldName2,'_EventFunctions')
                                     % Grab the data vector
                                     data = d.(subFieldName2);
                                     
@@ -280,8 +283,10 @@ for i_data = 1:length(names)
                                             otherwise
                                                 error('Unknown field detected: %s \n',subFieldName2)                                        
                                         end
-                                    else % We are dealing with normal column data                                        
-                                        data = fillmissing(data,'linear');
+                                    else % We are dealing with normal column data    
+                                        if ~isstring(data)
+                                            data = fillmissing(data,'linear');
+                                        end
                                     end
                                     
                                     % Push corrected data into the dout data
