@@ -37,6 +37,8 @@ function updated_dataStructure = fcn_DataClean_renameSensorsToStandardNames(data
 %
 % 2023_07_04: sbrennan@psu.edu
 % -- wrote the code originally
+% 2024_07_15: xfc5113@psu.edu
+% -- update bad and good names of the fields
 
 % Set default fid (file ID) first:
 fid = 1; % Default case is to print to the console
@@ -107,25 +109,31 @@ correct_names = {...
 'ENCODER_USDigital_RearAxle';
 'TRIGGER_TrigBox_RearTop';
 'LIDAR_Sick_Rear';
-'DIAGNOSTIC_Sparkfun_RearLeft';
-'DIAGNOSTIC_Sparkfun_RearRight';
+'DIAGNOSTIC_Sparkfun_LeftRear';
+'DIAGNOSTIC_Sparkfun_RightRear';
+'DIAGNOSTIC_Sparkfun_Front';
 'TRANSFORM_ROS_Rear';
-'GPS_SparkFun_RearRight';
-'GPS_SparkFun_RearLeft';
+'GPS_SparkFun_RightRear';
+'GPS_SparkFun_LeftRear';
+'GPS_SparkFun_Front';
 'IMU_Adis_TopCenter'};
 Ngood = length(correct_names);
 
 name_pairs = {...
 'Hemisphere_DGPS','GPS_Hemisphere_TopCenter';
-'diagnostic_encoder','DIAGNOSTIC_USDigital_RearAxle';
-'diagnostic_trigger','DIAGNOSTIC_TrigBox_RearTop';
+'Diag_Encoder','DIAGNOSTIC_USDigital_RearAxle';
+'Diag_Trigger','DIAGNOSTIC_TrigBox_RearTop';
 'ntrip_info','NTRIP_Hotspot_Rear';
-'Raw_Encoder','ENCODER_USDigital_RearAxle';
-'RawTrigger','TRIGGER_TrigBox_RearTop';
+'Encoder_Raw','ENCODER_USDigital_RearAxle';
+'Trigger_Raw','TRIGGER_TrigBox_RearTop';
 'SickLiDAR','LIDAR_Sick_Rear';
-'sparkfun_gps_diag_rear_left', 'DIAGNOSTIC_Sparkfun_RearLeft';
-'sparkfun_gps_diag_rear_right', 'DIAGNOSTIC_Sparkfun_RearRight';
+'Lidar_Sick_Rear','LIDAR_Sick_Rear';
+'sparkfun_gps_diag_rear_left', 'DIAGNOSTIC_Sparkfun_LeftRear';
+'sparkfun_gps_diag_rear_right', 'DIAGNOSTIC_Sparkfun_RightRear';
+'sparkfun_gps_diag_front', 'DIAGNOSTIC_Sparkfun_Front';
 'transform', 'TRANSFORM_ROS_Rear';
+'VelodyneLiDAR', 'LIDAR_Velodyne_Rear';
+'Lidar_Velodyne_Rear','LiDAR_Velodyne_Rear';
 };
 
 [Npairs,~] = size(name_pairs);

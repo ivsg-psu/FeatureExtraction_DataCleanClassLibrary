@@ -274,7 +274,7 @@ end
 
 %% Do we need to set up the work space?
 if ~exist('flag_DataClean_Folders_Initialized','var')
-    this_project_folders = {'Functions','Data'};
+    this_project_folders = {'Functions','LargeData'};
     fcn_INTERNAL_initializeUtilities(library_name,library_folders,library_url,this_project_folders);
     flag_DataClean_Folders_Initialized = 1;
 end
@@ -283,9 +283,13 @@ end
 %% Specify the data to use
 % bagFolderName = "mapping_van_2023-06-05-1Lap"; 
 % bagFolderName = "mapping_van_2023-06-22-1Lap_0";
-date = "2023-11-03";
-bagFolderName = "mapping_van_2023-11-03-16-21-38_0";
-
+% date = "2023-11-03";
+% bagFolderName = "mapping_van_2023-11-03-16-21-38_0";
+dataFolder = "LargeData";
+date = '2024-06-20';
+bagName = "mapping_van_2024-06-20-15-21-04_0";
+bagPath = fullfile(pwd, 'LargeData',date, bagName);
+rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
 
 %% ======================= Load the raw data =========================
 % This data will have outliers, be unevenly sampled, have multiple and
@@ -305,7 +309,8 @@ if ~exist('dataset','var')
         [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
         % Load the raw data from file
-        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,date,fid);
+%         dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,date,fid);
+        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
     end
 else
     if length(dataset)>1
@@ -358,10 +363,10 @@ while 1==flag_stay_in_main_loop
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
-    %% Check name flags
+    %% Check name flags -- Done
     [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(dataStructure,fid);
     
-    %% Check if sensor outputs are merged
+    %% Check if sensor outputs are merged -- Done
     %    ### ISSUES with this:
     %    * The Sparkfun GPS unit requires several different datagrams to fully
     %    capture its output
@@ -374,24 +379,34 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Merge the data from the fields together
 
-    % Check Sparkfun_GPS_RearRight_sensors_are_merged
-    if (1==flag_keep_checking) && (0==name_flags.Sparkfun_GPS_RearRight_sensors_are_merged)
-        sensors_to_merge = 'Sparkfun_GPS_RearRight';
-        merged_sensor_name = 'GPS_SparkFun_RearRight';
+    % Check GPS_SparkFun_RightRear_sensors_are_merged
+    if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_RightRear_sensors_are_merged)
+        sensors_to_merge = 'GPS_SparkFun_RightRear';
+        merged_sensor_name = 'GPS_SparkFun_RightRear';
         method_name = 'keep_unique';
         fid = 1;
-        fixed_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
-        flag_keep_checking = 0;
+        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        flag_keep_checking = 1;
     end
     
-    % Check Sparkfun_GPS_RearRight_sensors_are_merged
-    if (1==flag_keep_checking) && (0==name_flags.Sparkfun_GPS_RearLeft_sensors_are_merged)
-        sensors_to_merge = 'Sparkfun_GPS_RearLeft';
-        merged_sensor_name = 'GPS_SparkFun_RearLeft';
+    % Check GPS_SparkFun_LeftRear_sensors_are_merged
+    if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_LeftRear_sensors_are_merged)
+        sensors_to_merge = 'GPS_SparkFun_LeftRear';
+        merged_sensor_name = 'GPS_SparkFun_LeftRear';
         method_name = 'keep_unique';
         fid = 1;
-        fixed_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
-        flag_keep_checking = 0;
+        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(merged_dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        flag_keep_checking = 1;
+    end
+
+    % Check GPS_SparkFun_Front_sensors_are_merged
+    if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_Front_sensors_are_merged)
+        sensors_to_merge = 'GPS_SparkFun_Front';
+        merged_sensor_name = 'GPS_SparkFun_Front';
+        method_name = 'keep_unique';
+        fid = 1;
+        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(merged_dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        flag_keep_checking = 1;
     end
     
     % Check ADIS_sensors_are_merged 
@@ -400,10 +415,11 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'IMU_Adis_TopCenter';
         method_name = 'keep_unique';
         fid = 1;
-        fixed_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 0;
     end
     
+%     dataset{2} = merged_dataStructure;
     %% Check if sensor_naming_standards_are_used
     %    ### ISSUES with this:
     %    * The sensors used on the mapping van follow a standard naming
@@ -416,17 +432,18 @@ while 1==flag_stay_in_main_loop
     
     % Check if sensor_naming_standards_are_used
     if (1==flag_keep_checking) && (0==name_flags.sensor_naming_standards_are_used)
-        fixed_dataStructure = fcn_DataClean_renameSensorsToStandardNames(dataStructure,fid);
-        flag_keep_checking = 0;
+        merged_dataStructure_renamed = fcn_DataClean_renameSensorsToStandardNames(merged_dataStructure,fid);
+        flag_keep_checking = 1;
+
     end
 
     
     %% Check data for errors in Time data related to GPS-enabled sensors
     if (1==flag_keep_checking)
-        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
+        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(merged_dataStructure_renamed,fid);
     end
 
-    %% GPS_Time tests
+    %% GPS_Time tests - all of these steps can be found in fcn_DataClean_checkDataTimeConsistency, the following sections need to be deleted later
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %    _____ _____   _____            _______ _                   _______        _
     %   / ____|  __ \ / ____|          |__   __(_)                 |__   __|      | |
@@ -501,7 +518,7 @@ while 1==flag_stay_in_main_loop
         % Fix the data
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
-        fixed_dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructure,fid, field_name,sensors_to_check);
+        merged_dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructure,fid, field_name,sensors_to_check);
         flag_keep_checking = 0;
     end
 
@@ -548,7 +565,7 @@ while 1==flag_stay_in_main_loop
     %    error.
     
     if (1==flag_keep_checking) && (0==time_flags.start_time_GPS_sensors_agrees_to_within_5_seconds)
-        fixed_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(dataStructure,fid);
+        merged_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(dataStructure,fid);
         flag_keep_checking = 0;
     end
     
@@ -569,7 +586,7 @@ while 1==flag_stay_in_main_loop
     %    * Crop all data to same starting centi-second value
 
     if (1==flag_keep_checking) && (0==time_flags.consistent_start_and_end_times_across_GPS_sensors)
-        fixed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,fid);
+        merged_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,fid);
         flag_keep_checking = 0;
     end
 
@@ -590,7 +607,7 @@ while 1==flag_stay_in_main_loop
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
         fid = 1;
-        fixed_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(dataStructure, field_name,sensors_to_check,fid);               
+        merged_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(dataStructure, field_name,sensors_to_check,fid);               
         flag_keep_checking = 0;
     end
     
@@ -638,7 +655,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
     if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
-        fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
+        merged_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
         flag_keep_checking = 0;
     end
     
@@ -683,7 +700,7 @@ while 1==flag_stay_in_main_loop
     %    * Divide ROS_Time on this sensor by 10^9, confirm that this fixes the
     %    problem
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_scaled_correctly_as_seconds)
-        fixed_dataStructure = fcn_DataClean_convertROSTimeToSeconds(dataStructure,'',fid);              
+        merged_dataStructure = fcn_DataClean_convertROSTimeToSeconds(dataStructure,'',fid);              
         flag_keep_checking = 0;
     end
     
@@ -835,7 +852,7 @@ while 1==flag_stay_in_main_loop
         clear dataset
         dataset{1} = temp;
     end
-    dataset{end+1} = fixed_dataStructure; %#ok<SAGROW>
+    dataset{end+1} = merged_dataStructure; %#ok<SAGROW>
     
        
     % Check if all the name_flags work, so we can exit!
