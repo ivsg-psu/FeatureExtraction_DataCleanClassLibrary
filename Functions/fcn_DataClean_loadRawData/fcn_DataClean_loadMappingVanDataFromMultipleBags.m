@@ -88,15 +88,16 @@ if isempty(fid)
 end
 if nargin <= 2
     dataFolder = fullfile(pwd, 'LargeData', date); % No sub-folder
-    
+    flag_do_load_all_data = 1;
 elseif nargin == 3
     laneName = varargin{1};
     dataFolder = fullfile(pwd, 'LargeData', date,laneName);
+    flag_do_load_all_data = 1;
 elseif nargin == 4
     laneName = varargin{1};
     dataFolder = fullfile(pwd, 'LargeData', date,laneName);
-    flag_do_load_all_data = 0;
     Flags = varargin{2};
+    flag_do_load_all_data = Flags.flag_do_load_all_data;
 end
 
 
@@ -142,7 +143,7 @@ for folder_idx = 1:num_folders
 
     % Check that the list is the file. If it is a directory, the isdir flag
     % will be 1.
-    if length(folder_list(folder_idx).name) > 2 
+    if length(folder_list(folder_idx).name) > 9 
         % Get the file name
         bagFolderName = folder_list(folder_idx).name;
         bagFolderPath = fullfile(dataFolder,bagFolderName);
