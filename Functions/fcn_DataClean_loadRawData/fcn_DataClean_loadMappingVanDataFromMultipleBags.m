@@ -1,4 +1,4 @@
-function rawdata_cell = fcn_DataClean_loadMappingVanDataFromMultipleBags(date,fid,varargin)
+function rawdata_cell = fcn_DataClean_loadMappingVanDataFromMultipleBags(dataFolder,date,fid,varargin)
 
 % imports raw data from mapping van bag files
 %
@@ -86,26 +86,10 @@ end
 if isempty(fid)
     fid = 1;
 end
-if nargin <= 2
-    dataFolder = fullfile(pwd, 'LargeData', date); % No sub-folder
-    flag_do_load_all_data = 1;
-elseif nargin == 3
-    laneName = varargin{1};
-    dataFolder = fullfile(pwd, 'LargeData', date,laneName);
-    flag_do_load_all_data = 1;
-elseif nargin == 4
-    laneName = varargin{1};
-    dataFolder = fullfile(pwd, 'LargeData', date,laneName);
-    Flags = varargin{2};
-    flag_do_load_all_data = Flags.flag_do_load_all_data;
-end
-
-
-
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    narginchk(2,3);
+    narginchk(3,5);
         
     % Check if dataFolder is a directory. If directory is not there, warn
     % the user.
@@ -121,6 +105,25 @@ if flag_check_inputs
         rethrow(ME)
     end
 end
+
+
+if nargin <= 3
+    dataFolder = fullfile(pwd, dataFolder, date); % No sub-folder
+    flag_do_load_all_data = 1;
+elseif nargin == 4
+    laneName = varargin{1};
+    dataFolder = fullfile(pwd, dataFolder, date,laneName);
+    flag_do_load_all_data = 1;
+elseif nargin == 5
+    laneName = varargin{1};
+    dataFolder = fullfile(pwd, dataFolder, date,laneName);
+    Flags = varargin{2};
+    flag_do_load_all_data = Flags.flag_do_load_all_data;
+end
+
+
+
+
 
 
 

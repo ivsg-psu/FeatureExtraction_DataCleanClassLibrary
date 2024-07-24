@@ -1,34 +1,33 @@
-function trimedDataStructure = fcn_DataClean_trimDatabyTime(rawDataStructure)
+function trimedDataStructure = fcn_DataClean_trimDatabyROSTime(rawDataStructure)
 
 % fcn_DataPreprocessing_FindMaxAndMinTime finds the start and end time for
 % each sensor
 %
 % FORMAT:
 %
-% time_range = fcn_DataPreprocessing_FindMaxAndMinTime(rawDataStructure)
+% time_range = fcn_DataClean_trimDatabyTime(rawDataStructure)
 %
 % INPUTS:
 %
-%      GPS_rawdata_struct: a structure array containing raw GPS data
+%      rawDataStructure: a structure array containing raw data 
 %
 %
 % OUTPUTS:
 %
-%      GPS_Locked_data_struct: a structure array containing locked GPS data
+%      trimedDataStructure: a structure array containing trimmed data
 %
 %
 % DEPENDENCIES:
 %
-%      fcn_DebugTools_checkInputsToFunctions
-%      fcn_geometry_plotCircle
+%      fcn_DataClean_FindMaxAndMinTime
+%      
 %
 % EXAMPLES:
 %      
 %      % BASIC example
-%      points = [0 0; 1 4; 0.5 -1];
-%      [centers,radii] = fcn_geometry_circleCenterFrom3Points(points,1)
+%
 % 
-% See the script: script_test_fcn_Transform_CalculateAngleBetweenVectors
+% See the script: script_test_fcn_DataClean_trimDatabyROSTime
 % for a full test suite.
 %
 % This function was written on 2023_10_20 by X.Cao
@@ -38,6 +37,8 @@ function trimedDataStructure = fcn_DataClean_trimDatabyTime(rawDataStructure)
 % 2023_10_20 - wrote the code
 % 2024_01_28 - added more comments, particularly to explain inputs more
 % clearly
+% 2024_07_24 - rename the function from fcn_DataClean_trimDatabyTime to
+% fcn_DataClean_trimDatabyROSTime
 
 %% Debugging and Input checks
 flag_do_debug = 1;
@@ -81,13 +82,15 @@ end
 time_range = fcn_DataClean_FindMaxAndMinTime(rawDataStructure);
 sensorfields = fieldnames(rawDataStructure);
 trimedDataStructure = rawDataStructure;
-sensor_type = 'Trigger_Raw';
-LockMode_ROS_Time = fcn_DataClean_grabTriggerLockedTime(rawdata);
 
 for idx_field = 1:length(sensorfields)
     current_field_struct = rawDataStructure.(sensorfields{idx_field});
     trimmed_field_struct = current_field_struct;
-    current_field_struct_ROS_Time = current_field_struct.ROS_Time;
+    if isfield(current_field_struct,'ROS_Time')
+        current_field_struct_ROS_Time = current_field_struct.ROS_Time;
+    else
+        current_field_struct_ROS_Time = [];
+    end
     valid_idxs = (current_field_struct_ROS_Time>=min(time_range))&(current_field_struct_ROS_Time<=max(time_range));
     topicfields = fieldnames(current_field_struct);
     N_topics = length(topicfields);

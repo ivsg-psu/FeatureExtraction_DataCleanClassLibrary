@@ -285,11 +285,12 @@ end
 % bagFolderName = "mapping_van_2023-06-22-1Lap_0";
 % date = "2023-11-03";
 % bagFolderName = "mapping_van_2023-11-03-16-21-38_0";
+fid = 1;
 dataFolder = "LargeData";
 date = '2024-06-20';
 bagName = "mapping_van_2024-06-20-15-21-04_0";
 bagPath = fullfile(pwd, 'LargeData',date, bagName);
-rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
+dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
 
 %% ======================= Load the raw data =========================
 % This data will have outliers, be unevenly sampled, have multiple and
@@ -341,13 +342,15 @@ N_max_loops = 30;
 data_structure_sequence{N_max_loops} = struct;
 
 main_data_clean_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
+%%
 while 1==flag_stay_in_main_loop
     dataStructure = dataset{end};    
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
-    
+    %% Trim data with ROS time
+    trimedDataStructure = fcn_DataClean_trimDatabyROSTime(dataStructure);
     %% Name consistency checks start here
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
@@ -364,7 +367,7 @@ while 1==flag_stay_in_main_loop
     
     
     %% Check name flags -- Done
-    [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(dataStructure,fid);
+    [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(trimedDataStructure,fid);
     
     %% Check if sensor outputs are merged -- Done
     %    ### ISSUES with this:
@@ -385,7 +388,7 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'GPS_SparkFun_RightRear';
         method_name = 'keep_unique';
         fid = 1;
-        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(trimedDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 1;
     end
     
@@ -438,7 +441,7 @@ while 1==flag_stay_in_main_loop
     end
 
     
-    %% Check data for errors in Time data related to GPS-enabled sensors
+    %% Check data for errors in Time data related to GPS-enabled sensors -- Done
     if (1==flag_keep_checking)
         [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(merged_dataStructure_renamed,fid);
     end

@@ -88,12 +88,7 @@ if isempty(fid)
     fid = 1;
 end
 
-% if nargin <= 3
-%     dataFolder = fullfile(pwd, 'LargeData',date, bagFolderName);
-% else
-%     laneName = varargin{1};
-%     dataFolder = fullfile(pwd, 'LargeData', date,laneName,bagFolderName);
-% end
+
 
 if flag_check_inputs
     % Are there the right number of inputs?
