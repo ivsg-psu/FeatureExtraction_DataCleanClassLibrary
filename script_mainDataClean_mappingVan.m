@@ -369,6 +369,9 @@ while 1==flag_stay_in_main_loop
     %% Check name flags -- Done
     [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(trimedDataStructure,fid);
     
+
+    %% Find the map from ROS Time to GPS Time
+    
     %% Check if sensor outputs are merged -- Done
     %    ### ISSUES with this:
     %    * The Sparkfun GPS unit requires several different datagrams to fully
@@ -423,6 +426,13 @@ while 1==flag_stay_in_main_loop
     end
     
 %     dataset{2} = merged_dataStructure;
+%%
+    time_offsets_stats = fcn_DataClean_findMapfromROSTimetoGPSTime(merged_dataStructure);
+    %%
+    % plot()
+    p1 = polyfit(merged_dataStructure.GPS_SparkFun_Front.ROS_Time,merged_dataStructure.GPS_SparkFun_Front.GPS_Time,1)
+    plot(merged_dataStructure.GPS_SparkFun_Front.GPS_Time-merged_dataStructure.GPS_SparkFun_Front.ROS_Time)
+    
     %% Check if sensor_naming_standards_are_used
     %    ### ISSUES with this:
     %    * The sensors used on the mapping van follow a standard naming

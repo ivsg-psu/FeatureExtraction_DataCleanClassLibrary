@@ -138,17 +138,31 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 folder_list = dir(dataFolder);
-num_folders = length(folder_list);
-% num_folders = 3;
+bag_folder_list = folder_list(3:end);
+num_folders = length(bag_folder_list);
+
 rawdata_cell = {};
 skip_count = 0;
-for folder_idx = 1:num_folders
 
+if flag_do_load_all_data == 1
+    folder_range = 1:num_folders;
+else
+    user_input_txt = sprintf('There are %d bag folders, please enter the folder range you want to load. [idx_start:idx_end]', num_folders);
+    user_input = input(user_input_txt);
+    folder_range = user_input;
+end
+
+
+
+    
+for folder_idx = folder_range
+    
     % Check that the list is the file. If it is a directory, the isdir flag
     % will be 1.
-    if length(folder_list(folder_idx).name) > 9 
+    bagFolderName = bag_folder_list(folder_idx).name;
+    if contains(bagFolderName,"mapping_van")
         % Get the file name
-        bagFolderName = folder_list(folder_idx).name;
+        
         bagFolderPath = fullfile(dataFolder,bagFolderName);
         % date = 'none';
         if flag_do_load_all_data

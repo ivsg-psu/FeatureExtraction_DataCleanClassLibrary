@@ -1,12 +1,12 @@
-function fcn_DataClean_findMapfromROSTimetoGPSTime(dataStructure)
+function time_offset_stats = fcn_DataClean_findMapfromROSTimetoGPSTime(dataStructure)
 
+flag_do_plot = 1;
+sensorfields = fieldnames(dataStructure);
 
-sensorfields = fieldnames(rawDataStructure);
-trimedDataStructure = rawDataStructure;
-p_array = [];
+time_offset_stats = [];
 for idx_field = 1:length(sensorfields)
-    current_field_struct = rawDataStructure.(sensorfields{idx_field});
-    trimmed_field_struct = current_field_struct;
+
+    current_field_struct = dataStructure.(sensorfields{idx_field});
     if isfield(current_field_struct,'ROS_Time')
         current_field_struct_ROS_Time = current_field_struct.ROS_Time;
     else
@@ -19,25 +19,22 @@ for idx_field = 1:length(sensorfields)
         current_field_struct_GPS_Time = [];
     end
 
-    if (~isempty(current_field_struct_ROS_Time))&(~isempty(current_field_struct_GPS_Time))
-        p = polyfit(current_field_struct_GPS_Time,current_field_struct_ROS_Time);
+    if (~isempty(current_field_struct_ROS_Time))&(~isnan(current_field_struct_GPS_Time))
+        time_offset = current_field_struct_GPS_Time - current_field_struct_ROS_Time;
+        
+        
+        
+        time_offset_ave = mean(time_offset);
+        time_offset_std = std(time_offset);
+        time_offset_stat = [time_offset_ave, time_offset_std];
+        time_offset_stats = [time_offset_stats;time_offset_stat];
+        if flag_do_plot == 1
+            plot(time_offset)
+            hold on
 
-
-    end
-
-    p_array = [p_array;p];
-    valid_idxs = (current_field_struct_ROS_Time>=min(time_range))&(current_field_struct_ROS_Time<=max(time_range));
-    topicfields = fieldnames(current_field_struct);
-    N_topics = length(topicfields);
-    for idx_topic = 1:N_topics
-        current_topic_content = current_field_struct.(topicfields{idx_topic});
-        if length(current_topic_content) > 1
-           trimmed_field_struct.(topicfields{idx_topic}) = current_topic_content(valid_idxs,:);
         end
-        trimmed_field_struct.centiSeconds = current_field_struct.centiSeconds;
-        trimmed_field_struct.Npoints = length(trimmed_field_struct.ROS_Time);
-
     end
-    trimedDataStructure.(sensorfields{idx_field}) = trimmed_field_struct;
+
+   
 
 end
