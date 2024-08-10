@@ -1,4 +1,4 @@
-function trimedDataStructure = fcn_DataClean_trimDatabyROSTime(rawDataStructure)
+function trimedDataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(rawDataStructure)
 
 % fcn_DataPreprocessing_FindMaxAndMinTime finds the start and end time for
 % each sensor

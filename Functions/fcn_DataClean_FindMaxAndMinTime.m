@@ -7,14 +7,15 @@ function time_range = fcn_DataClean_FindMaxAndMinTime(rawDataStructure)
 %
 % time_range = fcn_DataPreprocessing_FindMaxAndMinTime(rawDataStructure)
 %
+%
 % INPUTS:
 %
-%      GPS_rawdata_struct: a structure array containing raw GPS data
+%      rawDataStructure: a structure array containing raw data
 %
 %
 % OUTPUTS:
 %
-%      GPS_Locked_data_struct: a structure array containing locked GPS data
+%      time_range: a structure array containing locked GPS data
 %
 %
 % DEPENDENCIES:
@@ -82,6 +83,11 @@ end
 fields = fieldnames(rawDataStructure);
 time_start = 0;
 time_end = Inf;
+sensor_centiSeconds = [];
+start_times_centiSeconds = [];
+end_times_centiSeconds = [];
+start_times = [];
+end_times = [];
 for idx_field = 1:length(fields)
     current_field_struct = rawDataStructure.(fields{idx_field});
     if ~isempty(current_field_struct)
@@ -89,12 +95,26 @@ for idx_field = 1:length(fields)
        current_field_struct_time = current_field_struct.ROS_Time;
         
     end
-    time_start = max([min(current_field_struct_time),time_start]);
-    time_end = min([max(current_field_struct_time),time_end]);
+    ROSTime_centiSeconds = round(100*current_field_struct_time/current_field_struct.centiSeconds)*current_field_struct.centiSeconds;
+    sensor_centiSeconds = [sensor_centiSeconds; current_field_struct.centiSeconds]; %#ok<AGROW>
+    start_times_centiSeconds = [start_times_centiSeconds; ROSTime_centiSeconds(1)]; %#ok<AGROW>
+    end_times_centiSeconds = [end_times_centiSeconds; ROSTime_centiSeconds(end)]; %#ok<AGROW>
+
 
 
 end
-time_range = [time_start,time_end];
+% Take the maximum start time and minimum end time and assign these to the
+% global start and end times.
+master_start_time_centiSeconds = max(start_times_centiSeconds);
+master_end_time_centiSeconds = min(end_times_centiSeconds);
+
+% Make sure we choose a time that all the sensors CAN start at. We round
+% start seconds up, and end seconds down.
+master_start_time_Seconds = ceil(master_start_time_centiSeconds*0.01);
+master_end_time_Seconds = floor(master_end_time_centiSeconds*0.01);
+% [start_time,idx_sensor_start] = max(start_times);
+% [end_time,idx_sensor_end] = min(end_times);
+time_range = [master_start_time_Seconds, master_end_time_Seconds];
 
     
 end

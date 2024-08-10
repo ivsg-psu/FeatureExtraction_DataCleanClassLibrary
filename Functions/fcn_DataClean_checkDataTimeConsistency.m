@@ -351,8 +351,32 @@ custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
 
 fcn_INTERNAL_checkDataStrictlyIncreasing(fid, dataStructure, flags, 'GPS_Time','GPS');
 if 0==flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+    warning('There are jumps in differences of GPS time, GPS time need to be interpolated')
     return
 end
+
+%% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+%    ### ISSUES with this:
+%    * The GPS_Time may have small jumps which could occur if the sensor
+%    pauses for a moment, then restarts
+%    * If these jumps are large, the data from the sensor may be corrupted
+%    ### DETECTION:
+%    * Examine if the differences in GPS_Time are out of ordinary by
+%    looking at the standard deviations of the differences relative to the
+%    mean differences
+%    ### FIXES:
+%    * Interpolate time field if only a small segment is missing
+
+threshold_in_standard_deviations = 3;
+custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
+[flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure,'GPS_Time',flags,threshold_in_standard_deviations, custom_lower_threshold,'any','GPS', fid);
+
+fcn_INTERNAL_checkDataStrictlyIncreasing(fid, dataStructure, flags, 'GPS_Time','GPS');
+if 0==flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+    warning('There are missings in differences of GPS time, GPS time need to be interpolated')
+    return
+end
+
 
 %% Trigger_Time Tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -381,8 +405,9 @@ end
 %    ### FIXES:
 %    * Recalculate Trigger_Time fields as needed, using centiSeconds
 
-[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'Trigger_Time',flags,'all','GPS',fid);
+[flags,offending_sensor,~] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'Trigger_Time',flags,'all','GPS',fid);
 if 0==flags.Trigger_Time_exists_in_all_GPS_sensors
+    warning('Trigger time does not exist in GPS sensors')
     return
 end
 
@@ -412,7 +437,7 @@ end
 %    ### FIXES:
 %    * Catastrophic error. Sensor has failed and should be removed.
 
-[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'ROS_Time',flags,'all','GPS',fid);
+[flags,offending_sensor,~] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'ROS_Time',flags,'all','GPS',fid);
 if 0==flags.ROS_Time_exists_in_all_GPS_sensors
     return
 end
@@ -485,7 +510,7 @@ end
 %    ### FIXES:
 %    * Remove and interpolate time field if not strictly increasing
 
-[flags,offending_sensor]  = fcn_DataClean_checkFieldCountMatchesTimeCount(dataStructure,'ROS_Time',flags,'Trigger_Time','GPS',fid);
+[flags,offending_sensor,~]  = fcn_DataClean_checkFieldCountMatchesTimeCount(dataStructure,'ROS_Time',flags,'Trigger_Time','GPS',fid);
 if 0==flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
     return
 end
@@ -505,7 +530,10 @@ end
 
 [flags,offending_sensor,~] = fcn_DataClean_checkTimeRoundsCorrectly(dataStructure, 'ROS_Time',flags,'Trigger_Time','GPS',fid);
 if 0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
+    warning('ROS_Time need to be rounded to Trigger_Time in all GPS sensors')
     return
+else
+    disp("ROS_Time is rounded correctly")
 end
 
 

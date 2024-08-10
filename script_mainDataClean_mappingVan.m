@@ -287,8 +287,8 @@ end
 % bagFolderName = "mapping_van_2023-11-03-16-21-38_0";
 fid = 1;
 dataFolder = "LargeData";
-date = '2024-06-20';
-bagName = "mapping_van_2024-06-20-15-21-04_0";
+date = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-31-08_0";
 bagPath = fullfile(pwd, 'LargeData',date, bagName);
 dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
 
@@ -350,7 +350,8 @@ while 1==flag_stay_in_main_loop
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
     %% Trim data with ROS time
-    trimedDataStructure = fcn_DataClean_trimDatabyROSTime(dataStructure);
+
+    dataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(dataStructure);
     %% Name consistency checks start here
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
@@ -367,10 +368,10 @@ while 1==flag_stay_in_main_loop
     
     
     %% Check name flags -- Done
-    [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(trimedDataStructure,fid);
+    
+    [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(dataStructure,fid);
     
 
-    %% Find the map from ROS Time to GPS Time
     
     %% Check if sensor outputs are merged -- Done
     %    ### ISSUES with this:
@@ -391,17 +392,16 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'GPS_SparkFun_RightRear';
         method_name = 'keep_unique';
         fid = 1;
-        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(trimedDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 1;
     end
-    
     % Check GPS_SparkFun_LeftRear_sensors_are_merged
     if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_LeftRear_sensors_are_merged)
         sensors_to_merge = 'GPS_SparkFun_LeftRear';
         merged_sensor_name = 'GPS_SparkFun_LeftRear';
         method_name = 'keep_unique';
         fid = 1;
-        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(merged_dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 1;
     end
 
@@ -411,7 +411,7 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'GPS_SparkFun_Front';
         method_name = 'keep_unique';
         fid = 1;
-        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(merged_dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 1;
     end
     
@@ -421,18 +421,13 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'IMU_Adis_TopCenter';
         method_name = 'keep_unique';
         fid = 1;
-        merged_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 0;
     end
     
 %     dataset{2} = merged_dataStructure;
-%%
-    time_offsets_stats = fcn_DataClean_findMapfromROSTimetoGPSTime(merged_dataStructure);
-    %%
-    % plot()
-    p1 = polyfit(merged_dataStructure.GPS_SparkFun_Front.ROS_Time,merged_dataStructure.GPS_SparkFun_Front.GPS_Time,1)
-    plot(merged_dataStructure.GPS_SparkFun_Front.GPS_Time-merged_dataStructure.GPS_SparkFun_Front.ROS_Time)
-    
+
+
     %% Check if sensor_naming_standards_are_used
     %    ### ISSUES with this:
     %    * The sensors used on the mapping van follow a standard naming
@@ -445,16 +440,18 @@ while 1==flag_stay_in_main_loop
     
     % Check if sensor_naming_standards_are_used
     if (1==flag_keep_checking) && (0==name_flags.sensor_naming_standards_are_used)
-        merged_dataStructure_renamed = fcn_DataClean_renameSensorsToStandardNames(merged_dataStructure,fid);
+        dataStructure = fcn_DataClean_renameSensorsToStandardNames(dataStructure,fid);
         flag_keep_checking = 1;
-
+        name_flags.sensor_naming_standards_are_used = 1;
     end
 
     
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
     if (1==flag_keep_checking)
-        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(merged_dataStructure_renamed,fid);
+        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
+        
     end
+
 
     %% GPS_Time tests - all of these steps can be found in fcn_DataClean_checkDataTimeConsistency, the following sections need to be deleted later
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -531,7 +528,7 @@ while 1==flag_stay_in_main_loop
         % Fix the data
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
-        merged_dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructure,fid, field_name,sensors_to_check);
+        dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructure,fid, field_name,sensors_to_check);
         flag_keep_checking = 0;
     end
 
@@ -578,7 +575,7 @@ while 1==flag_stay_in_main_loop
     %    error.
     
     if (1==flag_keep_checking) && (0==time_flags.start_time_GPS_sensors_agrees_to_within_5_seconds)
-        merged_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(dataStructure,fid);
+        dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(dataStructure,fid);
         flag_keep_checking = 0;
     end
     
@@ -599,7 +596,7 @@ while 1==flag_stay_in_main_loop
     %    * Crop all data to same starting centi-second value
 
     if (1==flag_keep_checking) && (0==time_flags.consistent_start_and_end_times_across_GPS_sensors)
-        merged_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,fid);
+        dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,fid);
         flag_keep_checking = 0;
     end
 
@@ -620,7 +617,7 @@ while 1==flag_stay_in_main_loop
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
         fid = 1;
-        merged_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(dataStructure, field_name,sensors_to_check,fid);               
+        dataStructure = fcn_DataClean_sortSensorDataByGPSTime(dataStructure, field_name,sensors_to_check,fid);               
         flag_keep_checking = 0;
     end
     
@@ -635,13 +632,36 @@ while 1==flag_stay_in_main_loop
     %    mean differences
     %    ### FIXES:
     %    * Interpolate time field if only a small segment is missing        
+    ref_baseStation_Pitts = [40.44181017, -79.76090840, 327.428];
     if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
-        error('Large jump discontinuity detected in GPS_Time data');
-        flag_keep_checking = 0;
+        dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_baseStation_Pitts,fid);
+        flag_keep_checking = 1;
+        
+    end
+
+    %% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+    %    ### ISSUES with this:
+    %    * The GPS_Time may have small jumps which could occur if the sensor
+    %    pauses for a moment, then restarts
+    %    * If these jumps are large, the data from the sensor may be corrupted
+    %    ### DETECTION:
+    %    * Examine if the differences in GPS_Time are out of ordinary by
+    %    looking at the standard deviations of the differences relative to the
+    %    mean differences
+    %    ### FIXES:
+    %    * Interpolate time field if only a small segment is missing        
+    ref_baseStation_Pitts = [40.44181017, -79.76090840, 327.428];
+    if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
+        dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_baseStation_Pitts,fid);
+        flag_keep_checking = 1;
+        
+        
     end
 
     
-    %% Trigger_Time Tests
+    %%
+
+     %% Trigger_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
     %   _______   _                                  _______ _                   _______        _
@@ -668,10 +688,14 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
     if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
-        merged_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
-        flag_keep_checking = 0;
+        dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
+        flag_keep_checking = 1;
     end
     
+    
+
+
+
     %% ROS_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
@@ -713,7 +737,7 @@ while 1==flag_stay_in_main_loop
     %    * Divide ROS_Time on this sensor by 10^9, confirm that this fixes the
     %    problem
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_scaled_correctly_as_seconds)
-        merged_dataStructure = fcn_DataClean_convertROSTimeToSeconds(dataStructure,'',fid);              
+        dataStructure = fcn_DataClean_convertROSTimeToSeconds(dataStructure,'',fid);              
         flag_keep_checking = 0;
     end
     
@@ -750,7 +774,7 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends)
-        error('ROS time is not strictly ascending.\');
+        error('ROS time is not strictly ascending.');
         flag_keep_checking = 0;
     end
     
@@ -768,7 +792,7 @@ while 1==flag_stay_in_main_loop
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
-    %% Check if ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
+    %% Check if ROS_Time_has_same_length_as_GPS_Time_in_GPS_sensors
     %    ### ISSUES with this:
     %    * The Trigger_Time represents, for many sensors, when they were
     %    commanded to collect data. If the number of data in the ROS time list
@@ -782,12 +806,36 @@ while 1==flag_stay_in_main_loop
     
     %% Check that ROS_Time data has expected count
     flag_keep_checking = 1;
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_GPS_Time_in_GPS_sensors)
         error('ROS time does not have expected count.\');
         flag_keep_checking = 0;
     end
-    
 
+
+    
+    %% Check ROS_Time_rounds_correctly_to_Trigger_Time
+    % Check that the ROS Time, when rounded to the nearest sampling interval,
+    % matches the Trigger time.
+    %    ### ISSUES with this:
+    %    * The data on some sensors are triggered, inlcuding the GPS sensors
+    %    which are self-triggered
+    %    * If the rounding does not work, this indicates a problem in the ROS
+    %    master
+    %    ### DETECTION:
+    %    * Round the ROS Time and compare to the Trigger_Times
+    %    ### FIXES:
+    %    * Remove and interpolate time field if not strictly increasing
+
+    
+    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
+        warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
+        dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure,'GPS',fid);
+        flag_keep_checking = 1;
+    end
+
+    %% Start to work on other sensors, start with Velodyne LiDAR
+    
 
     %% TO-DO - Create a time analysis function - and add it here
     % Fix the x-axes to match the time duration, e.g. index*centiSeconds*0.01
@@ -831,26 +879,7 @@ while 1==flag_stay_in_main_loop
     end
     legend(sensor_names,'Interpreter','none')
 
-    %% Check ROS_Time_rounds_correctly_to_Trigger_Time
-    % Check that the ROS Time, when rounded to the nearest sampling interval,
-    % matches the Trigger time.
-    %    ### ISSUES with this:
-    %    * The data on some sensors are triggered, inlcuding the GPS sensors
-    %    which are self-triggered
-    %    * If the rounding does not work, this indicates a problem in the ROS
-    %    master
-    %    ### DETECTION:
-    %    * Round the ROS Time and compare to the Trigger_Times
-    %    ### FIXES:
-    %    * Remove and interpolate time field if not strictly increasing
-
     
-    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
-        warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
-        flag_keep_checking = 0;
-    end
-
 
 
     %% Done!
@@ -865,7 +894,7 @@ while 1==flag_stay_in_main_loop
         clear dataset
         dataset{1} = temp;
     end
-    dataset{end+1} = merged_dataStructure; %#ok<SAGROW>
+    dataset{end+1} = dataStructure; %#ok<SAGROW>
     
        
     % Check if all the name_flags work, so we can exit!

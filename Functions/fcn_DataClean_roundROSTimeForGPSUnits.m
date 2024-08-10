@@ -1,58 +1,49 @@
-function fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,varargin)
-
-% fcn_DataClean_recalculateTriggerTimes
-% Recalculates the Trigger_Time field for all sensors. This is done by
-% using the centiSeconds field and the effective start and end GPS_Times,
-% determined by taking the maximum start time and minimum end time over all
-% sensors.
+%% fcn_DataClean_checkROSTimeRoundsCorrectly
+function fixed_dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure, varargin)
+% fcn_DataClean_roundROSTimeForGPSUnits(dataStructure,fid)
+% fcn_DataClean_roundROSTimeForGPSUnits
+% Given a data structure, round ROS time of GPS units to the centiSecond
+% value
 %
 % FORMAT:
 %
-%      fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,(fid))
+%      fixed_dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure, (sensot_type), (fid))
 %
 % INPUTS:
 %
-%      dataStructure: a data structure to be analyzed that includes the following
-%      fields:
+%      dataStructure: a data structure to be analyzed
 %
 %      (OPTIONAL INPUTS)
 %
-%      sensor_type: a string to indicate the type of sensor to query, for
-%      example 'gps' will query all sensors whose name contains 'gps'
-%      somewhere in the name
-%
-%      fid: a file ID to print results of analysis. If not entered, the
-%      console (FID = 1) is used.
+%      fid: a file ID to print results of analysis. If not entered, no
+%      output is given (FID = 0). Set fid to 1 for printing to console.
 %
 % OUTPUTS:
 %
 %      fixed_dataStructure: a data structure to be analyzed that includes the following
 %      fields:
+%
 % 
 % DEPENDENCIES:
 %
 %      fcn_DebugTools_checkInputsToFunctions
 %
-% EXAMPLES:
+% EXAMPLES: # to be done
 %
-%     See the script: script_test_fcn_DataClean_recalculateTriggerTimes
+%     See the script: script_test_fcn_DataClean_roundROSTimeForGPSUnits
 %     for a full test suite.
 %
-% This function was written on 2023_06_29 by S. Brennan
-% Questions or comments? sbrennan@psu.edu 
+% This function was written on 2024_08_09 by X. Cao
+% Questions or comments? xfc5113@psu.edu 
 
 % Revision history:
 %     
-% 2023_06_29: sbrennan@psu.edu
+% 2024_08_09: xfc5113@psu.edu
 % -- wrote the code originally 
-% 2023_06_30: sbrennan@psu.edu
-% -- added the sensor_type field
 
-% TO DO
 
-% Set default fid (file ID) first:
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
+flag_do_plots = 0;  % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
 
@@ -123,9 +114,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % The method this is done is to:
-% 1. Find the effective start and end GPS_Times, determined by taking the maximum start time and minimum end time over all
+% 1. Find the effective start and end ROS_Times, determined by taking the maximum start time and minimum end time over all
 % sensors.
-% 2.  Recalculates the Trigger_Time field for all sensors. This is done by
+% 2.  Recalculates the common ROS_Time field for all sensors. This is done by
 % using the centiSeconds field.
 
 %% Step 1: Find the effective start and end times over all sensors
@@ -146,31 +137,31 @@ end
 
 
 %% Find start time
-[cell_array_GPS_Time_start,sensor_names_GPS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time',sensor_type,'first_row');
+[cell_array_ROS_Time_start,sensor_names_ROS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time',sensor_type,'first_row');
 
 % Confirm that both results are identical
-if ~isequal(sensor_names_GPS_Time,sensor_names_centiSeconds)
+if ~isequal(sensor_names_ROS_Time,sensor_names_centiSeconds)
     error('Sensors were found that were missing either GPS_Time or centiSeconds. Unable to calculate Trigger_Times.');
 end
 
 % Convert GPS_Time_start to a column matrix
-array_GPS_Time_start = cell2mat(cell_array_GPS_Time_start)';
+array_ROS_Time_start = cell2mat(cell_array_ROS_Time_start)';
 
 % Find when each sensor's start time lands on this centiSecond value, rounding up
-all_start_times_centiSeconds = ceil(100*array_GPS_Time_start/max_sampling_period_centiSeconds)*max_sampling_period_centiSeconds;
+all_start_times_centiSeconds = ceil(100*array_ROS_Time_start/max_sampling_period_centiSeconds)*max_sampling_period_centiSeconds;
 
 % Warn if max/min are WAY off (like more than 1 second)
 if (max(all_start_times_centiSeconds)-min(all_start_times_centiSeconds))>100
     error('The start times on different GPS sensors appear to be untrimmed to same value. The Trigger_Time calculations will give incorrect results if the data are not trimmed first.');
 end
-centitime_all_sensors_have_started_GPS_Time = max(all_start_times_centiSeconds);
+centitime_all_sensors_have_started_ROS_Time = max(all_start_times_centiSeconds);
 
 % Show the results?
 if fid
     longest_name_string = 0;
-    for ith_name = 1:length(sensor_names_GPS_Time)
-        if length(sensor_names_GPS_Time{ith_name})>longest_name_string
-            longest_name_string = length(sensor_names_GPS_Time{ith_name});
+    for ith_name = 1:length(sensor_names_ROS_Time)
+        if length(sensor_names_ROS_Time{ith_name})>longest_name_string
+            longest_name_string = length(sensor_names_ROS_Time{ith_name});
         end
     end
     fprintf(fid,'\t \t Summarizing start times: \n');
@@ -178,10 +169,10 @@ if fid
     posix_title_string = fcn_DebugTools_debugPrintStringToNCharacters('Posix Time (sec since 1970):',29);
     datetime_title_string = fcn_DebugTools_debugPrintStringToNCharacters('Date Time:',25);
     fprintf(fid,'\t \t %s \t %s \t %s \n',sensor_title_string,posix_title_string,datetime_title_string);
-    for ith_data = 1:length(sensor_names_GPS_Time)
-        sensor_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sensor_names_GPS_Time{ith_data},longest_name_string);
-        posix_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.6f',array_GPS_Time_start(ith_data)),29);
-        time_in_datetime = datetime(array_GPS_Time_start(ith_data),'convertfrom','posixtime','format','yyyy-MM-dd HH:mm:ss.SSS');
+    for ith_data = 1:length(sensor_names_ROS_Time)
+        sensor_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sensor_names_ROS_Time{ith_data},longest_name_string);
+        posix_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.6f',array_ROS_Time_start(ith_data)),29);
+        time_in_datetime = datetime(array_ROS_Time_start(ith_data),'convertfrom','posixtime','format','yyyy-MM-dd HH:mm:ss.SSS');
         
         time_string = sprintf('%s',time_in_datetime);
         datetime_data_string = fcn_DebugTools_debugPrintStringToNCharacters(time_string,25);
@@ -191,25 +182,25 @@ if fid
 end
 
 %% Find end time
-[cell_array_GPS_Time_end,sensor_names_GPS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time',sensor_type,'last_row');
+[cell_array_ROS_Time_end,sensor_names_ROS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time',sensor_type,'last_row');
 
 % Confirm that both results are identical
-if ~isequal(sensor_names_GPS_Time,sensor_names_centiSeconds)
-    error('Sensors were found that were missing either GPS_Time or centiSeconds. Unable to calculate Trigger_Times.');
+if ~isequal(sensor_names_ROS_Time,sensor_names_centiSeconds)
+    error('Sensors were found that were missing either ROS_Time or centiSeconds. Unable to calculate Trigger_Times.');
 end
 
 % Convert GPS_Time_start to a column matrix
-array_GPS_Time_end = cell2mat(cell_array_GPS_Time_end)';
+array_ROS_Time_end = cell2mat(cell_array_ROS_Time_end)';
 
 % Find when each sensor's end time lands on this centiSecond value,
 % rounding down
-all_end_times_centiSeconds = floor(100*array_GPS_Time_end/max_sampling_period_centiSeconds)*max_sampling_period_centiSeconds;
+all_end_times_centiSeconds = floor(100*array_ROS_Time_end/max_sampling_period_centiSeconds)*max_sampling_period_centiSeconds;
 
 % Warn if max/min are WAY off (like more than 1 second)
 if (max(all_end_times_centiSeconds)-min(all_end_times_centiSeconds))>100
     error('The end times on different GPS sensors appear to be untrimmed to same value. The Trigger_Time calculations will give incorrect results if the data are not trimmed first.');
 end
-centitime_all_sensors_have_ended_GPS_Time = min(all_end_times_centiSeconds);
+centitime_all_sensors_have_ended_ROS_Time = min(all_end_times_centiSeconds);
 
 % Show the results?
 if fid
@@ -218,10 +209,10 @@ if fid
     posix_title_string = fcn_DebugTools_debugPrintStringToNCharacters('Posix Time (sec since 1970):',29);
     datetime_title_string = fcn_DebugTools_debugPrintStringToNCharacters('Date Time:',25);
     fprintf(fid,'\t \t %s \t %s \t %s \n',sensor_title_string,posix_title_string,datetime_title_string);
-    for ith_data = 1:length(sensor_names_GPS_Time)
-        sensor_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sensor_names_GPS_Time{ith_data},longest_name_string);
-        posix_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.6f',array_GPS_Time_end(ith_data)),29);
-        time_in_datetime = datetime(array_GPS_Time_end(ith_data),'convertfrom','posixtime','format','yyyy-MM-dd HH:mm:ss.SSS');
+    for ith_data = 1:length(sensor_names_ROS_Time)
+        sensor_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sensor_names_ROS_Time{ith_data},longest_name_string);
+        posix_data_string = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.6f',array_ROS_Time_end(ith_data)),29);
+        time_in_datetime = datetime(array_ROS_Time_end(ith_data),'convertfrom','posixtime','format','yyyy-MM-dd HH:mm:ss.SSS');
         
         time_string = sprintf('%s',time_in_datetime);
         datetime_data_string = fcn_DebugTools_debugPrintStringToNCharacters(time_string,25);
@@ -231,80 +222,78 @@ if fid
 end
 if fid
     fprintf(fid,'\t The Trigger_Time is using the following GPS_Time range: \n');
-    fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',centitime_all_sensors_have_started_GPS_Time/100);
-    fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',centitime_all_sensors_have_ended_GPS_Time/100);
+    fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',centitime_all_sensors_have_started_ROS_Time/100);
+    fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',centitime_all_sensors_have_ended_ROS_Time/100);
     fprintf(fid,'\n');
 end
 
+%% Step 2: Round ROS_Time to centiSeconds
 
-%% Step 2: Fill all Trigger_Time data to common start/end times
-% and fix GPS_Time
-
-[cell_array_GPS_Time,sensor_names_GPS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time',sensor_type);
+[cell_array_ROS_Time,sensor_names_ROS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time',sensor_type);
+[cell_array_Trigger_Time,~]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time',sensor_type);
 
 % Initialize the result:
 fixed_dataStructure = dataStructure;
 
 % Loop through the fields, searching for ones that have "GPS" in their name
-for ith_sensor = 1:length(sensor_names_GPS_Time)
+for ith_sensor = 1:length(sensor_names_ROS_Time)
     % Grab the sensor subfield name
-    sensor_name = sensor_names_GPS_Time{ith_sensor};
+    sensor_name = sensor_names_ROS_Time{ith_sensor};
     
     if 0~=fid
-        fprintf(fid,'\t Filling Trigger_Time in sensor %d of %d to have correct start and end GPS_Time values: %s\n',ith_sensor,length(sensor_names_GPS_Time),sensor_name);
+        fprintf(fid,'\t Filling Trigger_Time in sensor %d of %d to have correct start and end GPS_Time values: %s\n',ith_sensor,length(sensor_names_ROS_Time),sensor_name);
     end
+    % Grab centiSeconds
+    centiSeconds = cell_array_centiSeconds{ith_sensor};
+    % Grab Trigger_Time
+    Trigger_Time_original = cell_array_Trigger_Time{ith_sensor};
+    rounded_centiSecond_Trigger_Time = round(100*Trigger_Time_original/centiSeconds)*centiSeconds;
     
-    % Calculate new Trigger_Time
-    centiSeconds = array_centiSeconds(ith_sensor,1);
-    new_Trigger_Time = (centitime_all_sensors_have_started_GPS_Time:centiSeconds:centitime_all_sensors_have_ended_GPS_Time)'/100;
-    fixed_dataStructure.(sensor_name).Trigger_Time = new_Trigger_Time;
+    
+    % Calculate round ROS_Time
+    ROS_Time_original = cell_array_ROS_Time{ith_sensor};
+    rounded_centiSecond_ROS_Time = round(100*ROS_Time_original/centiSeconds)*centiSeconds;
+    
+    % Check if the rounded ROS_Time_strictly_ascends
+    rounded_centiSecond_ROS_Time_diff = diff(rounded_centiSecond_ROS_Time);
+    ROS_Time_strictly_ascends = all(rounded_centiSecond_ROS_Time_diff>0);
+    rounded_centiSecond_ROS_Time_fixed = rounded_centiSecond_ROS_Time;
 
-    % Calculate new GPS_Time
-    GPS_Time_original = cell_array_GPS_Time{ith_sensor};
-    original_vector_size = size(GPS_Time_original);
-
-    % Find the start index
-    rounded_centiSecond_GPS_Time = round(100*GPS_Time_original/centiSeconds)*centiSeconds;
-    start_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_started_GPS_Time,1,'first');
-    if isempty(start_index)
-        error('Unable to match GPS_Time to Trigger_Time for start time calculation');
+    if ROS_Time_strictly_ascends == 0
+        turning_indices = find(rounded_centiSecond_ROS_Time_diff ~= centiSeconds);
+        all_turning_indices = [turning_indices, turning_indices+1];
+        indices_need_to_be_refilled = all_turning_indices((all_turning_indices>0)&(all_turning_indices<=length(rounded_centiSecond_ROS_Time)));
+        unique_indices = unique(indices_need_to_be_refilled,'stable');
+        rounded_centiSecond_ROS_Time_fixed(unique_indices) = nan;
+        rounded_centiSecond_ROS_Time_fixed = fillmissing(rounded_centiSecond_ROS_Time_fixed,'linear');
     end
 
-    % Find the end index
-    end_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_ended_GPS_Time,1,'last');
-    if isempty(end_index)
-        error('Unable to match GPS_Time to Trigger_Time for end time calculation');
-    end
-    GPS_Time_in_Trigger = GPS_Time_original(start_index:end_index,:);
-    fixed_dataStructure.(sensor_name).GPS_Time = GPS_Time_in_Trigger;
-
-    if length(GPS_Time_in_Trigger)~=length(new_Trigger_Time)
-        error('The GPS time calculated to match the Trigger_Time duration does not have same length. This is typically caused by GPS rounding errors, but it must be resolved to continue.\n');
-    end
+   
+    fixed_dataStructure.(sensor_name).ROS_Time = rounded_centiSecond_ROS_Time_fixed/100;
 
     % Loop through subfields
-    sensor_data = fixed_dataStructure.(sensor_name);
-    subfieldNames = fieldnames(sensor_data);
-    for i_subField = 1:length(subfieldNames)
-        % Grab the name of the ith subfield
-        subFieldName = subfieldNames{i_subField};
-        
-        if ~iscell(sensor_data.(subFieldName)) % Is it a cell? If yes, skip it
-            if length(sensor_data.(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
-                % It's an array, make sure it has right length
-                if isequal(size(sensor_data.(subFieldName)),original_vector_size)
-                    if strcmp(sensor_name,'LIDAR_Sick_Rear') 
-                        warning('SICK lidar data processing not yet tested.');
-                    else
-                        % Resize the data to exact same indicies as trimmed
-                        % GPS_Time field, to align with the Trigger_Time
-                        fixed_dataStructure.(sensor_name).(subFieldName) = sensor_data.(subFieldName)(start_index:end_index,:);
-                    end
-                end
-            end
-        end
-       
-    end % Ends for loop through the subfields
+    % sensor_data = fixed_dataStructure.(sensor_name);
+    % subfieldNames = fieldnames(sensor_data);
+    % for i_subField = 1:length(subfieldNames)
+    %     % Grab the name of the ith subfield
+    %     subFieldName = subfieldNames{i_subField};
+    % 
+    %     if ~iscell(sensor_data.(subFieldName)) % Is it a cell? If yes, skip it
+    %         if length(sensor_data.(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
+    %             % It's an array, make sure it has right length
+    %             if isequal(size(sensor_data.(subFieldName)),original_vector_size)
+    %                 if strcmp(sensor_name,'LIDAR_Sick_Rear') 
+    %                     warning('SICK lidar data processing not yet tested.');
+    %                 else
+    %                     % Resize the data to exact same indicies as trimmed
+    %                     % GPS_Time field, to align with the Trigger_Time
+    %                     fixed_dataStructure.(sensor_name).(subFieldName) = sensor_data.(subFieldName)(start_index:end_index,:);
+    %                 end
+    %             end
+    %         end
+    %     end
+    % 
+    % end % Ends for loop through the subfields
 end
 
 %% Plot the results (for debugging)?

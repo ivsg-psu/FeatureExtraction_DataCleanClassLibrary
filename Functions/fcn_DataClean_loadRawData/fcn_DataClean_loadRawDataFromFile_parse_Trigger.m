@@ -49,9 +49,11 @@ if strcmp(datatype,'trigger')
     secs = datatable.secs;
     nsecs = datatable.nsecs;
     parseTrigger.mode = datatable.mode;
+    time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
     % parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit
     % parseTrigger.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample
-    parseTrigger.ROS_Time                          = secs + nsecs*(10^-9);  % This is the ROS time that the data arrived into the bag
+    % parseTrigger.ROS_Time                          = secs + nsecs*(10^-9);  % This is the ROS time that the data arrived into the bag
+    parseTrigger.ROS_Time  = time_stamp;
     parseTrigger.centiSeconds                      = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     parseTrigger.Npoints                           = height(datatable);  % This is the number of data points in the array
     mode_cell = datatable.mode;  

@@ -56,6 +56,7 @@ if strcmp(datatype,'lidar3d')
     Nscans = height(velodyne_lidar_table);
     scan_filenames_array = string(velodyne_lidar_table.scan_filename);
     Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
+  
     secs = velodyne_lidar_table.secs;
     nsecs = velodyne_lidar_table.nsecs;
     % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit

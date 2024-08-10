@@ -187,7 +187,7 @@ for ith_field = 1:Nfields
             data_to_check = dataStructure.(sensor_name_to_check).(field_name_to_check);
 
             % Check to see if data are equal!
-            if isequal(reference_data,data_to_check)
+            if isequal(reference_data,data_to_check)|any([all(isnan(reference_data)), all(isnan(data_to_check))])
                 flags_field_data_is_repeated(comparison_field) = ith_field;
             end
         end % Ends for loop through repeat checks

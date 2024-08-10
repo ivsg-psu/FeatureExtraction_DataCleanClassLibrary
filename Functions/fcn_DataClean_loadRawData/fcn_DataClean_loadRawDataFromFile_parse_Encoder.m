@@ -45,9 +45,11 @@ if strcmp(datatype,'encoder')
     parseEncoder = fcn_DataClean_initializeDataByType(datatype,Npoints);
     secs = datatable.secs;
     nsecs = datatable.nsecs;
+    time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
 %     parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
     % parseEncoder.Trigger_Time         = datatable.time;  % This is the Trigger time, UTC, as calculated by sample
-    parseEncoder.ROS_Time           = secs + nsecs * 10^-9;  % This is the ROS time that the data arrived into the bag
+    % parseEncoder.ROS_Time           = secs + nsecs * 10^-9;  % This is the ROS time that the data arrived into the bag
+    parseEncoder.ROS_Time           = time_stamp;  % This is the ROS time that the data arrived into the bag
     parseEncoder.centiSeconds       = 1;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     parseEncoder.Npoints            = height(datatable);  % This is the number of data points in the array
     % parseEncoder.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
