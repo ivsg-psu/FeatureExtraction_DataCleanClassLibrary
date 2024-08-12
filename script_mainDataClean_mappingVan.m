@@ -340,8 +340,9 @@ N_max_loops = 30;
 
 % Preallocate the data array
 data_structure_sequence{N_max_loops} = struct;
-
+ref_baseStation_Pitts = [40.44181017, -79.76090840, 327.428];
 main_data_clean_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
+flag_trim_with_ROSTime = 1;
 %%
 while 1==flag_stay_in_main_loop
     dataStructure = dataset{end};    
@@ -350,8 +351,10 @@ while 1==flag_stay_in_main_loop
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
     %% Trim data with ROS time
-
-    dataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(dataStructure);
+    if flag_trim_with_ROSTime == 1
+        dataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(dataStructure);
+        flag_trim_with_ROSTime = 0;
+    end
     %% Name consistency checks start here
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
@@ -449,10 +452,12 @@ while 1==flag_stay_in_main_loop
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
     if (1==flag_keep_checking)
         [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
-        
     end
 
-
+    %%
+    % plot(dataStructure.GPS_SparkFun_Front.ROS_Time)
+    % hold on
+    % plot(dataStructure.LiDAR_Velodyne_Rear.ROS_Time)
     %% GPS_Time tests - all of these steps can be found in fcn_DataClean_checkDataTimeConsistency, the following sections need to be deleted later
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %    _____ _____   _____            _______ _                   _______        _
@@ -632,10 +637,9 @@ while 1==flag_stay_in_main_loop
     %    mean differences
     %    ### FIXES:
     %    * Interpolate time field if only a small segment is missing        
-    ref_baseStation_Pitts = [40.44181017, -79.76090840, 327.428];
     if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
         dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_baseStation_Pitts,fid);
-        flag_keep_checking = 1;
+        flag_keep_checking = 0;
         
     end
 
@@ -650,16 +654,11 @@ while 1==flag_stay_in_main_loop
     %    mean differences
     %    ### FIXES:
     %    * Interpolate time field if only a small segment is missing        
-    ref_baseStation_Pitts = [40.44181017, -79.76090840, 327.428];
+    
     if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
         dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_baseStation_Pitts,fid);
-        flag_keep_checking = 1;
-        
-        
+        flag_keep_checking = 0;    
     end
-
-    
-    %%
 
      %% Trigger_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -689,7 +688,7 @@ while 1==flag_stay_in_main_loop
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
     if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
         dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,'gps',fid);
-        flag_keep_checking = 1;
+        flag_keep_checking = 0;
     end
     
     
@@ -792,7 +791,7 @@ while 1==flag_stay_in_main_loop
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
-    %% Check if ROS_Time_has_same_length_as_GPS_Time_in_GPS_sensors
+    %% Check if ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
     %    ### ISSUES with this:
     %    * The Trigger_Time represents, for many sensors, when they were
     %    commanded to collect data. If the number of data in the ROS time list
@@ -805,8 +804,7 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictly increasing
     
     %% Check that ROS_Time data has expected count
-    flag_keep_checking = 1;
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_GPS_Time_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
         error('ROS time does not have expected count.\');
         flag_keep_checking = 0;
     end
@@ -827,59 +825,59 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictly increasing
 
     
-    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time
+    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time 
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
         warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
         dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure,'GPS',fid);
-        flag_keep_checking = 1;
+        flag_keep_checking = 0;
     end
 
     %% Start to work on other sensors, start with Velodyne LiDAR
-    
+    dataStructure = fcn_DataClean_matchROSTimeForLiDAR(dataStructure,fid);
 
     %% TO-DO - Create a time analysis function - and add it here
     % Fix the x-axes to match the time duration, e.g. index*centiSeconds*0.01
 
     % Examine the offset deviations between the different time sources
-    [cell_array_centiSeconds,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds','GPS');
-    [cell_array_GPS_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
-    [cell_array_Trigger_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS');
-    [cell_array_ROS_Time,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS');
-    
-    % Calculate ROS_Time - Trigger_time, plot this versus duration
-    figure(1818);
-    clf;
-    hold on;
-    grid on;
-    xlabel('Duration of Data Collection (seconds)');
-    ylabel('Deviations in Time (seconds)');
-    title('Differences, ROS Time - Trigger Time');
-
-    for ith_sensor = 1:length(sensor_names)
-        
-        xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
-        deviations_in_time = (cell_array_ROS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
-        plot(xdata,deviations_in_time);
-    end
-    legend(sensor_names,'Interpreter','none')
-
-    % Calculate GPS_Time - Trigger_time, plot this versus duration
-    figure(1819);
-    clf;
-    hold on;
-    grid on;
-    xlabel('Duration of Data Collection (seconds)');
-    ylabel('Deviations in Time (seconds)');
-    title('Differences, GPS Time - Trigger Time');
-
-    for ith_sensor = 1:length(sensor_names)
-        xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
-        deviations_in_time = (cell_array_GPS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
-        plot(xdata,deviations_in_time);
-    end
-    legend(sensor_names,'Interpreter','none')
-
-    
+    % [cell_array_centiSeconds,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds','GPS');
+    % [cell_array_GPS_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
+    % [cell_array_Trigger_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS');
+    % [cell_array_ROS_Time,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS');
+    % 
+    % % Calculate ROS_Time - Trigger_time, plot this versus duration
+    % figure(1818);
+    % clf;
+    % hold on;
+    % grid on;
+    % xlabel('Duration of Data Collection (seconds)');
+    % ylabel('Deviations in Time (seconds)');
+    % title('Differences, ROS Time - Trigger Time');
+    % 
+    % for ith_sensor = 1:length(sensor_names)
+    % 
+    %     xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
+    %     deviations_in_time = (cell_array_ROS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
+    %     plot(xdata,deviations_in_time);
+    % end
+    % legend(sensor_names,'Interpreter','none')
+    % 
+    % % Calculate GPS_Time - Trigger_time, plot this versus duration
+    % figure(1819);
+    % clf;
+    % hold on;
+    % grid on;
+    % xlabel('Duration of Data Collection (seconds)');
+    % ylabel('Deviations in Time (seconds)');
+    % title('Differences, GPS Time - Trigger Time');
+    % 
+    % for ith_sensor = 1:length(sensor_names)
+    %     xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
+    %     deviations_in_time = (cell_array_GPS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
+    %     plot(xdata,deviations_in_time);
+    % end
+    % legend(sensor_names,'Interpreter','none')
+    % 
+    % 
 
 
     %% Done!
@@ -889,11 +887,11 @@ while 1==flag_stay_in_main_loop
     end
     
     %% Exiting conditions
-    if length(dataset)==1
-        temp = dataset;
-        clear dataset
-        dataset{1} = temp;
-    end
+    % if length(dataset)==1
+    %     temp = dataset;
+    %     clear dataset
+    %     dataset{1} = temp;
+    % end
     dataset{end+1} = dataStructure; %#ok<SAGROW>
     
        

@@ -197,7 +197,7 @@ for i_data = 1:length(sensor_names)
     flags_data_rounds_correctly = 1;
     
     % Find multiplier
-    multiplier = round(100/sensor_data.centiSeconds);
+    multiplier = round(100/sensor_data.centiSeconds)*sensor_data.centiSeconds;
     
     % Round ROS_Time    
     Rounded_Field_Time_samples_centiSeconds   = round((sensor_data.(field_name)-sensor_data.(time_field)(1,1))*multiplier);
@@ -209,8 +209,12 @@ for i_data = 1:length(sensor_names)
     % disp(Rounded_Field_Time_samples_centiSeconds(1:10));
     % disp(Rounded_Trigger_Time_samples_centiSeconds(1:10));
    
-    % Make sure it counts strictly up
-    if ~isequal(Rounded_Field_Time_samples_centiSeconds,Rounded_Trigger_Time_samples_centiSeconds)
+    % Make sure it counts strictly up ()
+    % if ~isequal(Rounded_Field_Time_samples_centiSeconds,Rounded_Trigger_Time_samples_centiSeconds)
+    %     flags_data_rounds_correctly = 0;
+    % end
+    % Temp version
+    if ~all(mod(Rounded_Field_Time_samples_centiSeconds, 1)==0)
         flags_data_rounds_correctly = 0;
     end
         

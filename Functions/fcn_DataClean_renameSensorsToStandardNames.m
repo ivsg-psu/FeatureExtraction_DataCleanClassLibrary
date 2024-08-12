@@ -134,6 +134,7 @@ name_pairs = {...
 'transform', 'TRANSFORM_ROS_Rear';
 'VelodyneLiDAR', 'LIDAR_Velodyne_Rear';
 'Lidar_Velodyne_Rear','LiDAR_Velodyne_Rear';
+'LiDAR_Velodyne_Rear','LiDAR_Velodyne_Rear';
 };
 
 [Npairs,~] = size(name_pairs);

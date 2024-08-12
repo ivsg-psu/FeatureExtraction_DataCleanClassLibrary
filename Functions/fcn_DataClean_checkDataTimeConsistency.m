@@ -815,8 +815,14 @@ for i_data = 1:length(sensor_names)
         fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
     end
     flags_data_strictly_ascends= 1;
-    if ~issorted(sensor_data.(field_name),1,"strictascend")
+    % time_diff = diff(sensor_data.(field_name));
+    sensor_value = sensor_data.(field_name);
+    sensor_value_noNaN = sensor_value(~isnan(sensor_value));
+
+    if ~issorted(sensor_value_noNaN,1,"strictascend")
         flags_data_strictly_ascends = 0;
+    else
+        plot(sensor_value_noNaN,'b-','linewidth',2)
     end
     
     flag_name = cat(2,field_name,'_strictly_ascends');
