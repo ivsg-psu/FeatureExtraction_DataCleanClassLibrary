@@ -51,18 +51,18 @@ end
 if strcmp(datatype,'lidar3d')
     opts = detectImportOptions(file_path);
     velodyne_lidar_table = readtable(file_path, opts);
-    velodyne_lidar_table.Properties.VariableNames = {'seq','secs','nsecs','scan_filename'};
+    velodyne_lidar_table.Properties.VariableNames = {'seq','host_time','device_time','scan_filename'};
     % The number of rows in the file, also the number of scans
     Nscans = height(velodyne_lidar_table);
     scan_filenames_array = string(velodyne_lidar_table.scan_filename);
     Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
   
-    secs = velodyne_lidar_table.secs;
-    nsecs = velodyne_lidar_table.nsecs;
+    host_time = velodyne_lidar_table.host_time;
+    device_time = velodyne_lidar_table.device_time;
     % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
     Velodyne_Lidar_structure.Seq                = velodyne_lidar_table.seq;
-    Velodyne_Lidar_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
+    Velodyne_Lidar_structure.ROS_Time           = host_time;  % This is the ROS time that the data arrived into the bag
     Velodyne_Lidar_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     Velodyne_Lidar_structure.Npoints            = Nscans;  % This is the number of data points in the array
     
@@ -87,19 +87,30 @@ if strcmp(datatype,'lidar3d')
     else
         scan_duration = 1:Nscans;
     end
-           
+    LiDAR_Time = [];       
     for idx_scan = scan_duration
         scan_filename = scan_filenames_array(idx_scan);
         scan_filename_char = char(scan_filename);
         points_file = pointcloud_folder+scan_filename_char(1:2)+"/"+scan_filename_char(3:4)+"/"+scan_filename+".txt";
 
         opts_scan = detectImportOptions(points_file);
-        points = readmatrix(points_file,opts_scan);
-        points_cell{idx_scan,1} = points;
-        clear points
+        pointcloud = readmatrix(points_file,opts_scan);
+        % if size(pointcloud,2) == 8
+        %     time_offsets = pointcloud(:,5);
+        % elseif size(pointcloud,2) == 6
+        %     time_offsets = pointcloud(:,6);
+        % end
+        % LiDAR_Time_all_points = host_time(idx_scan,:) + time_offsets;
+        % LiDAR_Time(idx_scan) = min(LiDAR_Time_all_points);
+
+
+
+        points_cell{idx_scan,1} = pointcloud;
+        clear pointcloud
 
     end
     Velodyne_Lidar_structure.PointCloud = points_cell;
+    % Velodyne_Lidar_structure.LiDAR_Time = LiDAR_Time;
     % Loading completed
  
 else

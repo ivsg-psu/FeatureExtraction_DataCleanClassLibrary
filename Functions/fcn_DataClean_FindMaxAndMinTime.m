@@ -1,4 +1,4 @@
-function time_range = fcn_DataClean_FindMaxAndMinTime(rawDataStructure)
+function time_range = fcn_DataClean_FindMaxAndMinTime(DataStructure,time_type)
 
 % fcn_DataPreprocessing_FindMaxAndMinTime finds the start and end time for
 % each sensor
@@ -62,7 +62,7 @@ end
 flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_check_inputs == 1
-    if ~isstruct(rawDataStructure)
+    if ~isstruct(DataStructure)
         error('The input of the function should be a structure array')
     end
 
@@ -80,7 +80,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-fields = fieldnames(rawDataStructure);
+fields = fieldnames(DataStructure);
 time_start = 0;
 time_end = Inf;
 sensor_centiSeconds = [];
@@ -89,14 +89,15 @@ end_times_centiSeconds = [];
 start_times = [];
 end_times = [];
 for idx_field = 1:length(fields)
-    current_field_struct = rawDataStructure.(fields{idx_field});
+    current_field_struct = DataStructure.(fields{idx_field});
     if ~isempty(current_field_struct)
         
-       current_field_struct_time = current_field_struct.ROS_Time;
+       current_field_struct_time = current_field_struct.(time_type);
+       current_field_centiSeconds = current_field_struct.centiSeconds;
         
     end
-    ROSTime_centiSeconds = round(100*current_field_struct_time/current_field_struct.centiSeconds)*current_field_struct.centiSeconds;
-    sensor_centiSeconds = [sensor_centiSeconds; current_field_struct.centiSeconds]; %#ok<AGROW>
+    ROSTime_centiSeconds = round(100*current_field_struct_time/current_field_centiSeconds)*current_field_centiSeconds;
+    sensor_centiSeconds = [sensor_centiSeconds; current_field_centiSeconds]; %#ok<AGROW>
     start_times_centiSeconds = [start_times_centiSeconds; ROSTime_centiSeconds(1)]; %#ok<AGROW>
     end_times_centiSeconds = [end_times_centiSeconds; ROSTime_centiSeconds(end)]; %#ok<AGROW>
 
@@ -110,10 +111,9 @@ master_end_time_centiSeconds = min(end_times_centiSeconds);
 
 % Make sure we choose a time that all the sensors CAN start at. We round
 % start seconds up, and end seconds down.
-master_start_time_Seconds = ceil(master_start_time_centiSeconds*0.01);
-master_end_time_Seconds = floor(master_end_time_centiSeconds*0.01);
-% [start_time,idx_sensor_start] = max(start_times);
-% [end_time,idx_sensor_end] = min(end_times);
+master_start_time_Seconds = ceil(master_start_time_centiSeconds/100);
+master_end_time_Seconds = (master_end_time_centiSeconds/100);
+
 time_range = [master_start_time_Seconds, master_end_time_Seconds];
 
     

@@ -187,8 +187,12 @@ for ith_field = 1:Nfields
             data_to_check = dataStructure.(sensor_name_to_check).(field_name_to_check);
 
             % Check to see if data are equal!
-            if isequal(reference_data,data_to_check)|any([all(isnan(reference_data)), all(isnan(data_to_check))])
+            
+            if (isequal(reference_data,data_to_check))|(all([all(isnan(reference_data)), all(isnan(data_to_check))]))
                 flags_field_data_is_repeated(comparison_field) = ith_field;
+            end
+            if strcmp(field_name_to_check,"SpdOverGrndKmph")
+                disp(field_name_to_check)
             end
         end % Ends for loop through repeat checks
     end % Ends if statement to check if repeats on this field
@@ -284,8 +288,16 @@ for ith_field = 1:Nfields
                 %            another, the repeated name is appended
                 %            with "2", then "3", etc.
                 if flags_field_data_is_repeated(ith_field)==0
-                    new_name = sprintf('%s%d',field_name,all_repeat_count(ith_field));
-                    merged_sensor.(new_name) = dataStructure.(sensor_name).(field_name);
+                    if strcmp(field_name,'SpdOverGrndKmph')
+                        disp(field_name)
+                    end
+                    if all(isnan(merged_sensor.(field_name)))
+                        merged_sensor.(field_name)= dataStructure.(sensor_name).(field_name);
+                    else
+                        new_name = sprintf('%s%d',field_name,all_repeat_count(ith_field));
+                        merged_sensor.(new_name) = dataStructure.(sensor_name).(field_name);
+                
+                    end
                 end
             otherwise
                 error('Unrecognized method_name for sensor merging');

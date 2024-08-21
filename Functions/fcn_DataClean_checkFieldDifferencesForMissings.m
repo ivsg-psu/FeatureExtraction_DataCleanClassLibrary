@@ -260,7 +260,7 @@ for ith_sensor = 1:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{ith_sensor};
     sensor_data = dataStructure.(sensor_name);
-    
+    centiSeconds = sensor_data.centiSeconds;
     % Tell the user what is happening?
     if 0~=fid
         fprintf(fid,'\t Checking sensor %d of %d: %s\n',ith_sensor,length(sensor_names),sensor_name);
@@ -287,7 +287,7 @@ for ith_sensor = 1:length(sensor_names)
             min_differences_threshold = mean_differences - threshold_in_standard_deviations*std_differences;
         end
         
-        if any(differences_in_field_data>max_difference_threshold) || any(differences_in_field_data<min_differences_threshold)
+        if any(abs(differences_in_field_data-centiSeconds/100)>1e-5)
             flag_this_sensor_passes_test = 0;
         end
     end

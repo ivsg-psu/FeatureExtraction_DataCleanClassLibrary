@@ -78,20 +78,20 @@ end
 %  |_|  |_|\__,_|_|_| |_|
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-time_range = fcn_DataClean_FindMaxAndMinTime(rawDataStructure);
+time_type = 'ROS_Time';
+time_range = fcn_DataClean_FindMaxAndMinTime(rawDataStructure,time_type);
 sensorfields = fieldnames(rawDataStructure);
 trimedDataStructure = rawDataStructure;
 
 for idx_field = 1:length(sensorfields)
     current_field_struct = rawDataStructure.(sensorfields{idx_field});
     trimmed_field_struct = current_field_struct;
-    if isfield(current_field_struct,'ROS_Time')
-        current_field_struct_ROS_Time = current_field_struct.ROS_Time;
+    if isfield(current_field_struct,time_type)
+        current_field_struct_ROS_Time = current_field_struct.(time_type);
     else
         current_field_struct_ROS_Time = [];
     end
-    valid_idxs = (current_field_struct_ROS_Time>=min(time_range))&(current_field_struct_ROS_Time<=max(time_range));
+    valid_idxs = (current_field_struct_ROS_Time>min(time_range))&(current_field_struct_ROS_Time<max(time_range));
     topicfields = fieldnames(current_field_struct);
     N_topics = length(topicfields);
     for idx_topic = 1:N_topics
@@ -99,7 +99,6 @@ for idx_field = 1:length(sensorfields)
         if length(current_topic_content) > 1
            trimmed_field_struct.(topicfields{idx_topic}) = current_topic_content(valid_idxs,:);
         end
-        trimmed_field_struct.centiSeconds = current_field_struct.centiSeconds;
         trimmed_field_struct.Npoints = length(trimmed_field_struct.ROS_Time);
 
     end
