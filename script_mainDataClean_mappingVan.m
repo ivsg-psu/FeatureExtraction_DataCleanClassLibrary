@@ -281,10 +281,7 @@ end
 
 
 %% Specify the data to use
-% bagFolderName = "mapping_van_2023-06-05-1Lap"; 
-% bagFolderName = "mapping_van_2023-06-22-1Lap_0";
-% date = "2023-11-03";
-% bagFolderName = "mapping_van_2023-11-03-16-21-38_0";
+% The data can be found in OneDrive IVSG\GitHubMirror\MappingVanDataCollection\ParsedData\2024-07-10\Pittsburgh Mapping Left Lane First Round
 fid = 1;
 dataFolder = "LargeData";
 date = '2024-07-10';
