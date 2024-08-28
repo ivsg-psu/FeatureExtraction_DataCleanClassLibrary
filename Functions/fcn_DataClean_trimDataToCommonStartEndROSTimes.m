@@ -1,7 +1,6 @@
-function trimedDataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(rawDataStructure)
+function trimed_dataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(dataStructure)
 
-% fcn_DataPreprocessing_FindMaxAndMinTime finds the start and end time for
-% each sensor
+% fcn_DataClean_trimDataToCommonStartEndROSTimes trims data by ROS_Time
 %
 % FORMAT:
 %
@@ -9,12 +8,12 @@ function trimedDataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(ra
 %
 % INPUTS:
 %
-%      rawDataStructure: a structure array containing raw data 
+%      dataStructure: a structure array containing raw data 
 %
 %
 % OUTPUTS:
 %
-%      trimedDataStructure: a structure array containing trimmed data
+%      trimed_dataStructure: a structure array containing trimmed data
 %
 %
 % DEPENDENCIES:
@@ -62,7 +61,7 @@ end
 flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_check_inputs == 1
-    if ~isstruct(rawDataStructure)
+    if ~isstruct(dataStructure)
         error('The input of the function should be a structure array')
     end
 
@@ -79,12 +78,12 @@ end
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 time_type = 'ROS_Time';
-time_range = fcn_DataClean_FindMaxAndMinTime(rawDataStructure,time_type);
-sensorfields = fieldnames(rawDataStructure);
-trimedDataStructure = rawDataStructure;
+time_range = fcn_DataClean_FindMaxAndMinTime(dataStructure,time_type);
+sensorfields = fieldnames(dataStructure);
+trimed_dataStructure = dataStructure;
 
 for idx_field = 1:length(sensorfields)
-    current_field_struct = rawDataStructure.(sensorfields{idx_field});
+    current_field_struct = dataStructure.(sensorfields{idx_field});
     trimmed_field_struct = current_field_struct;
     if isfield(current_field_struct,time_type)
         current_field_struct_ROS_Time = current_field_struct.(time_type);
@@ -102,7 +101,7 @@ for idx_field = 1:length(sensorfields)
         trimmed_field_struct.Npoints = length(trimmed_field_struct.ROS_Time);
 
     end
-    trimedDataStructure.(sensorfields{idx_field}) = trimmed_field_struct;
+    trimed_dataStructure.(sensorfields{idx_field}) = trimmed_field_struct;
 
 end
 end

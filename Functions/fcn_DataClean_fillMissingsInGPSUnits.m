@@ -1,6 +1,6 @@
 function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_basestation,varargin)
 
-% fcn_DataClean_interpolateGPSTime
+% fcn_DataClean_fillMissingsInGPSUnits
 % Interpolate the GPS_Time field for all GPS sensors. This is done by
 % using the centiSeconds field and the effective start and end GPS_Times,
 % determined by taking the maximum start time and minimum end time over all
@@ -8,18 +8,17 @@ function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructur
 %
 % FORMAT:
 %
-%      fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,(fid))
+%      fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_basestation,(fid))
 %
 % INPUTS:
 %
 %      dataStructure: a data structure to be analyzed that includes the following
 %      fields:
 %
+%      ref_basestation: base station that used for the dataset
+%
 %      (OPTIONAL INPUTS)
 %
-%      sensor_type: a string to indicate the type of sensor to query, for
-%      example 'gps' will query all sensors whose name contains 'gps'
-%      somewhere in the name
 %
 %      fid: a file ID to print results of analysis. If not entered, the
 %      console (FID = 1) is used.
@@ -33,21 +32,14 @@ function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructur
 %
 %      fcn_DebugTools_checkInputsToFunctions
 %
-% EXAMPLES:
+% EXAMPLES: # To be Done
 %
-%     See the script: script_test_fcn_DataClean_recalculateTriggerTimes
-%     for a full test suite.
 %
-% This function was written on 2023_06_29 by S. Brennan
-% Questions or comments? sbrennan@psu.edu 
+% This function was written on 2024_08_15 by X. Cao
+% Questions or comments? xfc5113@psu.edu
 
 % Revision history:
 %     
-% 2023_06_29: sbrennan@psu.edu
-% -- wrote the code originally 
-% 2023_06_30: sbrennan@psu.edu
-% -- added the sensor_type field
-
 % TO DO
 
 % Set default fid (file ID) first:
@@ -77,34 +69,16 @@ if flag_check_inputs
         
 end
 
-% Does the user want to specify the sensor_type?
-sensor_type = '';
-if 2 <= nargin
-    temp = varargin{1};
-    if ~isempty(temp)
-        sensor_type = temp;
-    end
-end
-        
-
 % Does the user want to specify the fid?
 % Check for user input
 fid = 0; % Default case is to NOT print to the console
-
-if 3 == nargin
-    temp = varargin{end};
+if 2 <= nargin
+    temp = varargin{1};
     if ~isempty(temp)
-        % Check that the FID works
-        try
-            temp_msg = ferror(temp); %#ok<NASGU>
-            % Set the fid value, if the above ferror didn't fail
-            fid = temp;
-        catch ME
-            warning('User-specified FID does not correspond to a file. Unable to continue.');
-            throwAsCaller(ME);
-        end
+        fid = temp;
     end
 end
+        
 
 if fid
     st = dbstack; %#ok<*UNRCH>
@@ -125,13 +99,10 @@ end
 % The method this is done is to:
 % 1. Find the effective start and end GPS_Times, determined by taking the maximum start time and minimum end time over all
 % sensors.
-% 2.  Recalculates the Trigger_Time field for all sensors. This is done by
-% using the centiSeconds field.
+% 2.  Fill and interpolate the missing data in GPS units
 
 
 %% Step 1: Find the effective start and end GPS and ROS times over all sensors
-
-
 
 
 [cell_array_GPS_Time, sensor_names_GPS_Time] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
@@ -143,11 +114,6 @@ end
 
 [cell_array_centiSeconds, ~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds','GPS');
 N_GPS_Units = length(cell_array_GPS_Time);
-timeOffset_array = [];
-start_GPSTimes = [];
-end_GPSTimes = [];
-start_ROSTimes = [];
-end_ROSTimes = [];
 %% Define fields need to be interpolated
 
 fields_need_to_be_interpolated=["ROS_Time",...
@@ -164,12 +130,9 @@ fields_need_to_be_interpolated=["ROS_Time",...
                                 "ROS_Time2",...
                                 "ROS_Time3"];
 
-%%
+%% Interate over GPS units and interpolate data
 
 fixed_dataStructure = dataStructure;
-
-
-
 for idx_gps_unit = 1:N_GPS_Units
     GPSUnitName = sensor_names_GPS_Time{idx_gps_unit};
     GPSdataStructure = fixed_dataStructure.(GPSUnitName);
@@ -181,14 +144,14 @@ for idx_gps_unit = 1:N_GPS_Units
     ROS_Time = cell_array_ROS_Time{idx_gps_unit};
 
     offset_between_GPSTime_and_ROSTime = ROS_Time - GPS_Time;
-
+    % 
     start_GPSTime = GPS_Time(1);
     end_GPSTime = GPS_Time(end);
-    
     start_GPSTime_centiSeconds = 100*start_GPSTime/centiSeconds*centiSeconds;
     end_GPSTime_centiSeconds = 100*end_GPSTime/centiSeconds*centiSeconds;
     newGPSTime_centiSeconds = (start_GPSTime_centiSeconds:centiSeconds:end_GPSTime_centiSeconds).';
     newGPSTime = newGPSTime_centiSeconds/100;
+    % Calculate and interpolate X, Y and Z of current GPS unit
     GPS_LLA = [GPSdataStructure.Latitude, GPSdataStructure.Longitude, GPSdataStructure.Altitude];
     GPS_ENU = lla2enu(GPS_LLA,ref_basestation,'ellipsoid');
     GPS_ENU_interp = interp1(GPS_Time,GPS_ENU,newGPSTime,'linear','extrap');
@@ -217,7 +180,7 @@ for idx_gps_unit = 1:N_GPS_Units
         GST_Fields = ["ROS_Time2","GPS_Time2","StdLat","StdLon","StdAlt"];
         ROS_Time_need_to_be_checked = GPSdataStructure.ROS_Time3;
     end
-   
+    % Find matched GPS time for different NMEA sentences
     GPS_Time_matched = fcn_DataClean_calculateGPSTimeForMergedData(ROS_Time_need_to_be_checked,GPS_Time,centiSeconds,offset_between_GPSTime_and_ROSTime);
     if any(contains(sub_fields,"GPS_Time2"))
         original_GPS_Time2 = GPSdataStructure.GPS_Time2;

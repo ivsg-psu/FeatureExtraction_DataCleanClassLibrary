@@ -1,21 +1,22 @@
-function time_range = fcn_DataClean_FindMaxAndMinTime(DataStructure,time_type)
+function time_range = fcn_DataClean_FindMaxAndMinTime(dataStructure,time_type)
 
-% fcn_DataPreprocessing_FindMaxAndMinTime finds the start and end time for
+% fcn_DataClean_FindMaxAndMinTime finds the start and end time for
 % each sensor
 %
 % FORMAT:
 %
-% time_range = fcn_DataPreprocessing_FindMaxAndMinTime(rawDataStructure)
+% time_range = fcn_DataClean_FindMaxAndMinTime(dataStructure,time_type)
 %
 %
 % INPUTS:
 %
-%      rawDataStructure: a structure array containing raw data
+%      dataStructure: a structure array containing raw data
 %
+%       time_type: ROS_Time,GPS_Time or Trigger_Time
 %
 % OUTPUTS:
 %
-%      time_range: a structure array containing locked GPS data
+%      time_range: a array containing start and end time
 %
 %
 % DEPENDENCIES:
@@ -23,14 +24,10 @@ function time_range = fcn_DataClean_FindMaxAndMinTime(DataStructure,time_type)
 %      fcn_DebugTools_checkInputsToFunctions
 %      fcn_geometry_plotCircle
 %
-% EXAMPLES:
+% EXAMPLES: to be done
 %      
-%      % BASIC example
-%      points = [0 0; 1 4; 0.5 -1];
-%      [centers,radii] = fcn_geometry_circleCenterFrom3Points(points,1)
+%
 % 
-% See the script: script_test_fcn_Transform_CalculateAngleBetweenVectors
-% for a full test suite.
 %
 % This function was written on 2023_10_20 by X.Cao
 % Questions or comments? xfc5113@psu.edu
@@ -62,7 +59,7 @@ end
 flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_check_inputs == 1
-    if ~isstruct(DataStructure)
+    if ~isstruct(dataStructure)
         error('The input of the function should be a structure array')
     end
 
@@ -80,16 +77,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-fields = fieldnames(DataStructure);
-time_start = 0;
-time_end = Inf;
+fields = fieldnames(dataStructure);
 sensor_centiSeconds = [];
 start_times_centiSeconds = [];
 end_times_centiSeconds = [];
-start_times = [];
-end_times = [];
+% start_times = [];
+% end_times = [];
 for idx_field = 1:length(fields)
-    current_field_struct = DataStructure.(fields{idx_field});
+    current_field_struct = dataStructure.(fields{idx_field});
     if ~isempty(current_field_struct)
         
        current_field_struct_time = current_field_struct.(time_type);

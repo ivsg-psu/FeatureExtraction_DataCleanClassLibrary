@@ -1,12 +1,11 @@
-function matched_dataStructure = fcn_DataClean_matchOtherSensorsToGPSUnits(dataStructure,fid)
-% fcn_DataClean_roundROSTimeForGPSUnits(dataStructure,fid)
-% fcn_DataClean_roundROSTimeForGPSUnits
-% Given a data structure, round ROS time of GPS units to the centiSecond
-% value
+function matched_dataStructure = fcn_DataClean_matchOtherSensorsToGPSUnits(dataStructure,varargin)
+% fcn_DataClean_matchOtherSensorsToGPSUnits(dataStructure,fid)
+% fcn_DataClean_matchOtherSensorsToGPSUnits
+% Given a data structure, match other sensors data to GPS units
 %
 % FORMAT:
 %
-%      fixed_dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure, (sensot_type), (fid))
+%      fixed_dataStructure = fcn_DataClean_matchOtherSensorsToGPSUnits(dataStructure,(fid))
 %
 % INPUTS:
 %
@@ -19,7 +18,7 @@ function matched_dataStructure = fcn_DataClean_matchOtherSensorsToGPSUnits(dataS
 %
 % OUTPUTS:
 %
-%      fixed_dataStructure: a data structure to be analyzed that includes the following
+%      matched_dataStructure: a data structure to be analyzed that includes the following
 %      fields:
 %
 % 
@@ -29,7 +28,7 @@ function matched_dataStructure = fcn_DataClean_matchOtherSensorsToGPSUnits(dataS
 %
 % EXAMPLES: # to be done
 %
-%     See the script: script_test_fcn_DataClean_roundROSTimeForGPSUnits
+%     See the script: script_test_fcn_DataClean_matchOtherSensorsToGPSUnits
 %     for a full test suite.
 %
 % This function was written on 2024_08_09 by X. Cao
@@ -67,34 +66,14 @@ if flag_check_inputs
         
 end
 
-% Does the user want to specify the sensor_type?
-% sensor_type = '';
-% if 2 <= nargin
-%     temp = varargin{1};
-%     if ~isempty(temp)
-%         sensor_type = temp;
-%     end
-% end
-% 
-
-% Does the user want to specify the fid?
-% Check for user input
+% Does the user want to specify the specify the fid?
 fid = 0; % Default case is to NOT print to the console
-
-% if 3 == nargin
-%     temp = varargin{end};
-%     if ~isempty(temp)
-%         % Check that the FID works
-%         try
-%             temp_msg = ferror(temp); %#ok<NASGU>
-%             % Set the fid value, if the above ferror didn't fail
-%             fid = temp;
-%         catch ME
-%             warning('User-specified FID does not correspond to a file. Unable to continue.');
-%             throwAsCaller(ME);
-%         end
-%     end
-% end
+if 1 < nargin
+    temp = varargin{1};
+    if ~isempty(temp)
+        fid = temp;
+    end
+end
 
 if fid
     st = dbstack; %#ok<*UNRCH>
@@ -113,19 +92,18 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % The method this is done is to:
-% 1. Find the effective start and end ROS_Times, determined by taking the maximum start time and minimum end time over all
-% sensors.
-% 2.  Recalculates the common ROS_Time field for all sensors. This is done by
-% using the centiSeconds field.
+% 1. Find the common Trigger_Time for all sensors
+% 2. Grab Trigger_Time field for all sensors. 
+% 3. Match other sensors data according to Trigger_Time
 
 
-%% Step 1: Find centiSeconds, Trigger Time for GPS units
-%%
-%% Work on other sensors 
+%% Find the common Trigger_Time for all sensors
 matched_dataStructure = dataStructure;
 time_type = 'Trigger_Time';
 time_range = fcn_DataClean_FindMaxAndMinTime(dataStructure,time_type);
+%% Grab Trigger_time field for all sensors and match other sensors data according to Trigger_Time
 sensorfields = fieldnames(dataStructure);
+
 N_sensors = length(sensorfields);
 for idx_field = 1:N_sensors
     sensorName = sensorfields{idx_field};
@@ -146,7 +124,6 @@ for idx_field = 1:N_sensors
         current_topic_content = current_field_struct.(topic_name);
         
         if length(current_topic_content) > 1
-            % current_topic_content_valid = current_topic_content(valid_idxs,:);
             if iscell(current_topic_content)
                 matched_current_topic_content = cell(size(Trigger_Time_censitime_common));
             else
@@ -173,7 +150,3 @@ for idx_field = 1:N_sensors
     matched_dataStructure.(sensorfields{idx_field}) = matched_field_struct;
 end
 
-
-    %%
-  
-    
