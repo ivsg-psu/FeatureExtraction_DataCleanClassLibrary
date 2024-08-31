@@ -1,20 +1,33 @@
-function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder,fid,varargin)
+function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, varargin)
 % fcn_DataClean_loadMappingVanDataFromFile
 % imports raw data from mapping van bag files
 %
 % FORMAT:
 %
-%      rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName)
+%      rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, (fid), (Flags), (fig_num))
 %
 % INPUTS:
 %
-%      bagFolderName: the folder name where the bag files are located as a
+%      dataFolder: the folder name where the bag files are located as a
 %      sub-directory within the LargeData subdirectory of the
 %      DataCleanClass library.
 %
 %      (OPTIONAL INPUTS)
 %
-%      lane_folder: the sub-folder where the bag files are located
+%      fid: the fileID where to print. Default is 1, to print results to
+%      the console.
+%
+%      Flags: a structure containing key flags to set the process. The
+%      defaults, and explanation of each, are below:
+%
+%           Flags.flag_do_load_sick = 1; % Loads the SICK LIDAR data
+%           Flags.flag_do_load_velodyne = 1; % Loads the Velodyne LIDAR
+%           Flags.flag_do_load_cameras = 0; % Loads camera images
+%           Flags.flag_select_scan_duration = 0; % Lets user specify scans from Velodyne
+%
+%      fig_num: a figure number to plot results. If set to -1, skips any
+%      input checking or debugging, no figures will be generated, and sets
+%      up code to maximize speed.
 %
 % OUTPUTS:
 %
@@ -60,14 +73,42 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder,fid,varar
 % -- moved loading print statements to this file, not subfiles
 % 2023_07_02 - X. Cao
 % -- added varagin to choose whether load LiDAR data
+% 2024_08_29 - S. Brennan
+% -- added debug headers
+% -- added varagin for the FID input
+% -- added fig_num input (to allow max_speed mode)
+% -- fixed input argument checking area to be more clean
 
-flag_do_debug = 1;  % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+%% Debugging and Input checks
+
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==4 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
+
+% flag_do_debug = 1;
 
 if flag_do_debug
     st = dbstack; %#ok<*UNRCH>
-    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
 end
 
 
@@ -84,51 +125,79 @@ end
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if isempty(fid)
-    fid = 1;
-end
+if 0 == flag_max_speed
+    if flag_check_inputs == 1
+        % Are there the right number of inputs?
+        narginchk(1,4);
 
+        % Check if dataFolder is a directory. If directory is not there, warn
+        % the user.
+        try
+            fcn_DebugTools_checkInputsToFunctions(dataFolder, 'DoesDirectoryExist');
+        catch ME
+            warning(['It appears that data was not pushed into a folder: ' ...
+                '\\DataCleanClassLibrary\LargeData ' ...
+                'which is the folder where large data is imported for processing. ' ...
+                'Note that this folder is too large to include in the code repository, ' ...
+                'so it must be copied over from a data storage location. Within IVSG, ' ...
+                'this storage location is the OndeDrive folder called GitHubMirror.']);
+            rethrow(ME)
+        end
 
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(2,3);
-        
-    % Check if dataFolder is a directory. If directory is not there, warn
-    % the user.
-    try
-        fcn_DebugTools_checkInputsToFunctions(dataFolder, 'DoesDirectoryExist');
-    catch ME
-        warning(['It appears that data was not pushed into a folder: ' ...
-            '\\DataCleanClassLibrary\LargeData ' ...
-            'which is the folder where large data is imported for processing. ' ...
-            'Note that this folder is too large to include in the code repository, ' ...
-            'so it must be copied over from a data storage location. Within IVSG, ' ...
-            'this storage location is the OndeDrive folder called GitHubMirror.']);
-        rethrow(ME)
     end
 end
 
-if 3 == nargin
-    Flags = varargin{1};
-    flag_do_load_SICK = Flags.flag_do_load_sick;
-    flag_do_load_Velodyne = Flags.flag_do_load_velodyne;
-    flag_do_load_cameras = Flags.flag_do_load_cameras;
-    prompt = "Do you want to load the LiDAR scan for the entire route? y/n [y]";
-    user_input_txt = input(prompt,"s");
-    if isempty(user_input_txt)
-        user_input_txt = 'y';
+% Does user want to specify fid?
+fid = 1;
+if 2 <= nargin
+    temp = varargin{1};
+    if ~isempty(temp)
+        fid = temp;
     end
-    if strcmp(user_input_txt,'y')
-        flag_select_scan_duration = 0;
-    else
-        flag_select_scan_duration = 1;
-    end    
-else
-    flag_do_load_SICK = 1;
-    flag_do_load_Velodyne = 1;
-    flag_do_load_cameras = 0;
-    flag_select_scan_duration = 0;
+end
+
+
+% Does user specify Flags?
+% Set defaults
+flag_do_load_SICK = 1;
+flag_do_load_Velodyne = 1;
+flag_do_load_cameras = 0;
+flag_select_scan_duration = 0;
+
+if 3 <= nargin
+    temp = varargin{2};
+    if ~isempty(temp)
+        Flags = temp;
+
+        flag_do_load_SICK = Flags.flag_do_load_sick;
+        flag_do_load_Velodyne = Flags.flag_do_load_velodyne;
+        flag_do_load_cameras = Flags.flag_do_load_cameras;
+        try
+            flag_select_scan_duration = Flags.flag_select_scan_duration;
+        catch
+            prompt = "Do you want to load the LiDAR scan for the entire route? y/n [y]";
+            user_input_txt = input(prompt,"s");
+            if isempty(user_input_txt)
+                user_input_txt = 'y';
+            end
+            if strcmp(user_input_txt,'y')
+                flag_select_scan_duration = 0;
+            else
+                flag_select_scan_duration = 1;
+            end
+        end
+    end
+end
+
+
+% Does user want to specify fig_num?
+flag_do_plots = 0;
+if (0==flag_max_speed) &&  (4<=nargin)
+    temp = varargin{end};
+    if ~isempty(temp)
+        fig_num = temp;
+        flag_do_plots = 1;
+    end
 end
 
 %% Main code starts here
@@ -154,7 +223,7 @@ num_files = length(file_list);
 rawdata = struct;
 
 if fid
-    fprintf(fid,'Loading data from files in folder: %s\n',dataFolder);
+    fprintf(fid,'Loading data from files from folder: %s\n',dataFolder);
 end
 
 % Search the contents of the directory for data files
@@ -386,7 +455,7 @@ for file_idx = 1:num_files
 end % Ends loop through directory list
 
 %%
-fprintf(1,'\nLoading completed\n')
+fprintf(fid,'\nLoading completed\n');
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -399,14 +468,26 @@ fprintf(1,'\nLoading completed\n')
 %                            __/ |
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if flag_do_plots
+if flag_do_plots == 1
+    % Plot some test data
+    LLdata = [rawdata.GPS_SparkFun_Front_GGA.Latitude rawdata.GPS_SparkFun_Front_GGA.Longitude];
     
-    % Nothing to plot        
-    
+    clear plotFormat
+    plotFormat.Color = [0 0.7 0];
+    plotFormat.Marker = '.';
+    plotFormat.MarkerSize = 10;
+    plotFormat.LineStyle = '-';
+    plotFormat.LineWidth = 3;
+
+    fcn_plotRoad_plotLL(LLdata, plotFormat,fig_num);
+    set(gca,'MapCenterMode','auto','ZoomLevelMode','auto');
+    set(gca,'MapCenter',LLdata(1,:));
+    title('Raw Data');
+
 end
 
 if flag_do_debug
-    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

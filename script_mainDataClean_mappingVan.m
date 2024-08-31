@@ -79,6 +79,11 @@
 % -- added Trigger_Time calculation codes
 % 2023_07_01 - S. Brennan, sbrennan@psu.edu
 % -- added code to fix GPS_Time data if not strictly ascending
+% 2024_08_29 - S. Brennan, sbrennan@psu.edu
+% -- updated PathClass_v2024_03_14
+% -- added PlotRoad_v2024_08_19
+% -- added GeometryClass_v2024_08_28
+
 
 %
 % Known issues:
@@ -240,9 +245,9 @@ library_folders{ith_library} = {'Functions','Data'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2023_04_22.zip';
 
 ith_library = ith_library+1;
-library_name{ith_library}    = 'PathClass_v2023_10_13';
+library_name{ith_library}    = 'PathClass_v2024_03_14';
 library_folders{ith_library} = {'Functions'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/archive/refs/tags/PathClass_v2023_10_13.zip';
+library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary/archive/refs/tags/PathClass_v2024_03_14.zip';
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'GPSClass_v2023_06_29';
@@ -264,6 +269,17 @@ library_name{ith_library}    = 'BreakDataIntoLaps_v2023_08_25';
 library_folders{ith_library} = {'Functions'};                                
 library_url{ith_library}     = 'https://github.com/ivsg-psu/FeatureExtraction_DataClean_BreakDataIntoLaps/archive/refs/tags/BreakDataIntoLaps_v2023_08_25.zip';
 
+ith_library = ith_library+1;
+library_name{ith_library}    = 'PlotRoad_v2024_08_19';
+library_folders{ith_library} = {'Functions', 'Data'};
+library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_PlotRoad/archive/refs/tags/PlotRoad_v2024_08_19.zip'; 
+
+ith_library = ith_library+1;
+library_name{ith_library}    = 'GeometryClass_v2024_08_28';
+library_folders{ith_library} = {'Functions'};
+library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_GeomTools_GeomClassLibrary/archive/refs/tags/GeometryClass_v2024_08_28.zip';
+
+
 
 %% Clear paths and folders, if needed
 if 1==0
@@ -280,14 +296,52 @@ if ~exist('flag_DataClean_Folders_Initialized','var')
 end
 
 
+%% Set environment flags that define the ENU origin
+% This sets the "center" of the ENU coordinate system for all plotting
+% functions
+
+% Location for Test Track base station
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.86368573');
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-77.83592832');
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
+
+% % Location for Pittsburgh, site 1
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.43073');
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.87261');
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
+
+% % Location for Site 2, Falling water
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','39.995339');
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.445472');
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
+
+
+%% Set environment flags for plotting
+% These are values to set if we are forcing image alignment via Lat and Lon
+% shifting, when doing geoplot. This is added because the geoplot images
+% are very, very slightly off at the test track, which is confusing when
+% plotting data
+setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LAT','-0.0000008');
+setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LON','0.0000054');
+
+
+%% Set environment flags for input checking
+% These are values to set if we want to check inputs or do debugging
+% setenv('MATLABFLAG_FINDEDGE_FLAG_CHECK_INPUTS','1');
+% setenv('MATLABFLAG_FINDEDGE_FLAG_DO_DEBUG','1');
+setenv('MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS','1');
+setenv('MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG','0');
+
+
 %% Specify the data to use
 % The data can be found in OneDrive IVSG\GitHubMirror\MappingVanDataCollection\ParsedData\2024-07-10\Pittsburgh Mapping Left Lane First Round
 fid = 1;
-dataFolder = "LargeData";
 date = '2024-07-10';
 bagName = "mapping_van_2024-07-10-19-31-08_0";
 bagPath = fullfile(pwd, 'LargeData',date, bagName);
-dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
+
+%% Set up figure numbers
+rawdata_fig_num = 1;
 
 %% ======================= Load the raw data =========================
 % This data will have outliers, be unevenly sampled, have multiple and
@@ -298,7 +352,7 @@ dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
 flag.DBquery = false; %true; %set to true to query raw data from database 
 flag.DBinsert = false; %set to true to insert cleaned data to cleaned data database
 flag.SaveQueriedData = true; % 
-fid = 1;
+
 % clear dataset
 if ~exist('dataset','var')
     if flag.DBquery == true
@@ -307,8 +361,7 @@ if ~exist('dataset','var')
         [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
         % Load the raw data from file
-%         dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName,date,fid);
-        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
+        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid,[],rawdata_fig_num);
     end
 else
     if length(dataset)>1
