@@ -75,7 +75,5 @@ assert(strcmp(datatype,'ins'))
 
 %% Fail conditions
 if 1==0
-    %% ERROR for bad data folder
-    bagFolderName = "badData";
-    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+    %% ERROR for ...
 end

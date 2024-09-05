@@ -8,6 +8,8 @@
 % -- fixed typo in comments where script had wrong name! 
 % 2023_06_26 - xfc5113@psu.edu
 % -- Update the default data information
+% 2024_09_05 - sbrennan@psu.edu
+% -- Updated function call for new arguments
 
 %% Set up the workspace
 close all
@@ -62,7 +64,7 @@ dataFolder = "LargeData";
 date = '2024-06-20';
 bagName = "mapping_van_2024-06-20-15-21-04_0";
 bagPath = fullfile(pwd, 'LargeData',date, bagName);
-rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid);
+rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath, bagName, fid);
 
 %% Test 2: Load part of the bag file
 fid = 1;
@@ -74,12 +76,12 @@ Flags = struct;
 Flags.flag_do_load_sick = 0;
 Flags.flag_do_load_velodyne = 1;
 Flags.flag_do_load_cameras = 0;
-rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid,Flags);
+rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagPath, bagName, fid,Flags);
 %%
 
 %% Fail conditions
 if 1==0
     %% ERROR for bad data folder
     bagName = "badData";
-    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName);
+    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName, bagName,);
 end

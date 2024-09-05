@@ -166,9 +166,9 @@ for folder_idx = folder_range
         bagFolderPath = fullfile(dataFolder,bagFolderName);
         % date = 'none';
         if flag_do_load_all_data
-            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,fid);
+            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,bagFolderName, fid);
         else
-            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,fid,Flags);
+            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,bagFolderName, fid,Flags);
         end
         % Remove the extension
         rawdata_cell{folder_idx - skip_count} = rawdata_temp;

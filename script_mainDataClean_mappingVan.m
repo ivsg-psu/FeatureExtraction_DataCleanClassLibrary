@@ -83,7 +83,10 @@
 % -- updated PathClass_v2024_03_14
 % -- added PlotRoad_v2024_08_19
 % -- added GeometryClass_v2024_08_28
-
+% 2024_09_05 - S. Brennan, sbrennan@psu.edu
+% -- added PlotRoad_v2024_09_04
+% -- updated raw load process to push out image grab for data
+% -- updated the GPS coordinates of Pittsburgh site 1 to true coordinates
 
 %
 % Known issues:
@@ -270,9 +273,9 @@ library_folders{ith_library} = {'Functions'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/FeatureExtraction_DataClean_BreakDataIntoLaps/archive/refs/tags/BreakDataIntoLaps_v2023_08_25.zip';
 
 ith_library = ith_library+1;
-library_name{ith_library}    = 'PlotRoad_v2024_08_19';
+library_name{ith_library}    = 'PlotRoad_v2024_09_04';
 library_folders{ith_library} = {'Functions', 'Data'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_PlotRoad/archive/refs/tags/PlotRoad_v2024_08_19.zip'; 
+library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_PlotRoad/archive/refs/tags/PlotRoad_v2024_09_04.zip'; 
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'GeometryClass_v2024_08_28';
@@ -300,15 +303,15 @@ end
 % This sets the "center" of the ENU coordinate system for all plotting
 % functions
 
-% Location for Test Track base station
-setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.86368573');
-setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-77.83592832');
-setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
-
-% % Location for Pittsburgh, site 1
-% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.43073');
-% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.87261');
+% % Location for Test Track base station
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.86368573');
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-77.83592832');
 % setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
+
+% Location for Pittsburgh, site 1
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.44181017');
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.76090840');
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','327.428');
 
 % % Location for Site 2, Falling water
 % setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','39.995339');
@@ -334,10 +337,13 @@ setenv('MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG','0');
 
 
 %% Specify the data to use
+% For
+% "mapping_van_2024-07-10-19-36-59_3"
+% "mapping_van_2024-07-10-19-31-08_0"
 % The data can be found in OneDrive IVSG\GitHubMirror\MappingVanDataCollection\ParsedData\2024-07-10\Pittsburgh Mapping Left Lane First Round
 fid = 1;
 date = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-31-08_0";
+bagName = "mapping_van_2024-07-10-19-36-59_3";
 bagPath = fullfile(pwd, 'LargeData',date, bagName);
 
 %% Set up figure numbers
@@ -348,6 +354,9 @@ rawdata_fig_num = 1;
 % inconsistent measurements of the same variable. In other words, it is the
 % raw data. It can be loaded either from a database or a file - details are
 % in the function below.
+
+% For debugging, to force the if statement to be run
+clear dataset
 
 flag.DBquery = false; %true; %set to true to query raw data from database 
 flag.DBinsert = false; %set to true to insert cleaned data to cleaned data database
@@ -360,12 +369,15 @@ if ~exist('dataset','var')
         queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
         [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
-        % Load the raw data from file
-        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath,fid,[],rawdata_fig_num);
+        % Load the raw data from file, and if a fig_num is given, save the
+        % image to a JPG file with same name as the bag file
+        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath, bagName, fid,[],rawdata_fig_num);
     end
 else
     if length(dataset)>1
-        dataset = dataset{1};
+        % Keep just the first dataset
+        temp{1} = dataset{1};
+        dataset = temp;
     end
 end
 

@@ -9,12 +9,6 @@
 close all
 clc
 
-% % % Make sure we can see the utilities folder
-addpath '.'/Utilities/;
-addpath '.'/LargeData/; % add the data path
-addpath('./Functions/'); % all the functions and wrapper class
-
-
 %% Check assertions for basic path operations and function testing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              _   _                 
@@ -37,7 +31,8 @@ addpath('./Functions/'); % all the functions and wrapper class
 % change the data_folder variable and bagname variable to corresponding path and bag
 % name.
 bagFolderName = "mapping_van_2023-06-05-1Lap";
-rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+bagName = "mapping_van_2023-06-05-1Lap";
+rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName, bagName);
 
 %%
 %%
@@ -101,5 +96,6 @@ end
 if 1==0
     %% ERROR for bad data folder
     bagFolderName = "badData";
-    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName);
+    bagName = "badData";
+    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagFolderName, bagName);
 end

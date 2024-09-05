@@ -1,16 +1,22 @@
-function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, varargin)
+function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, bagName, varargin)
 % fcn_DataClean_loadMappingVanDataFromFile
-% imports raw data from mapping van bag files
+% imports raw data from mapping van bag files, and creates an image summary
+% with the same name as the bag file that shows the area of data that was
+% collected
 %
 % FORMAT:
 %
-%      rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, (fid), (Flags), (fig_num))
+%      rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, bagName, (fid), (Flags), (fig_num))
 %
 % INPUTS:
 %
 %      dataFolder: the folder name where the bag files are located as a
 %      sub-directory within the LargeData subdirectory of the
 %      DataCleanClass library.
+%
+%      bagName: the name of the bag file, for example:
+%      "mapping_van_2024-07-10-19-36-59_3.bag". Note, the extension ".bag"
+%      is dropped when naming the image output
 %
 %      (OPTIONAL INPUTS)
 %
@@ -20,8 +26,8 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, varargin
 %      Flags: a structure containing key flags to set the process. The
 %      defaults, and explanation of each, are below:
 %
-%           Flags.flag_do_load_sick = 1; % Loads the SICK LIDAR data
-%           Flags.flag_do_load_velodyne = 1; % Loads the Velodyne LIDAR
+%           Flags.flag_do_load_sick = 0; % Loads the SICK LIDAR data
+%           Flags.flag_do_load_velodyne = 0; % Loads the Velodyne LIDAR
 %           Flags.flag_do_load_cameras = 0; % Loads camera images
 %           Flags.flag_select_scan_duration = 0; % Lets user specify scans from Velodyne
 %
@@ -78,6 +84,8 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, varargin
 % -- added varagin for the FID input
 % -- added fig_num input (to allow max_speed mode)
 % -- fixed input argument checking area to be more clean
+% 2024_09_05 - S. Brennan
+% -- added automated image summary output
 
 %% Debugging and Input checks
 
@@ -85,7 +93,7 @@ function rawdata = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, varargin
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
 flag_max_speed = 0;
-if (nargin==4 && isequal(varargin{end},-1))
+if (nargin==5 && isequal(varargin{end},-1))
     flag_do_debug = 0; % % % % Flag to plot the results for debugging
     flag_check_inputs = 0; % Flag to perform input checking
     flag_max_speed = 1;
@@ -128,7 +136,7 @@ end
 if 0 == flag_max_speed
     if flag_check_inputs == 1
         % Are there the right number of inputs?
-        narginchk(1,4);
+        narginchk(2,5);
 
         % Check if dataFolder is a directory. If directory is not there, warn
         % the user.
@@ -149,7 +157,7 @@ end
 
 % Does user want to specify fid?
 fid = 1;
-if 2 <= nargin
+if 3 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
         fid = temp;
@@ -159,12 +167,12 @@ end
 
 % Does user specify Flags?
 % Set defaults
-flag_do_load_SICK = 1;
-flag_do_load_Velodyne = 1;
+flag_do_load_SICK = 0;
+flag_do_load_Velodyne = 0;
 flag_do_load_cameras = 0;
 flag_select_scan_duration = 0;
 
-if 3 <= nargin
+if 4 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
         Flags = temp;
@@ -192,7 +200,7 @@ end
 
 % Does user want to specify fig_num?
 flag_do_plots = 0;
-if (0==flag_max_speed) &&  (4<=nargin)
+if (0==flag_max_speed) &&  (5<=nargin)
     temp = varargin{end};
     if ~isempty(temp)
         fig_num = temp;
@@ -223,7 +231,14 @@ num_files = length(file_list);
 rawdata = struct;
 
 if fid
-    fprintf(fid,'Loading data from files from folder: %s\n',dataFolder);
+    fprintf(fid,'Loading data from files from folder: \n\t%s\n',dataFolder);
+end
+
+% Make sure bagName is good
+if contains(bagName,'.')
+    bagName_clean = extractBefore(bagName,'.');
+else
+    bagName_clean = bagName;
 end
 
 % Search the contents of the directory for data files
@@ -241,7 +256,7 @@ for file_idx = 1:num_files
         topic_name = strrep(file_name_noext,'_slash_','/');
         
 
-
+        % Find the type of data for this topic
         datatype = fcn_DataClean_determineDataType(topic_name);
         
         % Tell the user what we are doing
@@ -469,21 +484,50 @@ fprintf(fid,'\nLoading completed\n');
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots == 1
+    figure(fig_num);
+    
     % Plot some test data
     LLdata = [rawdata.GPS_SparkFun_Front_GGA.Latitude rawdata.GPS_SparkFun_Front_GGA.Longitude];
     
     clear plotFormat
     plotFormat.Color = [0 0.7 0];
     plotFormat.Marker = '.';
-    plotFormat.MarkerSize = 10;
+    plotFormat.MarkerSize = 20;
     plotFormat.LineStyle = '-';
     plotFormat.LineWidth = 3;
 
-    fcn_plotRoad_plotLL(LLdata, plotFormat,fig_num);
-    set(gca,'MapCenterMode','auto','ZoomLevelMode','auto');
-    set(gca,'MapCenter',LLdata(1,:));
-    title('Raw Data');
 
+    % Fill in large colormap data using turbo
+    colorMapMatrix = colormap('turbo');
+    colorMapMatrix = colorMapMatrix(100:end,:); % Keep the scale from green to red
+
+    % Reduce the colormap
+    Ncolors = 20;
+    reducedColorMap = fcn_plotRoad_reduceColorMap(colorMapMatrix, Ncolors, -1);
+
+    if 1==0
+        h_animatedPlot = fcn_plotRoad_animatePlot('plotLL',0,[],LLdata, plotFormat,reducedColorMap,fig_num);
+
+        for ith_time = 1:10:length(LLdata(:,1))
+            fcn_plotRoad_animatePlot('plotLL', ith_time, h_animatedPlot, LLdata, (plotFormat), (reducedColorMap), (fig_num));
+            set(gca,'ZoomLevel',20,'MapCenter',LLdata(ith_time,1:2));
+            pause(0.02);
+        end
+    else
+        Npoints = length(LLdata(:,1));
+        Idata = ((1:Npoints)-1)'/(Npoints-1);
+        fcn_plotRoad_plotLLI([LLdata Idata], (plotFormat), (reducedColorMap), (fig_num));
+        set(gca,'MapCenterMode','auto','ZoomLevelMode','auto');
+    end
+    title(sprintf('%s',bagName_clean),'Interpreter','none');
+
+    % Save the image to file    
+    Image = getframe(gcf);
+    image_fname = cat(2,char(bagName_clean),'.jpg');
+    imagePath = fullfile(pwd, 'ImageSummaries',image_fname);
+    if 2~=exist(imagePath,'file')
+        imwrite(Image.cdata, imagePath);
+    end
 end
 
 if flag_do_debug
