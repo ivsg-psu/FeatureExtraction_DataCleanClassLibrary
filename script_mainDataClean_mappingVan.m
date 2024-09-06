@@ -370,8 +370,18 @@ if ~exist('dataset','var')
         [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
     else
         % Load the raw data from file, and if a fig_num is given, save the
-        % image to a JPG file with same name as the bag file
-        dataset{1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath, bagName, fid,[],rawdata_fig_num);
+        % image to a PNG file with same name as the bag file
+        rawData = fcn_DataClean_loadMappingVanDataFromFile(bagPath, bagName, fid,[],rawdata_fig_num);
+
+        % Save the mat file to the Data folder
+
+
+        % Save the image file to the Data folder
+
+
+        % Prepare the dataset for the "cleaning" process by loading rawData
+        % into the starting dataset variable
+        dataset{1} = rawData;
     end
 else
     if length(dataset)>1
@@ -380,6 +390,10 @@ else
         dataset = temp;
     end
 end
+
+%% Define the stitching points based on the site's start and end locations
+% This section takes a user-given start and end location for a site, and
+% identifies which data sets 
 
 %% Fill in test cases?
 % Fill in the initial data - we use this for testing
@@ -1015,6 +1029,9 @@ while 1==flag_stay_in_main_loop
     end
           
 end
+
+%% Save cleanData
+
 
 % %% ======================= Raw Data Clean and Merge =========================
 % % Step 1: we check if the time is incrementing uniformly. If it does not,

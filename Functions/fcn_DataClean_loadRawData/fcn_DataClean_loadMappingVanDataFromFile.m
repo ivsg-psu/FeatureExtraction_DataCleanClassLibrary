@@ -469,6 +469,9 @@ for file_idx = 1:num_files
     end % Ends check if the directory list is a file
 end % Ends loop through directory list
 
+%% Save final structure to MAT file
+
+
 %%
 fprintf(fid,'\nLoading completed\n');
 
@@ -523,7 +526,7 @@ if flag_do_plots == 1
 
     % Save the image to file    
     Image = getframe(gcf);
-    image_fname = cat(2,char(bagName_clean),'.jpg');
+    image_fname = cat(2,char(bagName_clean),'.png');
     imagePath = fullfile(pwd, 'ImageSummaries',image_fname);
     if 2~=exist(imagePath,'file')
         imwrite(Image.cdata, imagePath);
