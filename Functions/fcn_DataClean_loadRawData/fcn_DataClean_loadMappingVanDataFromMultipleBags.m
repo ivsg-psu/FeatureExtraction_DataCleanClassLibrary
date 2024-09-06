@@ -111,14 +111,16 @@ if nargin <= 3
     dataFolder = fullfile(pwd, dataFolder, date); % No sub-folder
     flag_do_load_all_data = 1;
 elseif nargin == 4
-    laneName = varargin{1};
-    dataFolder = fullfile(pwd, dataFolder, date,laneName);
-    flag_do_load_all_data = 1;
-elseif nargin == 5
-    laneName = varargin{1};
-    dataFolder = fullfile(pwd, dataFolder, date,laneName);
-    Flags = varargin{2};
+    Flags = varargin{1};
+    dataFolder = fullfile(pwd, dataFolder, date);
     flag_do_load_all_data = Flags.flag_do_load_all_data;
+    
+elseif nargin == 5
+    Flags = varargin{1};
+    flag_do_load_all_data = Flags.flag_do_load_all_data;
+    laneName = varargin{2};
+    dataFolder = fullfile(pwd, dataFolder, date,laneName);
+  
 end
 
 
@@ -160,23 +162,19 @@ for folder_idx = folder_range
     % Check that the list is the file. If it is a directory, the isdir flag
     % will be 1.
     bagFolderName = bag_folder_list(folder_idx).name;
-    if contains(bagFolderName,"mapping_van")
+    bagFolderPath = fullfile(dataFolder,bagFolderName);
+    isfolder(bagFolderPath)
+    if isfolder(bagFolderPath)
         % Get the file name
-        
-        bagFolderPath = fullfile(dataFolder,bagFolderName);
         % date = 'none';
-        if flag_do_load_all_data
-            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,bagFolderName, fid);
-        else
-            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,bagFolderName, fid,Flags);
-        end
+      
+        rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(dataFolder,bagFolderName,fid,Flags);
+     
         % Remove the extension
         rawdata_cell{folder_idx - skip_count} = rawdata_temp;
     else
         skip_count = skip_count + 1;
-
     end
-
 end
 
         
