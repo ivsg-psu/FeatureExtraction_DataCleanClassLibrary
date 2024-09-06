@@ -344,7 +344,7 @@ setenv('MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG','0');
 fid = 1;
 date = '2024-07-10';
 bagName = "mapping_van_2024-07-10-19-36-59_3";
-bagPath = fullfile(pwd, 'LargeData',date, bagName);
+largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
 
 %% Set up figure numbers
 rawdata_fig_num = 1;
@@ -371,12 +371,28 @@ if ~exist('dataset','var')
     else
         % Load the raw data from file, and if a fig_num is given, save the
         % image to a PNG file with same name as the bag file
-        rawData = fcn_DataClean_loadMappingVanDataFromFile(bagPath, bagName, fid,[],rawdata_fig_num);
+        [rawData, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[],rawdata_fig_num);
 
         % Save the mat file to the Data folder
 
 
+        %%%%%
         % Save the image file to the Data folder
+
+        % Make sure bagName is good
+        if contains(bagName,'.')
+            bagName_clean = extractBefore(bagName,'.');
+        else
+            bagName_clean = bagName;
+        end
+
+        % Save the image to file
+        Image = getframe(gcf);
+        image_fname = cat(2,char(bagName_clean),'.png');
+        imagePath = fullfile(pwd, 'ImageSummaries',image_fname);
+        if 2~=exist(imagePath,'file')
+            imwrite(Image.cdata, imagePath);
+        end
 
 
         % Prepare the dataset for the "cleaning" process by loading rawData
