@@ -1,15 +1,15 @@
-function [rawData, subPathStrings]  = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, bagName, varargin)
+function [rawData, subPathStrings]  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, varargin)
 % fcn_DataClean_loadMappingVanDataFromFile
 % imports raw data from mapping van bag files, and if a figure number is
 % given, plots a summary that shows the area of data that was collected
 %
 % FORMAT:
 %
-%      rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolder, (bagName), (fid), (Flags), (fig_num))
+%      rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, (bagName), (fid), (Flags), (fig_num))
 %
 % INPUTS:
 %
-%      dataFolder: the folder name where the bag files are located as a
+%      dataFolderString: the folder name where the bag files are located as a
 %      sub-directory within the LargeData subdirectory of the
 %      DataCleanClass library.
 %
@@ -19,7 +19,7 @@ function [rawData, subPathStrings]  = fcn_DataClean_loadMappingVanDataFromFile(d
 %      "mapping_van_2024-07-10-19-36-59_3.bag". If within the name, the
 %      extension ".bag" is dropped when naming the image output. If the
 %      bagName is given as an empty input, e.g. [], then the entire
-%      dataFolder is queried for bagNames.
+%      dataFolderString is queried for bagNames.
 %
 %      fid: the fileID where to print. Default is 1, to print results to
 %      the console.
@@ -66,17 +66,17 @@ function [rawData, subPathStrings]  = fcn_DataClean_loadMappingVanDataFromFile(d
 % 2023_06_19 - S. Brennan
 % -- first functionalization of the code
 % 2023_06_22 - S. Brennan
-% -- fixed fcn_DataClean_loadrawDataFromFile_SickLidar filename
-% -- to correct: fcn_DataClean_loadrawDataFromFile_sickLIDAR
+% -- fixed fcn_DataClean_loadRawDataFromFile_SickLidar filename
+% -- to correct: fcn_DataClean_loadRawDataFromFile_sickLIDAR
 % 2023_06_22 - S. Brennan
 % AGAIN - someone reverted the edits
-% -- fixed fcn_DataClean_loadrawDataFromFile_SickLidar filename
-% -- to correct: fcn_DataClean_loadrawDataFromFile_sickLIDAR
+% -- fixed fcn_DataClean_loadRawDataFromFile_SickLidar filename
+% -- to correct: fcn_DataClean_loadRawDataFromFile_sickLIDAR
 % 2023_06_26 - X. Cao
-% -- modified fcn_DataClean_loadrawDataFromFile_Diagnostic
+% -- modified fcn_DataClean_loadRawDataFromFile_Diagnostic
 % -- The old diagnostic topics 'diagnostic_trigger' and
 % 'diagnostic_encoder' are replaced with 'Trigger_diag' and 'Encoder_diag'
-% -- modified fcn_DataClean_loadrawDataFromFile_SparkFun_GPS
+% -- modified fcn_DataClean_loadRawDataFromFile_SparkFun_GPS
 % -- each sparkfun gps has three topics, sparkfun_gps_GGA, sparkfun_gps_VTG
 % and sparkfun_gps_GST.
 % 2023_07_04 - S. Brennan
@@ -147,10 +147,10 @@ if 0 == flag_max_speed
         % Are there the right number of inputs?
         narginchk(1,5);
 
-        % Check if dataFolder is a directory. If directory is not there, warn
+        % Check if dataFolderString is a directory. If directory is not there, warn
         % the user.
         try
-            fcn_DebugTools_checkInputsToFunctions(dataFolder, 'DoesDirectoryExist');
+            fcn_DebugTools_checkInputsToFunctions(dataFolderString, 'DoesDirectoryExist');
         catch ME
             warning(['It appears that data was not pushed into a folder: ' ...
                 '\\DataCleanClassLibrary\LargeData ' ...
@@ -176,7 +176,7 @@ end
 % Does user want to specify fid?
 fid = 1;
 if 3 <= nargin
-    temp = varargin{1};
+    temp = varargin{2};
     if ~isempty(temp)
         fid = temp;
     end
@@ -191,24 +191,24 @@ Flags.flag_do_load_cameras = 0;
 Flags.flag_select_scan_duration = 0;
 
 if 4 <= nargin
-    temp = varargin{2};
+    temp = varargin{3};
     if ~isempty(temp)
         Flags = temp;
-
-        try
-            temp = Flags.flag_select_scan_duration; %#ok<NASGU>
-        catch
-            prompt = "Do you want to load the LiDAR scan for the entire route? y/n [y]";
-            user_input_txt = input(prompt,"s");
-            if isempty(user_input_txt)
-                user_input_txt = 'y';
-            end
-            if strcmp(user_input_txt,'y')
-                Flags.flag_select_scan_duration = 0;
-            else
-                Flags.flag_select_scan_duration = 1;
-            end
-        end
+        
+        % try
+        %     temp = Flags.flag_select_scan_duration; %#ok<NASGU>
+        % catch
+        %     prompt = "Do you want to load the LiDAR scan for the entire route? y/n [y]";
+        %     user_input_txt = input(prompt,"s");
+        %     if isempty(user_input_txt)
+        %         user_input_txt = 'y';
+        %     end
+        %     if strcmp(user_input_txt,'y')
+        %         Flags.flag_select_scan_duration = 0;
+        %     else
+        %         Flags.flag_select_scan_duration = 1;
+        %     end
+        % end
     end
 end
 
@@ -241,16 +241,46 @@ else
     flag_loadEntireDirectory = 0;
 end
 
-% Make sure bagName is good
-if contains(bagName,'.')
-    bagName_clean = extractBefore(bagName,'.');
-else
-    bagName_clean = bagName;
-end
 
-if flag_loadEntireDirectory
+
+if 1==flag_loadEntireDirectory
+    folder_list = dir(dataFolderString);
+    num_folders = length(folder_list);
+
+    rawdata_cell = {};
+    skip_count = 0;
+
+
+    for folder_idx = 1:num_folders
+
+        % Check that the list is the file. If it is a directory, the isdir flag
+        % will be 1.
+        folderName = bag_folder_list(folder_idx).name;
+        folderPath = fullfile(dataFolderString,folderName);
+
+        if isfolder(folderPath) && contains(folderName,'mapping_van')
+            % Get the rawData for this
+            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString,folderName,fid,Flags);
+
+            % Remove the extension
+            rawdata_cell{folder_idx - skip_count} = rawdata_temp;
+        else
+            skip_count = skip_count + 1;
+
+
+        end
+    end
+
 else
-    rawData = fcn_INTERNAL_readRawDataFromFolder(fullfile(dataFolder,bagName), fid, Flags);
+
+    % Make sure bagName is good
+    if contains(bagName,'.bag')
+        bagName_clean = extractBefore(bagName,'.bag');
+    else
+        bagName_clean = bagName;
+    end
+    rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolderString, fid, Flags);
+    subPathStrings = '';
 end
 
 %%
@@ -267,7 +297,7 @@ fprintf(fid,'\nLoading completed\n');
 %                            __/ |
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if flag_do_plots == 1
+if (1==flag_do_plots) && (0==flag_loadEntireDirectory)
     figure(fig_num);
 
     % Plot some test data
@@ -329,7 +359,7 @@ end % Ends main function
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
 % fcn_INTERNAL_readRawDataFromFolder
-function rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolder, fid, Flags)
+function rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolderString, fid, Flags)
 
 flag_do_load_SICK = Flags.flag_do_load_SICK;
 flag_do_load_Velodyne = Flags.flag_do_load_Velodyne;
@@ -338,14 +368,14 @@ flag_select_scan_duration = Flags.flag_select_scan_duration;
 
 
 % Grab the list of files in this directory
-file_list = dir(dataFolder);
+file_list = dir(dataFolderString);
 num_files = length(file_list);
 
 % Initialize an empty structure
 rawData = struct;
 
 if fid
-    fprintf(fid,'Loading data from files from folder: \n\t%s\n',dataFolder);
+    fprintf(fid,'Loading data from files from folder: \n\t%s\n',dataFolderString);
 end
 
 % Search the contents of the directory for data files
@@ -371,167 +401,167 @@ for file_idx = 1:num_files
             fprintf(fid,'\t Loading file: %s, with topic name: %s, with datatype: %s \n',file_name, topic_name,datatype);
         end
 
-        full_file_path = fullfile(dataFolder,file_name);
+        full_file_path = fullfile(dataFolderString,file_name);
         % topic name is used to decide the sensor
         %         topic sicm_lms500/sick_time
 
         if (any([contains(topic_name,'sick_lms500/scan') contains(topic_name,'sick_lms_5xx/scan')])) && flag_do_load_SICK
 
-            SickLiDAR = fcn_DataClean_loadrawDataFromFile_sickLIDAR(full_file_path,datatype,fid);
+            SickLiDAR = fcn_DataClean_loadRawDataFromFile_sickLIDAR(full_file_path,datatype,fid);
             rawData.Lidar_Sick_Rear = SickLiDAR;
             % disp('Ignore for 2023-11-15')
 
         elseif contains(topic_name, 'Bin1')
-            Hemisphere_DGPS = fcn_DataClean_loadrawDataFromFile_Hemisphere(full_file_path,datatype,fid);
+            Hemisphere_DGPS = fcn_DataClean_loadRawDataFromFile_Hemisphere(full_file_path,datatype,fid);
             rawData.GPS_Hemisphere_SensorPlatform = Hemisphere_DGPS;
 
         elseif contains(topic_name, 'GPS_Novatel')
 
 
-            GPS_Novatel = fcn_DataClean_loadrawDataFromFile_Novatel_GPS(full_file_path,datatype,fid);
+            GPS_Novatel = fcn_DataClean_loadRawDataFromFile_Novatel_GPS(full_file_path,datatype,fid);
 
             rawData.GPS_Novatel_SensorPlatform = GPS_Novatel;
 
         elseif contains(topic_name, 'Garmin_GPS')
 
 
-            GPS_Garmin = fcn_DataClean_loadrawDataFromFile_Garmin_GPS(full_file_path,datatype,fid);
+            GPS_Garmin = fcn_DataClean_loadRawDataFromFile_Garmin_GPS(full_file_path,datatype,fid);
             rawData.GPS_Garmin_TopCenter = GPS_Garmin;
 
         elseif contains(topic_name, 'Novatel_IMU')
 
-            Novatel_IMU = fcn_DataClean_loadrawDataFromFile_IMU_Novatel(full_file_path,datatype,fid);
+            Novatel_IMU = fcn_DataClean_loadRawDataFromFile_IMU_Novatel(full_file_path,datatype,fid);
             rawData.IMU_Novatel_TopCenter = Novatel_IMU;
 
         elseif contains(topic_name, 'parseEncoder')
 
-            parseEncoder = fcn_DataClean_loadrawDataFromFile_parse_Encoder(full_file_path,datatype,fid);
+            parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(full_file_path,datatype,fid);
             rawData.Encoder_Raw = parseEncoder;
 
         elseif contains(topic_name, 'imu/data_raw')
 
-            adis_IMU_dataraw = fcn_DataClean_loadrawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
+            adis_IMU_dataraw = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
             rawData.IMU_adis_dataraw = adis_IMU_dataraw;
 
 
         elseif contains(topic_name, 'imu/rpy/filtered')
 
-            adis_IMU_filtered_rpy = fcn_DataClean_loadrawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
+            adis_IMU_filtered_rpy = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
             rawData.IMU_adis_filtered_rpy = adis_IMU_filtered_rpy;
 
         elseif contains(topic_name, 'imu/data')
 
-            adis_IMU_data = fcn_DataClean_loadrawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
+            adis_IMU_data = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
             rawData.IMU_adis_data = adis_IMU_data;
 
         elseif contains(topic_name, 'imu/mag')
 
-            adis_IMU_mag = fcn_DataClean_loadrawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
+            adis_IMU_mag = fcn_DataClean_loadRawDataFromFile_IMU_ADIS(full_file_path,datatype,fid,topic_name);
             rawData.IMU_adis_mag = adis_IMU_mag;
 
         elseif contains(topic_name, 'adis_msg')
 
-            adis_msg = fcn_DataClean_loadrawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
+            adis_msg = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
             rawData.adis_msg = adis_msg;
 
 
         elseif contains(topic_name, 'adis_temp')
 
-            adis_temp = fcn_DataClean_loadrawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
+            adis_temp = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
             rawData.adis_temp = adis_temp;
 
         elseif contains(topic_name, 'adis_press')
 
-            adis_press = fcn_DataClean_loadrawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
+            adis_press = fcn_DataClean_loadRawDataFromFile_ADIS(full_file_path,datatype,fid,topic_name);
             rawData.adis_press = adis_press;
 
 
         elseif contains(topic_name,'parseTrigger')
 
-            parseTrigger = fcn_DataClean_loadrawDataFromFile_parse_Trigger(full_file_path,datatype,fid);
+            parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(full_file_path,datatype,fid);
             rawData.Trigger_Raw = parseTrigger;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GGA')
 
-            SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_GGA = SparkFun_GPS_RearLeft_GGA;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearLeft_VTG')
 
-            SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_VTG = SparkFun_GPS_RearLeft_VTG;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GST')
 
-            SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_GST = SparkFun_GPS_RearLeft_GST;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_GGA')
-            sparkfun_gps_rear_right_GGA = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_GGA = sparkfun_gps_rear_right_GGA;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_VTG')
-            sparkfun_gps_rear_right_VTG = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_VTG = sparkfun_gps_rear_right_VTG;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_GST')
-            sparkfun_gps_rear_right_GST = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_GST = sparkfun_gps_rear_right_GST;
 
         elseif contains(topic_name, 'Trigger_diag')
-            diagnostic_trigger = fcn_DataClean_loadrawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
+            diagnostic_trigger = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
             rawData.Diag_Trigger = diagnostic_trigger;
 
         elseif contains(topic_name, 'Encoder_diag')
-            diagnostic_encoder = fcn_DataClean_loadrawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
+            diagnostic_encoder = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
             rawData.Diag_Encoder = diagnostic_encoder;
 
         elseif contains(topic_name, 'GPS_SparkFun_Front_GGA')
-            SparkFun_GPS_Front_GGA = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            SparkFun_GPS_Front_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Front_GGA = SparkFun_GPS_Front_GGA;
 
         elseif contains(topic_name, 'GPS_SparkFun_Front_VTG')
-            SparkFun_GPS_Front_VTG = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            SparkFun_GPS_Front_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Front_VTG = SparkFun_GPS_Front_VTG;
 
 
         elseif contains(topic_name, 'GPS_SparkFun_Front_GST')
-            SparkFun_GPS_Front_GST = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            SparkFun_GPS_Front_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Front_GST = SparkFun_GPS_Front_GST;
 
 
         elseif contains(topic_name, 'GPS_SparkFun_Temp_GGA')
-            SparkFun_GPS_Temp_GGA = fcn_DataClean_loadrawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            SparkFun_GPS_Temp_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Temp_GGA = SparkFun_GPS_Temp_GGA;
 
             %             elseif contains(topic_name, 'DIAG_SparkFun_RearLeft')
-            %                 sparkfun_gps_diag_rear_left = fcn_DataClean_loadrawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
+            %                 sparkfun_gps_diag_rear_left = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
             %                 rawData.Diag_GPS_SparkFun_LeftRear = sparkfun_gps_diag_rear_left;
             %
             %             elseif contains(topic_name, 'DIAG_SparkFun_RearRight')
-            %                 sparkfun_gps_diag_rear_right = fcn_DataClean_loadrawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
+            %                 sparkfun_gps_diag_rear_right = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);
             %                 rawData.Diag_GPS_SparkFun_RightRear = sparkfun_gps_diag_rear_right;
 
 
             %             elseif contains(topic_name,'ntrip_info')
-            %                 ntrip_info = fcn_DataClean_loadrawDataFromFile_NTRIP(full_file_path,datatype,fid);
+            %                 ntrip_info = fcn_DataClean_loadRawDataFromFile_NTRIP(full_file_path,datatype,fid);
             %                 rawData.ntrip_info = ntrip_info;
             %           Comment out due to format error with detectImportOptions
             %             elseif (contains(topic_name,'rosout') && ~contains(topic_name,'agg'))
             %
-            %                 ROSOut = fcn_DataClean_loadrawDataFromFile_ROSOut(full_file_path,datatype,fid);
+            %                 ROSOut = fcn_DataClean_loadRawDataFromFile_ROSOut(full_file_path,datatype,fid);
             %                 rawData.ROSOut = ROSOut;
 
         elseif contains(topic_name,'tf')
-            transform_struct = fcn_DataClean_loadrawDataFromFile_Transform(full_file_path,datatype,fid);
+            transform_struct = fcn_DataClean_loadRawDataFromFile_Transform(full_file_path,datatype,fid);
             rawData.Transform = transform_struct;
 
         elseif (contains(topic_name,'velodyne_packets')) && (flag_do_load_Velodyne)
 
             if flag_select_scan_duration
-                Velodyne_lidar_struct = fcn_DataClean_loadrawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid,flag_select_scan_duration);
+                Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid,flag_select_scan_duration);
             else
-                Velodyne_lidar_struct = fcn_DataClean_loadrawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
+                Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
             end
 
             rawData.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
@@ -540,32 +570,32 @@ for file_idx = 1:num_files
 
         elseif contains(topic_name,'/rear_left_camera/image_rect_color/compressed') && (flag_do_load_cameras)
             rear_left_camera_folder = 'images/rear_left_camera/';
-            Camera_Rear_Left_struct = fcn_DataClean_loadrawDataFromFile_Cameras(file_path,rear_left_camera_folder,datatype,fid);
+            Camera_Rear_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_left_camera_folder,datatype,fid);
             rawData.Camera_Rear_Left = Camera_Rear_Left_struct;
 
         elseif contains(topic_name,'/rear_center_camera/image_rect_color/compressed') && (flag_do_load_cameras)
             rear_center_camera_folder = 'images/rear_center_camera/';
-            Camera_Rear_Center_struct = fcn_DataClean_loadrawDataFromFile_Cameras(file_path,rear_center_camera_folder,datatype,fid);
+            Camera_Rear_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_center_camera_folder,datatype,fid);
             rawData.Camera_Rear_Center = Camera_Rear_Center_struct;
 
         elseif contains(topic_name,'/rear_right_camera/image_rect_color/compressed') && (flag_do_load_cameras)
             rear_right_camera_folder = 'images/rear_right_camera/';
-            Camera_Rear_Right_struct = fcn_DataClean_loadrawDataFromFile_Cameras(file_path,rear_right_camera_folder,datatype,fid);
+            Camera_Rear_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_right_camera_folder,datatype,fid);
             rawData.Camera_Rear_Right = Camera_Rear_Right_struct;
 
         elseif contains(topic_name,'/front_left_camera/image_rect_color/compressed') && (flag_do_load_cameras)
             front_left_camera_folder = 'images/front_left_camera/';
-            Camera_Front_Left_struct = fcn_DataClean_loadrawDataFromFile_Cameras(file_path,front_left_camera_folder,datatype,fid);
+            Camera_Front_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_left_camera_folder,datatype,fid);
             rawData.Camera_Front_Left = Camera_Front_Left_struct;
 
         elseif contains(topic_name,'/front_center_camera/image_rect_color/compressed') && (flag_do_load_cameras)
             front_center_camera_folder = 'images/front_center_camera/';
-            Camera_Front_Center_struct = fcn_DataClean_loadrawDataFromFile_Cameras(file_path,front_center_camera_folder,datatype,fid);
+            Camera_Front_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_center_camera_folder,datatype,fid);
             rawData.Camera_Front_Center = Camera_Front_Center_struct;
 
         elseif contains(topic_name,'/front_right_camera/image_rect_color/compressed') && (flag_do_load_cameras)
             front_right_camera_folder = 'images/front_right_camera/';
-            Camera_Front_Right_struct = fcn_DataClean_loadrawDataFromFile_Cameras(file_path,front_right_camera_folder,datatype,fid);
+            Camera_Front_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_right_camera_folder,datatype,fid);
             rawData.Camera_Front_Right = Camera_Front_Right_struct;
 
 

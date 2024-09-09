@@ -1,15 +1,9 @@
-% script_test_fcn_DataClean_loadMappingVanDataFromFile.m
-% tests fcn_DataClean_loadMappingVanDataFromFile.m
+% script_test_fcn_DataClean_cleanData.m
+% tests fcn_DataClean_cleanData.m
 
 % Revision history
-% 2023_06_19 - sbrennan@psu.edu
-% -- wrote the code originally, using Laps_checkZoneType as starter
-% 2023_06_25 - sbrennan@psu.edu
-% -- fixed typo in comments where script had wrong name! 
-% 2023_06_26 - xfc5113@psu.edu
-% -- Update the default data information
-% 2024_09_05 - sbrennan@psu.edu
-% -- Updated function call for new arguments
+% 2024_09_09 - sbrennan@psu.edu
+% -- wrote the code originally
 
 %% Set up the workspace
 close all
@@ -58,7 +52,7 @@ clc
 % mapping_van_2023-06-26-Parking5s folder will also be placed in the Data
 % folder and will be pushed to GitHub repo.
 
-%% Test 1: Load the entire bag file
+%% Test 1: Load and clean a single bag file
 fig_num = 1;
 figure(fig_num);
 clf;
@@ -69,34 +63,19 @@ dateString = '2024-06-20';
 bagName = "mapping_van_2024-06-20-15-21-04_0";
 bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
 Flags = [];
-[rawData, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (fig_num));
+[rawDataStruct, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (-1));
+
+
+ref_baseStationLLA = [40.44181017, -79.76090840, 327.428]; % Pittsburgh
+cleanDataStruct = fcn_DataClean_cleanData(rawDataStruct, (ref_baseStationLLA), (fid), (Flags), (fig_num));
 
 % Check the data
 assert(isstruct(rawData))
 assert(strcmp(subPathStrings,''))
 
-%% Test 2: Load part of the bag file
-fig_num = 1;
-figure(fig_num);
-clf;
-
-fid = 1;
-dataFolderString = "LargeData";
-dateString = '2024-06-20';
-bagName = "mapping_van_2024-06-20-15-21-04_0";
-bagPath = fullfile(pwd, 'LargeData',dateString, bagName);
-Flags = struct;
-Flags.flag_do_load_sick = 0;
-Flags.flag_do_load_velodyne = 1;
-Flags.flag_do_load_cameras = 0;
-rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, (bagName), (fid), (Flags), (fig_num));
-
-
 %%
 
 %% Fail conditions
 if 1==0
-    %% ERROR for bad data folder
-    bagName = "badData";
-    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName, bagName,);
+    %% ERROR situation: 
 end
