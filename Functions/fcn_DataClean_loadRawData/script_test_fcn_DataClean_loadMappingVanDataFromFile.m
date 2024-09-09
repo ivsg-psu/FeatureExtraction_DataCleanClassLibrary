@@ -58,15 +58,16 @@ clc
 % mapping_van_2023-06-26-Parking5s folder will also be placed in the Data
 % folder and will be pushed to GitHub repo.
 
-%% Test 1: Load the entire bag file
+
+%% Test 1: Load the bag file with defaults (no LIDARs)
 fig_num = 1;
 figure(fig_num);
 clf;
 
 fid = 1;
 dataFolderString = "LargeData";
-dateString = '2024-06-20';
-bagName = "mapping_van_2024-06-20-15-21-04_0";
+dateString = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-31-08_0";
 bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
 Flags = [];
 [rawData, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (fig_num));
@@ -76,7 +77,7 @@ assert(isstruct(rawData))
 assert(strcmp(subPathStrings,''))
 
 %% Test 2: Load part of the bag file
-fig_num = 1;
+fig_num = 2;
 figure(fig_num);
 clf;
 
@@ -84,11 +85,32 @@ fid = 1;
 dataFolderString = "LargeData";
 dateString = '2024-06-20';
 bagName = "mapping_van_2024-06-20-15-21-04_0";
-bagPath = fullfile(pwd, 'LargeData',dateString, bagName);
+bagPath = fullfile(pwd, dataFolderString, dateString, bagName);
 Flags = struct;
 Flags.flag_do_load_sick = 0;
 Flags.flag_do_load_velodyne = 1;
 Flags.flag_do_load_cameras = 0;
+rawData = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (fig_num));
+
+% Check the data
+assert(isstruct(rawData))
+assert(strcmp(subPathStrings,''))
+
+%% Test 3: Load all bag files from a given directory
+fig_num = 3;
+figure(fig_num);
+clf;
+
+rootdir = fullfile(cd,'LargeData');
+filelist = dir(fullfile(rootdir, '**\mapping_van_*'));  %get list of files and folders in any subfolder
+filelist = filelist([filelist.isdir]);  % keep only folders from list
+
+fid = 1;
+dataFolderString = "LargeData";
+dateString = '2024-06-20';
+bagName = "mapping_van_2024-06-20-15-21-04_0";
+bagPath = fullfile(pwd, 'LargeData',dateString, bagName);
+Flags = [];
 rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, (bagName), (fid), (Flags), (fig_num));
 
 
@@ -98,5 +120,5 @@ rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, (bagName), 
 if 1==0
     %% ERROR for bad data folder
     bagName = "badData";
-    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName, bagName,);
+    rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName, bagName);
 end

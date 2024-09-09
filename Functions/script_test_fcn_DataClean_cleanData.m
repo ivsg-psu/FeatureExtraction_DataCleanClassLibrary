@@ -59,18 +59,20 @@ clf;
 
 fid = 1;
 dataFolderString = "LargeData";
-dateString = '2024-06-20';
-bagName = "mapping_van_2024-06-20-15-21-04_0";
+dateString = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-31-08_0";
 bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
 Flags = [];
-[rawDataStruct, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (-1));
+[rawDataStruct, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), ([]));
+
+% Check the result
+assert(isstruct(rawDataStruct))
 
 
 ref_baseStationLLA = [40.44181017, -79.76090840, 327.428]; % Pittsburgh
 cleanDataStruct = fcn_DataClean_cleanData(rawDataStruct, (ref_baseStationLLA), (fid), (Flags), (fig_num));
 
 % Check the data
-assert(isstruct(rawData))
 assert(strcmp(subPathStrings,''))
 
 %%

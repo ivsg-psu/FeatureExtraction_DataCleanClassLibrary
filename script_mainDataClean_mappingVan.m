@@ -87,6 +87,8 @@
 % -- added PlotRoad_v2024_09_04
 % -- updated raw load process to push out image grab for data
 % -- updated the GPS coordinates of Pittsburgh site 1 to true coordinates
+% 2024_09_09 - S. Brennan, sbrennan@psu.edu
+% -- functionalization of cleanData (out of this script, into function)
 
 %
 % Known issues:
