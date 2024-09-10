@@ -100,7 +100,12 @@ end
 %% Find the common Trigger_Time for all sensors
 matched_dataStructure = dataStructure;
 time_type = 'Trigger_Time';
-time_range = fcn_DataClean_FindMaxAndMinTime(dataStructure,time_type);
+% time_range = fcn_DataClean_FindMaxAndMinTime(dataStructure,time_type);
+[cell_Trigger_Time_Start,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS','first_row');
+[cell_Trigger_Time_End,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS','last_row');
+array_Trigger_Time_Start = cell2mat(cell_Trigger_Time_Start);
+array_Trigger_Time_End = cell2mat(cell_Trigger_Time_End);
+time_range = [max(array_Trigger_Time_Start),min(array_Trigger_Time_End)];
 %% Grab Trigger_time field for all sensors and match other sensors data according to Trigger_Time
 sensorfields = fieldnames(dataStructure);
 
@@ -122,12 +127,14 @@ for idx_field = 1:N_sensors
     for idx_topic = 1:N_topics
         topic_name = topicfields{idx_topic};
         current_topic_content = current_field_struct.(topic_name);
-        
         if length(current_topic_content) > 1
             if iscell(current_topic_content)
                 matched_current_topic_content = cell(size(Trigger_Time_censitime_common));
+            elseif isstring(current_topic_content)
+                matched_current_topic_content = strings(size(Trigger_Time_censitime_common,1),size(current_topic_content,2));
             else
                 matched_current_topic_content = nan(size(Trigger_Time_censitime_common,1),size(current_topic_content,2));
+               
             end
             
             for idx_time = 1:length(Trigger_Time_censitime_original)

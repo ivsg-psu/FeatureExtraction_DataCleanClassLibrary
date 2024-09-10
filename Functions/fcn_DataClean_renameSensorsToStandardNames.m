@@ -135,6 +135,7 @@ name_pairs = {...
 'VelodyneLiDAR', 'LIDAR_Velodyne_Rear';
 'Lidar_Velodyne_Rear','LiDAR_Velodyne_Rear';
 'LiDAR_Velodyne_Rear','LiDAR_Velodyne_Rear';
+'GPS_SparkFun_Front_GGA','GPS_SparkFun_Front'
 };
 
 [Npairs,~] = size(name_pairs);

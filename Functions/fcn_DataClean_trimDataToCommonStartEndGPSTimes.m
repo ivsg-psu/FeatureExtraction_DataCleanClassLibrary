@@ -261,7 +261,7 @@ for i_data = 1:length(sensor_names)
                     if strcmp(sensor_name,'SickLiDAR') && strcmp(subFieldName,'Sick_Time')
                         warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
                     else
-                        error('Sensor %s contains a datafield %s that has an amount of data not equal to the GPS_Time. This is usually because data is missing.',sensor_name,subFieldName);
+                        warning('Sensor %s contains a datafield %s that has an amount of data not equal to the GPS_Time. This is usually because data is missing.',sensor_name,subFieldName);
                     end
                 end
                 
