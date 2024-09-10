@@ -174,14 +174,17 @@ for idx_gps_unit = 1:N_GPS_Units
             VTG_Fields = ["ROS_Time2","SpdOverGrndKmph"];
             ROS_Time_need_to_be_checked = GPSdataStructure.ROS_Time2;
             disp("GST field does not exist")
+             % Find matched GPS time for different NMEA sentences
+    GPS_Time_matched = fcn_DataClean_calculateGPSTimeForMergedData(ROS_Time_need_to_be_checked,GPS_Time,centiSeconds,offset_between_GPSTime_and_ROSTime);
         end
     elseif N_NMEA_sentences == 3
         VTG_Fields = ["ROS_Time3","SpdOverGrndKmph"];
         GST_Fields = ["ROS_Time2","GPS_Time2","StdLat","StdLon","StdAlt"];
         ROS_Time_need_to_be_checked = GPSdataStructure.ROS_Time3;
-    end
-    % Find matched GPS time for different NMEA sentences
+         % Find matched GPS time for different NMEA sentences
     GPS_Time_matched = fcn_DataClean_calculateGPSTimeForMergedData(ROS_Time_need_to_be_checked,GPS_Time,centiSeconds,offset_between_GPSTime_and_ROSTime);
+    end
+   
     if any(contains(sub_fields,"GPS_Time2"))
         original_GPS_Time2 = GPSdataStructure.GPS_Time2;
     end

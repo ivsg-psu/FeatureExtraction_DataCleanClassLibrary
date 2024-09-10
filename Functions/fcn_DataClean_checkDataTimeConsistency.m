@@ -821,8 +821,6 @@ for i_data = 1:length(sensor_names)
 
     if ~issorted(sensor_value_noNaN,1,"strictascend")
         flags_data_strictly_ascends = 0;
-    else
-        plot(sensor_value_noNaN,'b-','linewidth',2)
     end
     
     flag_name = cat(2,field_name,'_strictly_ascends');
