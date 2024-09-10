@@ -7,8 +7,8 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 % FORMAT:
 %
 %      [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(...
-%          dataStructure,field_name,...
-%          (flags),(string_any_or_all),(sensors_to_check),(fid))
+%          dataStructure, field_name,...
+%          (flags), (string_any_or_all), (sensors_to_check), (fid), (fig_num))
 %
 % INPUTS:
 %
@@ -32,6 +32,10 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %
 %      fid: a file ID to print results of analysis. If not entered, no
 %      output is given (FID = 0). Set fid to 1 for printing to console.
+%
+%      fig_num: a figure number to plot results. If set to -1, skips any
+%      input checking or debugging, no figures will be generated, and sets
+%      up code to maximize speed.
 %
 % OUTPUTS:
 %
@@ -64,10 +68,41 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 % -- fixed verbose mode bug
 % 2023_07_03 - sbrennan@psu.edu
 % -- added detailed printing
+% 2024_09_10: Sean Brennan, sbrennan@psu.edu
+% -- added debug modes
+% -- added fig_num input for speed
 
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+%% Debugging and Input checks
+
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==7 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
+
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 
 %% check input arguments
@@ -83,9 +118,11 @@ flag_check_inputs = 1; % Flag to perform input checking
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(2,6);
+if 0 == flag_max_speed
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(2,7);
+    end
 end
 
 % Does the user want to specify the flags?
@@ -121,7 +158,7 @@ end
 fid = 0;
 % Check for user input
 if 6 <= nargin
-    temp = varargin{end};
+    temp = varargin{4};
     if ~isempty(temp)
         % Check that the FID works
         try
@@ -135,9 +172,14 @@ if 6 <= nargin
     end
 end
 
-if fid
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+% Does user want to specify fig_num?
+flag_do_plots = 0;
+if (0==flag_max_speed) &&  (7<=nargin)
+    temp = varargin{end};
+    if ~isempty(temp)
+        fig_num = temp; %#ok<NASGU>
+        flag_do_plots = 1;
+    end
 end
 
 %% Main code starts here
@@ -307,8 +349,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

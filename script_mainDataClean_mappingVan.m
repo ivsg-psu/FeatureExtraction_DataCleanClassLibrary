@@ -429,7 +429,7 @@ else
     end
 end
 
-%% Functions follow
+%% Main Cleaning Function
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  __  __       _          _____ _                  _               ______                _   _
 % |  \/  |     (_)        / ____| |                (_)             |  ____|              | | (_)
@@ -444,6 +444,52 @@ end
 
 
 
+%% Supporting Functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%   _____                              _   _               ______                _   _
+%  / ____|                            | | (_)             |  ____|              | | (_)
+% | (___  _   _ _ __  _ __   ___  _ __| |_ _ _ __   __ _  | |__ _   _ _ __   ___| |_ _  ___  _ __  ___
+%  \___ \| | | | '_ \| '_ \ / _ \| '__| __| | '_ \ / _` | |  __| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+%  ____) | |_| | |_) | |_) | (_) | |  | |_| | | | | (_| | | |  | |_| | | | | (__| |_| | (_) | | | \__ \
+% |_____/ \__,_| .__/| .__/ \___/|_|   \__|_|_| |_|\__, | |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+%              | |   | |                            __/ |
+%              |_|   |_|                           |___/
+% https://patorjk.com/software/taag/#p=display&f=Big&t=Supporting%20Functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% fcn_DataClean_pullDataFromFieldAcrossAllSensors
+% Pulls a given field's data from all sensors. If the field does not exist,
+% it returns an empty array for that field
+%
+% FORMAT:
+%
+%      dataArray = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid), (fig_num))
+%
+
+% Grab example data
+fid = 1;
+date = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-41-49_0";
+largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+
+[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
+
+dataStructure = rawData;
+field_string = 'GPS_Time'; % Get the GPS_Time
+sensor_identifier_string = 'GPS'; % Only keep sensors that have GPS in name
+entry_location = 'first_row'; % Keep only the first sensor value
+fid = 1;
+
+% Call the function
+[dataArray,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid));
+
+% Check that results are all cell arrays
+assert(iscell(dataArray))
+assert(iscell(sensorNames))
+
+% Assert they have same length
+assert(length(dataArray)==length(sensorNames))
 
 %% Functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

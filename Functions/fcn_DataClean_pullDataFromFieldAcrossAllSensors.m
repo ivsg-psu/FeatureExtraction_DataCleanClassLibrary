@@ -1,12 +1,11 @@
 function [dataArray, sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, field_string, varargin)
-
 % fcn_DataClean_pullDataFromFieldAcrossAllSensors
 % Pulls a given field's data from all sensors. If the field does not exist,
 % it returns an empty array for that field
 %
 % FORMAT:
 %
-%      dataArray = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid))
+%      dataArray = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, field_string, (sensor_identifier_string), (entry_location), (fid), (fig_num))
 %
 % INPUTS:
 %
@@ -33,6 +32,10 @@ function [dataArray, sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSens
 %      fid: a file ID to print results of analysis. If not entered, no
 %      printing is done. Set fid to 1 to print to the console.
 %
+%      fig_num: a figure number to plot results. If set to -1, skips any
+%      input checking or debugging, no figures will be generated, and sets
+%      up code to maximize speed.
+%
 % OUTPUTS:
 %
 %      dataArray: a data structure in cell array form containing the data
@@ -58,15 +61,44 @@ function [dataArray, sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSens
 % -- wrote the code originally 
 % 2023_07_04: Sean Brennan, sbrennan@psu.edu
 % -- added narginchk
+% 2024_09_10: Sean Brennan, sbrennan@psu.edu
+% -- fixed bug where it breaks if query 1st or last entry in empty field
+% -- added debug modes
+% -- added fig_num input for speed
 
 % TO DO
 
-% Set default fid (file ID) first:
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+%% Debugging and Input checks
 
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==6 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
 
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 %% check input arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -81,10 +113,12 @@ flag_check_inputs = 1; % Flag to perform input checking
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(2,5);
-        
+if 0 == flag_max_speed
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(2,6);
+
+    end
 end
 
 % Does the user want to specify the sensor_identifier_string
@@ -108,7 +142,7 @@ end
 
 % Does the user want to specify the fid?
 fid = 0; % Default is 0 (not printing)
-if 5 == nargin
+if (0==flag_max_speed) && (5 == nargin)
     temp = varargin{end};
     if ~isempty(temp)
         % Check that the FID works
@@ -123,9 +157,14 @@ if 5 == nargin
     end
 end
 
-st = dbstack; 
-if fid~=0
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+% Does user want to specify fig_num?
+flag_do_plots = 0;
+if (0==flag_max_speed) &&  (5<=nargin)
+    temp = varargin{end};
+    if ~isempty(temp)
+        fig_num = temp; %#ok<NASGU>
+        flag_do_plots = 1;
+    end
 end
 
 
@@ -186,13 +225,13 @@ switch entry_location
         % Do nothing, return
     case 'first_row' % saves the first element of the first column, i.e. (1,1)
         for ith_sensor = 1:Nsensors
-            if length(dataArray{ith_sensor}(:,1))>=1
+            if ~isempty(dataArray{ith_sensor}) && length(dataArray{ith_sensor}(:,1))>=1
                 dataArray{ith_sensor} = dataArray{ith_sensor}(1,1);
             end
         end
     case 'last_row' % saves the first element of the first column, i.e. (1,1)
         for ith_sensor = 1:Nsensors
-            if length(dataArray{ith_sensor}(:,1))>=1
+            if ~isempty(dataArray{ith_sensor}) && length(dataArray{ith_sensor}(:,1))>=1
                 dataArray{ith_sensor} = dataArray{ith_sensor}(end,1);
             end
         end
@@ -216,8 +255,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

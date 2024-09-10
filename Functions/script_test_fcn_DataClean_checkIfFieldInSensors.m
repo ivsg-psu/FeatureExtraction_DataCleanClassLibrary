@@ -10,19 +10,21 @@
 %          dataStructure,field_name,...
 %          (flags),(string_any_or_all),(sensors_to_check),(fid))
 
-%% Fill in some silly test data
-initial_test_structure = struct;
-initial_test_structure.cow1.sound = 'moo';
-initial_test_structure.cow2.sound = 'moo moo';
-initial_test_structure.cow3.sound = 'moo moo moo';
-initial_test_structure.pig1.sound  = 'oink';
-initial_test_structure.quiet_pig.weight  = 4;
+
 
 %% CASE 1: basic example - no inputs, not verbose
 flags = []; 
 string_any_or_all = '';
 sensors_to_check = '';
 fid = 0;
+
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.cow1.sound = 'moo';
+initial_test_structure.cow2.sound = 'moo moo';
+initial_test_structure.cow3.sound = 'moo moo moo';
+initial_test_structure.pig1.sound  = 'oink';
+initial_test_structure.quiet_pig.weight  = 4;
 
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(initial_test_structure,'sound',flags, string_any_or_all, sensors_to_check,fid);
 assert(isequal(flags.sound_exists_in_all_sensors,0));
@@ -40,6 +42,14 @@ string_any_or_all = '';
 sensors_to_check = '';
 fid = 1;
 
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.cow1.sound = 'moo';
+initial_test_structure.cow2.sound = 'moo moo';
+initial_test_structure.cow3.sound = 'moo moo moo';
+initial_test_structure.pig1.sound  = 'oink';
+initial_test_structure.quiet_pig.weight  = 4;
+
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(initial_test_structure,'sound',flags, string_any_or_all, sensors_to_check,fid);
 assert(isequal(flags.sound_exists_in_all_sensors,0));
 assert(strcmp(offending_sensor,'quiet_pig'));
@@ -55,6 +65,14 @@ flags = [];
 string_any_or_all = '';
 sensors_to_check = '';
 fid = 1;
+
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.cow1.sound = 'moo';
+initial_test_structure.cow2.sound = 'moo moo';
+initial_test_structure.cow3.sound = 'moo moo moo';
+initial_test_structure.pig1.sound  = 'oink';
+initial_test_structure.quiet_pig.weight  = 4;
 
 % empty matrix field
 modified_test_structure = initial_test_structure;
@@ -86,12 +104,22 @@ string_any_or_all = 'any';
 sensors_to_check = '';
 fid = 1;
 
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.cow1.sound = 'moo';
+initial_test_structure.cow2.sound = 'moo moo';
+initial_test_structure.cow3.sound = 'moo moo moo';
+initial_test_structure.pig1.sound  = 'oink';
+initial_test_structure.quiet_pig.weight  = 4;
+
 % Run with 'any' option - it changes the flag name, and shows at least one
 % sensor passes
+fprintf(1,'\n\nTESTING: any option on default structure: \n');
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(initial_test_structure,'sound',flags, string_any_or_all, sensors_to_check,fid);
 assert(isequal(flags.sound_exists_in_at_least_one_sensor,1));
 assert(strcmp(offending_sensor,''));
 
+fprintf(1,'\n\nTESTING: any option on modified structure: \n');
 modified_test_structure = initial_test_structure;
 modified_test_structure.quiet_pig.sound  = 'oink oink';
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(modified_test_structure,'sound',flags, string_any_or_all, sensors_to_check,fid);
@@ -104,10 +132,12 @@ string_any_or_all = 'all';
 sensors_to_check = '';
 fid = 1;
 
+fprintf(1,'\n\nTESTING: all option on default structure: \n');
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(initial_test_structure,'sound',flags, string_any_or_all, sensors_to_check,fid);
 assert(isequal(flags.sound_exists_in_all_sensors,0));
 assert(strcmp(offending_sensor,'quiet_pig'));
 
+fprintf(1,'\n\nTESTING: all option on modified structure: \n');
 modified_test_structure = initial_test_structure;
 modified_test_structure.quiet_pig.sound  = 'oink oink';
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(modified_test_structure,'sound',flags, string_any_or_all, sensors_to_check,fid);
@@ -119,6 +149,14 @@ flags = [];
 string_any_or_all = '';
 sensors_to_check = 'cow';
 fid = 1;
+
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.cow1.sound = 'moo';
+initial_test_structure.cow2.sound = 'moo moo';
+initial_test_structure.cow3.sound = 'moo moo moo';
+initial_test_structure.pig1.sound  = 'oink';
+initial_test_structure.quiet_pig.weight  = 4;
 
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(initial_test_structure,'sound',flags, string_any_or_all, sensors_to_check,fid);
 assert(isequal(flags.sound_exists_in_all_cow_sensors,1));

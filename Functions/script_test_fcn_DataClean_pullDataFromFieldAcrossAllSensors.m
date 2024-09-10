@@ -7,20 +7,115 @@
 
 %% Set up the workspace
 close all
-clc
+
+
+% DOES NOT WORK?
+% dataStructure = fcn_DataClean_fillTestDataStructure;
+
+
+%% Example call 1 - using only defaults, pull out GPS_Time
+
+% Grab example data
+fid = 1;
+date = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-41-49_0";
+largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
+
+dataStructure = rawData;
+field_string = 'GPS_Time';
+sensor_identifier_string = []; % 'GPS'
+entry_location = [];
+fid = [];
+
+% Call the function
+[dataArray,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid));
+
+% Check that results are all cell arrays
+assert(iscell(dataArray))
+assert(iscell(sensorNames))
+
+% Assert they have same length
+assert(length(dataArray)==length(sensorNames))
+
+%% Example call 2 - pull out GPS_Time from only sensors that have "GPS" in name
+
+% Grab example data
+fid = 1;
+date = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-41-49_0";
+largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+
+[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
+
+dataStructure = rawData;
+field_string = 'GPS_Time';
+sensor_identifier_string = 'GPS';
+entry_location = [];
+fid = [];
+
+% Call the function
+[dataArray,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid));
+
+% Check that results are all cell arrays
+assert(iscell(dataArray))
+assert(iscell(sensorNames))
+
+% Assert they have same length
+assert(length(dataArray)==length(sensorNames))
+
+%% Example call 3 - pull out GPS_Time from only sensors that have "GPS" in name, keeping only 1st data and printing to console
+
+% Grab example data
+fid = 1;
+date = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-41-49_0";
+largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+
+[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
+
+dataStructure = rawData;
+field_string = 'GPS_Time';
+sensor_identifier_string = 'GPS';
+entry_location = 'first_row';
 fid = 1;
 
-%% Define a dataset
-dataStructure = fcn_DataClean_fillTestDataStructure;
+% Call the function
+[dataArray,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid));
 
+% Check that results are all cell arrays
+assert(iscell(dataArray))
+assert(iscell(sensorNames))
 
-%% Example call - grab the names and data from each, and show data is unique
+% Assert they have same length
+assert(length(dataArray)==length(sensorNames))
 
-[data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
-for i_data = 1:length(sensorNames)
-    unique_values = unique(data{i_data});
-    assert(isequal(unique_values,data{i_data}));
-end % Ends for loop
+%% Example call 4 - pull out GPS_Time from only sensors that have "GPS" in name, keeping only last data and printing to console
+
+% Grab example data
+fid = 1;
+date = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-41-49_0";
+largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+
+[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
+
+dataStructure = rawData;
+field_string = 'GPS_Time';
+sensor_identifier_string = 'GPS';
+entry_location = 'last_row';
+fid = 1;
+
+% Call the function
+[dataArray,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid));
+
+% Check that results are all cell arrays
+assert(iscell(dataArray))
+assert(iscell(sensorNames))
+
+% Assert they have same length
+assert(length(dataArray)==length(sensorNames))
+
 
 if 1==0 % BAD error cases start here
 
