@@ -1,4 +1,4 @@
-function [rawData, subPathStrings]  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, varargin)
+function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, varargin)
 % fcn_DataClean_loadMappingVanDataFromFile
 % imports raw data from mapping van bag files, and if a figure number is
 % given, plots a summary that shows the area of data that was collected
@@ -41,9 +41,6 @@ function [rawData, subPathStrings]  = fcn_DataClean_loadMappingVanDataFromFile(d
 %      rawData: a  data structure containing data fields filled for each
 %      ROS topic. If multiple bag files are specified, a cell array of data
 %      structures is returned.
-%
-%     subPathStrings: a string for each rawData load indicating the subpath
-%     where the data was obtained
 %
 % DEPENDENCIES:
 %
@@ -234,57 +231,8 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Main script
-if isempty(bagName)
-    flag_loadEntireDirectory = 1;
-else
-    flag_loadEntireDirectory = 0;
-end
+rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolderString, fid, Flags);
 
-
-
-if 1==flag_loadEntireDirectory
-    folder_list = dir(dataFolderString);
-    num_folders = length(folder_list);
-
-    rawdata_cell = {};
-    skip_count = 0;
-
-
-    for folder_idx = 1:num_folders
-
-        % Check that the list is the file. If it is a directory, the isdir flag
-        % will be 1.
-        folderName = bag_folder_list(folder_idx).name;
-        folderPath = fullfile(dataFolderString,folderName);
-
-        if isfolder(folderPath) && contains(folderName,'mapping_van')
-            % Get the rawData for this
-            rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString,folderName,fid,Flags);
-
-            % Remove the extension
-            rawdata_cell{folder_idx - skip_count} = rawdata_temp;
-        else
-            skip_count = skip_count + 1;
-
-
-        end
-    end
-
-else
-
-    % Make sure bagName is good
-    if contains(bagName,'.bag')
-        bagName_clean = extractBefore(bagName,'.bag');
-    else
-        bagName_clean = bagName;
-    end
-    rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolderString, fid, Flags);
-    subPathStrings = '';
-end
-
-%%
-fprintf(fid,'\nLoading completed\n');
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -297,43 +245,23 @@ fprintf(fid,'\nLoading completed\n');
 %                            __/ |
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if (1==flag_do_plots) && (0==flag_loadEntireDirectory)
-    figure(fig_num);
+if (1==flag_do_plots)
 
-    % Plot some test data
-    LLdata = [rawData.GPS_SparkFun_Front_GGA.Latitude rawData.GPS_SparkFun_Front_GGA.Longitude];
+    % Plot the base station
+    fcn_plotRoad_plotLL([],[],fig_num);
 
-    clear plotFormat
-    plotFormat.Color = [0 0.7 0];
-    plotFormat.Marker = '.';
-    plotFormat.MarkerSize = 20;
-    plotFormat.LineStyle = '-';
-    plotFormat.LineWidth = 3;
+    % % Test the function
+    % clear plotFormat
+    % plotFormat.LineStyle = '-';
+    % plotFormat.LineWidth = 2;
+    % plotFormat.Marker = 'none';
+    % plotFormat.MarkerSize = 5;
+    % plotFormat.Color = fcn_geometry_fillColorFromNumberOrName(2);
 
 
-    % Fill in large colormap data using turbo
-    colorMapMatrix = colormap('turbo');
-    colorMapMatrix = colorMapMatrix(100:end,:); % Keep the scale from green to red
-
-    % Reduce the colormap
-    Ncolors = 20;
-    reducedColorMap = fcn_plotRoad_reduceColorMap(colorMapMatrix, Ncolors, -1);
-
-    if 1==0
-        h_animatedPlot = fcn_plotRoad_animatePlot('plotLL',0,[],LLdata, plotFormat,reducedColorMap,fig_num);
-
-        for ith_time = 1:10:length(LLdata(:,1))
-            fcn_plotRoad_animatePlot('plotLL', ith_time, h_animatedPlot, LLdata, (plotFormat), (reducedColorMap), (fig_num));
-            set(gca,'ZoomLevel',20,'MapCenter',LLdata(ith_time,1:2));
-            pause(0.02);
-        end
-    else
-        Npoints = length(LLdata(:,1));
-        Idata = ((1:Npoints)-1)'/(Npoints-1);
-        fcn_plotRoad_plotLLI([LLdata Idata], (plotFormat), (reducedColorMap), (fig_num));
-        set(gca,'MapCenterMode','auto','ZoomLevelMode','auto');
-    end
-    title(sprintf('%s',bagName_clean),'Interpreter','none');
+    fcn_DataClean_plotRawData(rawData, (bagName), ([]), ([]), (fig_num))
+    h_legend = legend('Base station',bagName);
+    set(h_legend,'Interpreter','none')
 
 end
 

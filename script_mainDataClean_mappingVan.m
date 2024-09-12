@@ -352,21 +352,24 @@ setenv('MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG','0');
 
 %% fcn_DataClean_loadMappingVanDataFromFile
 % Specify the data to use
-% For
-% "mapping_van_2024-07-10-19-36-59_3"
-% "mapping_van_2024-07-10-19-31-08_0"
-% The data can be found in OneDrive IVSG\GitHubMirror\MappingVanDataCollection\ParsedData\2024-07-10\Pittsburgh Mapping Left Lane First Round
+% The data can be found in OneDrive IVSG\GitHubMirror\MappingVanDataCollection\ParsedData
+fig_num = 1;
+figure(fig_num);
+clf;
+
+clear rawData
+
+
 fid = 1;
-date = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-36-59_3";
-largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+dataFolderString = "LargeData";
+dateString = '2024-07-10';
+bagName = "mapping_van_2024-07-10-19-41-49_0";
+bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
+Flags = [];
+rawData = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (fig_num));
 
-% Set up figure numbers
-rawdata_fig_num = 1;
-
-[rawData, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[],rawdata_fig_num);
-
-
+% Check the data
+assert(isstruct(rawData))
 
 
 
@@ -490,6 +493,94 @@ assert(iscell(sensorNames))
 
 % Assert they have same length
 assert(length(dataArray)==length(sensorNames))
+
+%% fcn_DataClean_stichStructures
+% given a cell array of structures, merges all the fields that are common
+% among the structures, and lists also the fields that are not common
+% across all. A "merge" consists of a vertical concatenation of data, e.g.
+% the data rows from structure 1 are stacked above structure 2 which are
+% stacked above structure 3, etc. If the data are scalars, the scalars must
+% match for all the structures - otherwise they are considered not common.
+%
+% To merge structures, the following must be true:
+%
+%      all the merged fields must have the same field names
+%
+%      all the field entries must all be 1x1 scalars with the same scalar
+%      value, OR all the field entries must be NxM vectors where M is the
+%      same across structures, but N may be different across the structures
+%      and/or across fields.
+%
+%      if the fields are themselves substructures, then the stitching
+%      process is called with the substructures also.
+%
+%  The function returns an empty stitchedStructure ([]) if there is no
+%  merged result. If substructures exist and partially agree, the parts
+%  that disagree are indicated withthin uncommonFields using the dot
+%  notation, for example: fieldName.disagreedSubFieldName. This is
+%  recursive so sub-sub-fields would also be checked and similarly denoted
+%  with two dots, etc.
+%
+% FORMAT:
+%
+%      [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cellArrayOfStructures, (fig_num))
+%
+
+
+fig_num = [];
+
+clear s1 s2 s3 cellArrayOfStructures
+
+s1.a = 1*ones(3,1);
+s1.b = 1*ones(3,1);
+s1.c = 1*ones(3,1);
+s1.sub1.a = 1*ones(3,1);
+
+s2.a = 2*ones(3,1);
+s2.c = 2*ones(3,1);
+s2.d = 2*ones(3,1);
+s2.sub1.a = 2*ones(3,1);
+s2.sub1.b = 2*ones(3,1);
+
+s3.a = 3*ones(3,1);
+s3.c = 3*ones(3,1);
+s3.e = 3*ones(3,1);
+s3.f = 3*ones(3,1);
+s3.sub1.a = 3*ones(3,1);
+s3.sub1.c = 3*ones(3,1);
+s3.sub2.a = 3*ones(3,1);
+
+% Call the function
+cellArrayOfStructures{1} = s1;
+cellArrayOfStructures{2} = s2;
+cellArrayOfStructures{3} = s3;
+[stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cellArrayOfStructures, (fig_num));
+
+% Check the output types
+assert(isstruct(stitchedStructure))
+assert(iscell(uncommonFields))
+
+% Check their fields
+temp = fieldnames(stitchedStructure);
+assert(strcmp(temp{1},'a'));
+assert(strcmp(temp{2},'c'));
+assert(strcmp(temp{3},'sub1'));
+temp2 = fieldnames(stitchedStructure.sub1);
+assert(strcmp(temp2{1},'a'));
+
+assert(strcmp(uncommonFields{1},'b'));
+assert(strcmp(uncommonFields{2},'d'));
+assert(strcmp(uncommonFields{3},'e'));
+assert(strcmp(uncommonFields{4},'f'));
+assert(strcmp(uncommonFields{5},'sub2'));
+assert(strcmp(uncommonFields{6},'sub1.b'));
+assert(strcmp(uncommonFields{7},'sub1.c'));
+
+% Check field values
+assert(isequal(stitchedStructure.a,[1*ones(1,3) 2*ones(1,3) 3*ones(1,3)]'))
+assert(isequal(stitchedStructure.c,[1*ones(1,3) 2*ones(1,3) 3*ones(1,3)]'))
+assert(isequal(stitchedStructure.sub1.a,[1*ones(1,3) 2*ones(1,3) 3*ones(1,3)]'))
+
 
 %% Functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

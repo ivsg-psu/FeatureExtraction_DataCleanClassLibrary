@@ -72,11 +72,11 @@ dateString = '2024-07-10';
 bagName = "mapping_van_2024-07-10-19-41-49_0";
 bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
 Flags = [];
-[rawData, subPathStrings] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (fig_num));
+rawData = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (fig_num));
 
 % Check the data
 assert(isstruct(rawData))
-assert(strcmp(subPathStrings,''))
+
 
 
 %% Test 2: Load part of the bag file
@@ -100,12 +100,12 @@ assert(strcmp(subPathStrings,''))
 % 
 % % Check the data
 % assert(isstruct(rawData))
-% assert(strcmp(subPathStrings,''))
+% 
 
 %% Test 3: Load all bag files from a given directory and all subdirectories
-fig_num = 3;
-figure(fig_num);
-clf;
+% fig_num = 3;
+% figure(fig_num);
+% clf;
 
 clear rawData
 
@@ -132,8 +132,71 @@ for ith_folder = 1:NdataSets
     bagPath = fullfile(dataFolderString, bagName);
     rawData{ith_folder} = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (-1)); 
 
+end
+
+
+%% Plot all of them together
+fig_num = 1111;
+figure(fig_num);
+clf;
+
+% Plot the base station
+fcn_plotRoad_plotLL([],[],fig_num);
+
+% Test the function
+clear plotFormat
+plotFormat.LineStyle = '-';
+plotFormat.LineWidth = 2;
+plotFormat.Marker = 'none';
+plotFormat.MarkerSize = 5;
+
+for ith_rawData = 1:length(rawData)
+    bagName = only_directory_filelist(ith_rawData).name;
+    plotFormat.Color = fcn_geometry_fillColorFromNumberOrName(ith_rawData);
+    colorMap = plotFormat.Color;
+    fcn_DataClean_plotRawData(rawData{ith_rawData}, (bagName), (plotFormat), (colorMap), (fig_num))
+end
+
+% h_legend = legend('Base station',bagName);
+% set(h_legend,'Interpreter','none')
+
+
+%% Plot all separately, and save all images
+
+for ith_rawData = 1:length(rawData)
+    fig_num = 1111+ith_rawData;
+    figure(fig_num);
+    clf;
+
+    % Plot the base station
+    fcn_plotRoad_plotLL([],[],fig_num);
+
+    % Plot the data
+    bagName = only_directory_filelist(ith_rawData).name;
+    fcn_DataClean_plotRawData(rawData{ith_rawData}, (bagName), ([]), ([]), (fig_num))
+
+    pause(1);
+
+    % Save the image to file?
+    if 1==0
+        % Make sure bagName is good
+        if contains(bagName,'.')
+            bagName_clean = extractBefore(bagName,'.');
+        else
+            bagName_clean = bagName;
+        end
+
+        Image = getframe(gcf);
+        image_fname = cat(2,char(bagName_clean),'.png');
+        imagePath = fullfile(pwd, 'ImageSummaries',image_fname);
+        if 2~=exist(imagePath,'file')
+            imwrite(Image.cdata, imagePath);
+        end
+    end
 
 end
+
+
 
 %%
 % When did each data set start and stop in time?
@@ -207,15 +270,103 @@ for ith_merged = 1:NmergedFiles
                 else
                     flag_keepGoing = 0;
                 end
-            end
+            end            
+        end        
+    end % Ends while loop
+end % Ends for loop that loops through "starting" bag files
 
-            
+%% For each of the groups of bag files, merge them
+% Plot all of them together
+fig_num_rawMerged = 2222;
+figure(fig_num_rawMerged);
+clf;
+
+% Defined the mergedplotFormat
+clear mergedplotFormat
+mergedplotFormat.LineStyle = '-';
+mergedplotFormat.LineWidth = 2;
+mergedplotFormat.Marker = 'none';
+mergedplotFormat.MarkerSize = 5;
+
+
+
+
+clear legend_entries
+
+for ith_merge = 1:NmergedFiles    
+    indiciesToMerge = mergeIndexList{ith_merge};
+    mergeName = cat(2,shortMergedNames{ith_merge},'_merged');
+    
+    clear cellArrayOfStructures
+    NfilesToMerge = length(indiciesToMerge);
+    cellArrayOfStructures{NfilesToMerge} = struct; %#ok<SAGROW>
+    for ith_dataFile = 1:NfilesToMerge
+        cellArrayOfStructures{ith_dataFile} = rawData{indiciesToMerge(ith_dataFile)};
+    end
+    [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cellArrayOfStructures);
+
+    % Plot the data on the "together" plot
+    bagName = only_directory_filelist(ith_rawData).name;
+    mergedplotFormat.Color = fcn_geometry_fillColorFromNumberOrName(ith_merge);
+    mergedplotFormat.LineWidth = 1*(NmergedFiles - ith_merge + 1);
+    colorMap = mergedplotFormat.Color;
+    fcn_DataClean_plotRawData(stitchedStructure, (mergeName), (mergedplotFormat), (colorMap), (fig_num_rawMerged))
+    if ~exist('legend_entries','var')
+        legend_entries{1} = mergeName;
+    else
+        legend_entries{end+1} = mergeName; %#ok<SAGROW>
+    end
+
+    title('Pittsburgh Site 1, W to E traces');
+    subtitle('2024-07-10 to 2024-07-11')
+    h_legend = legend(legend_entries);
+    set(h_legend,'Interpreter','none')
+    
+    % Plot this individual trace?
+    if 1==1
+        fig_num = fig_num_rawMerged+ith_rawData;
+        figure(fig_num);
+        clf;
+
+        % Plot the base station
+        fcn_plotRoad_plotLL([],[],fig_num);
+
+        % Plot the data
+        fcn_DataClean_plotRawData(stitchedStructure, (mergeName), ([]), ([]), (fig_num))
+
+        pause(1);
+
+        % Save the image to file?
+        if 1==1
+            Image = getframe(gcf);
+            image_fname = cat(2,char(mergeName),'.png');
+            imagePath = fullfile(pwd, 'ImageSummaries',image_fname);
+            if 2~=exist(imagePath,'file')
+                imwrite(Image.cdata, imagePath);
+            end
         end
-        
     end
 end
 
-%%
+% Plot the base station
+fcn_plotRoad_plotLL([],[],fig_num_rawMerged);
+legend_entries{end+1} = 'Base Station';
+
+figure(fig_num_rawMerged)
+title('Pittsburgh Site 1, W to E traces');
+subtitle('2024-07-10 to 2024-07-11')
+h_legend = legend(legend_entries);
+set(h_legend,'Interpreter','none')
+
+% Save the image to file?
+if 1==1
+    Image = getframe(gcf);
+    image_fname = cat(2,'mapping_van_allMerged','.png');
+    imagePath = fullfile(pwd, 'ImageSummaries',image_fname);
+    if 2~=exist(imagePath,'file')
+        imwrite(Image.cdata, imagePath);
+    end
+end
 
 %% Fail conditions
 if 1==0
