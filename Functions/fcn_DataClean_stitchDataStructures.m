@@ -65,23 +65,30 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 N_dataset = length(rawData_cell);
+
 % If rawData_cell only contain one dataset, no stitching needed
 stitched_dataStructure = rawData_cell{1};
+
 % If rawData_cell have multiple dataset, stitch each dataset iteratively
 % until there is only one dataset in the cell array.
 while N_dataset > 1
     dataStructure_initial = rawData_cell{1};
     dataStructure_to_be_added = rawData_cell{2};
+
+
     % Grab the fields of two datasets, and stitch them if they have the
     % same fields
     sensorfields_initial= fieldnames(dataStructure_initial);
     sensorfields_to_be_added = fieldnames(dataStructure_to_be_added);
     sensorfields_initial_sorted = sort(sensorfields_initial);
     sensorfields_to_be_added_sorted = sort(sensorfields_to_be_added);
+
+
     if ~isequal(sensorfields_initial_sorted,sensorfields_to_be_added_sorted)
         error("Two datasets cannot be stitched since they have different fields")
     end
  
+    % Loop through all the fields
     for idx_field = 1:length(sensorfields_initial)
         current_field_struct = dataStructure_initial.(sensorfields_initial{idx_field});
         current_field_struct_to_be_added = sensorfields_to_be_added.(sensorfields_initial{idx_field});
