@@ -271,29 +271,6 @@ for ith_sensor = 1:length(sensor_names_ROS_Time)
    
     fixed_dataStructure.(sensor_name).ROS_Time = rounded_centiSecond_ROS_Time_fixed/100;
 
-    % Loop through subfields
-    % sensor_data = fixed_dataStructure.(sensor_name);
-    % subfieldNames = fieldnames(sensor_data);
-    % for i_subField = 1:length(subfieldNames)
-    %     % Grab the name of the ith subfield
-    %     subFieldName = subfieldNames{i_subField};
-    % 
-    %     if ~iscell(sensor_data.(subFieldName)) % Is it a cell? If yes, skip it
-    %         if length(sensor_data.(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
-    %             % It's an array, make sure it has right length
-    %             if isequal(size(sensor_data.(subFieldName)),original_vector_size)
-    %                 if strcmp(sensor_name,'LIDAR_Sick_Rear') 
-    %                     warning('SICK lidar data processing not yet tested.');
-    %                 else
-    %                     % Resize the data to exact same indicies as trimmed
-    %                     % GPS_Time field, to align with the Trigger_Time
-    %                     fixed_dataStructure.(sensor_name).(subFieldName) = sensor_data.(subFieldName)(start_index:end_index,:);
-    %                 end
-    %             end
-    %         end
-    %     end
-    % 
-    % end % Ends for loop through the subfields
 end
 
 %% Plot the results (for debugging)?

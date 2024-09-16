@@ -130,6 +130,7 @@ fields_need_to_be_interpolated=["ROS_Time",...
                                 "ROS_Time2",...
                                 "ROS_Time3"];
 
+GST_Fields = ["GPS_Time2","ROS_Time2","StdLat","StdLon","StdAlt"];
 %% Interate over GPS units and interpolate data
 
 fixed_dataStructure = dataStructure;
@@ -139,87 +140,52 @@ for idx_gps_unit = 1:N_GPS_Units
     centiSeconds = cell_array_centiSeconds{idx_gps_unit};
     sub_fields = fieldnames(GPSdataStructure);
     N_fields = length(sub_fields);
-    GPS_Time = cell_array_GPS_Time{idx_gps_unit};
-
-    ROS_Time = cell_array_ROS_Time{idx_gps_unit};
-
-    offset_between_GPSTime_and_ROSTime = ROS_Time - GPS_Time;
-    % 
-    start_GPSTime = GPS_Time(1);
-    end_GPSTime = GPS_Time(end);
-    start_GPSTime_centiSeconds = 100*start_GPSTime/centiSeconds*centiSeconds;
-    end_GPSTime_centiSeconds = 100*end_GPSTime/centiSeconds*centiSeconds;
-    newGPSTime_centiSeconds = (start_GPSTime_centiSeconds:centiSeconds:end_GPSTime_centiSeconds).';
-    newGPSTime = newGPSTime_centiSeconds/100;
+   
+    original_GPS_Time_GGA = cell_array_GPS_Time{idx_gps_unit};
+    original_ROS_Time_GGA = cell_array_ROS_Time{idx_gps_unit};
+    %% Find number of GPS_Time in the subfields, if there are multiple GPS_Time, intersections need to be finded
+    N_NMEA_sentences = length(find(contains(sub_fields,"GPS_Time")));
+    if N_NMEA_sentences ~= 1 % NMEA_sentences have the same GPS_Time
+        original_GPS_Time_GST = GPSdataStructure.GPS_Time2;
+        start_GPSTime = max([original_GPS_Time_GGA(1),original_GPS_Time_GST(1)]);
+        end_GPSTime = min([original_GPS_Time_GGA(end),original_GPS_Time_GST(end)]);
+    else
+        start_GPSTime = original_GPS_Time_GGA(1);
+        end_GPSTime = original_GPS_Time_GGA(end);
+    end
+    
+    % offset_between_GPSTime_and_ROSTime = original_ROS_Time_GGA - original_GPS_Time_GGA;
+    % Make sure we choose a time that all the sensors CAN start at. We round
+    % start seconds up, and end seconds down.
+    start_GPSTime_centiSeconds = round(100*start_GPSTime/centiSeconds)*centiSeconds;
+    end_GPSTime_centiSeconds = round(100*end_GPSTime/centiSeconds)*centiSeconds;
+    fixed_GPSTime_centiSeconds = (start_GPSTime_centiSeconds:centiSeconds:end_GPSTime_centiSeconds).';
+    fixed_GPSTime = fixed_GPSTime_centiSeconds/100;
     % Calculate and interpolate X, Y and Z of current GPS unit
     GPS_LLA = [GPSdataStructure.Latitude, GPSdataStructure.Longitude, GPSdataStructure.Altitude];
     GPS_ENU = lla2enu(GPS_LLA,ref_basestation,'ellipsoid');
-    GPS_ENU_interp = interp1(GPS_Time,GPS_ENU,newGPSTime,'linear','extrap');
+    GPS_ENU_interp = interp1(original_GPS_Time_GGA,GPS_ENU,fixed_GPSTime,'linear','extrap');
     GPS_LLA_interp = enu2lla(GPS_ENU_interp,ref_basestation,'ellipsoid');
-    %% Find number of ROS_Time in the subfields, which indicates the number of NMEA messages merged for current GPS unit
-    N_NMEA_sentences = length(find(contains(sub_fields,"ROS_Time")));
-
-    if N_NMEA_sentences == 1
-        GST_Fields = [];
-        VTG_Fields = [];
-        disp("VTG and GST fields do not exist")
-
-    elseif N_NMEA_sentences == 2
-        if all(isnan(GPSdataStructure.SpdOverGrndKmph))
-            disp("VTG fields do not exist")
-            GST_Fields = ["ROS_Time2","GPS_Time2","StdLat","StdLon","StdAlt"];
-            VTG_Fields = [];
-        else
-            GST_Fields = [];
-            VTG_Fields = ["ROS_Time2","SpdOverGrndKmph"];
-            ROS_Time_need_to_be_checked = GPSdataStructure.ROS_Time2;
-            disp("GST field does not exist")
-             % Find matched GPS time for different NMEA sentences
-    GPS_Time_matched = fcn_DataClean_calculateGPSTimeForMergedData(ROS_Time_need_to_be_checked,GPS_Time,centiSeconds,offset_between_GPSTime_and_ROSTime);
-        end
-    elseif N_NMEA_sentences == 3
-        VTG_Fields = ["ROS_Time3","SpdOverGrndKmph"];
-        GST_Fields = ["ROS_Time2","GPS_Time2","StdLat","StdLon","StdAlt"];
-        ROS_Time_need_to_be_checked = GPSdataStructure.ROS_Time3;
-         % Find matched GPS time for different NMEA sentences
-    GPS_Time_matched = fcn_DataClean_calculateGPSTimeForMergedData(ROS_Time_need_to_be_checked,GPS_Time,centiSeconds,offset_between_GPSTime_and_ROSTime);
-    end
-   
-    if any(contains(sub_fields,"GPS_Time2"))
-        original_GPS_Time2 = GPSdataStructure.GPS_Time2;
-    end
+    %% Find number of GPS_Time in the subfields, 
     % Interpolate each field except LLA fields and scalar field
     for idx_field = 1:N_fields
         sub_field = sub_fields{idx_field};
         current_field = GPSdataStructure.(sub_field);
-        if length(current_field)>1
-            if any(strcmp(fields_need_to_be_interpolated,sub_field))
-                interp_method = fcn_DataClean_determineInterpolateMethod(sub_field);
-                if any(strcmp(VTG_Fields,sub_field))
-                    original_GPS_Time = GPS_Time_matched;
-                elseif any(strcmp(GST_Fields,sub_field))
-                    if any(contains(sub_fields,"GPS_Time2"))
-                        original_GPS_Time = original_GPS_Time2;
-                    else
-                        original_GPS_Time = GPS_Time;
-                    end
-                else
-                    original_GPS_Time = GPS_Time;
-                end
-
-                % if length(current_field_unique)>1
-                current_field_interp = interp1(original_GPS_Time,current_field,newGPSTime,interp_method,"extrap");
+        if (length(current_field)>1)&(any(ismember(fields_need_to_be_interpolated,sub_field)))
+            interp_method = fcn_DataClean_determineInterpolateMethod(sub_field);
+            original_GPS_Time = original_GPS_Time_GGA;
+            if (N_NMEA_sentences ~= 1)&(any(ismember(GST_Fields,sub_field)))
+                original_GPS_Time = original_GPS_Time_GST;
+            end
+            current_field_interp = interp1(original_GPS_Time,current_field,fixed_GPSTime,interp_method,"extrap");
                 % else
                     % current_field_interp = current_field_unique;
                 % end
-                GPSdataStructure.(sub_field) = current_field_interp;
-
-            end  
-        end
-        
+            GPSdataStructure.(sub_field) = current_field_interp;
+        end     
     end
     % Fill the position fields
-    GPSdataStructure.GPS_Time = newGPSTime;
+    GPSdataStructure.GPS_Time = fixed_GPSTime;
     GPSdataStructure.Latitude = GPS_LLA_interp(:,1);
     GPSdataStructure.Longitude = GPS_LLA_interp(:,2);
     GPSdataStructure.Altitude = GPS_LLA_interp(:,3);
@@ -227,7 +193,7 @@ for idx_gps_unit = 1:N_GPS_Units
     GPSdataStructure.yNorth = GPS_ENU_interp(:,2);
     GPSdataStructure.zUp = GPS_ENU_interp(:,3);
     GPSdataStructure.centiSeconds = centiSeconds;
-    GPSdataStructure.Npoints = length(newGPSTime);
+    GPSdataStructure.Npoints = length(fixed_GPSTime);
     
     fixed_dataStructure.(GPSUnitName) = GPSdataStructure;
 

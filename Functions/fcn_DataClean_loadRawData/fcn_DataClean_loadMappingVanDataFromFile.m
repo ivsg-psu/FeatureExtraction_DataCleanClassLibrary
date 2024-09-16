@@ -163,11 +163,16 @@ end
 
 % Does user want to specify bagName?
 bagName = [];
+flag_load_entire_directory = 0;
 if 2 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
         bagName = temp;
+        
     end
+end
+if isempty(bagName)
+    flag_load_entire_directory = 1;
 end
 
 % Does user want to specify fid?
@@ -231,8 +236,26 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolderString, fid, Flags);
+if flag_load_entire_directory == 1
+    skip_count = 0;
+    dir_list = dir(dataFolderString);
+    bag_folder_list = dir_list(3:end);
+    num_folders = length(bag_folder_list);
+    
+    for folder_idx = 1:num_folders
+        bagFolderName = bag_folder_list(folder_idx).name;
+        bagFolderPath = fullfile(dataFolderString,bagFolderName);
+        if bag_folder_list(folder_idx).isdir == 1
+            rawData_temp = fcn_INTERNAL_readRawDataFromFolder(bagFolderPath, fid, Flags);
+            rawData{folder_idx - skip_count,1} =  rawData_temp;
+        else
+            skip_count = skip_count + 1;
+        end
+    end
 
+else
+    rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolderString, fid, Flags);
+end
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -417,7 +440,7 @@ for file_idx = 1:num_files
         elseif contains(topic_name, 'GPS_SparkFun_RearLeft_VTG')
 
             SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-            rawData.GPS_SparkFun_LeftRear_VTG = SparkFun_GPS_RearLeft_VTG;
+            rawData.Velocity_Estimate_SparkFun_LeftRear = SparkFun_GPS_RearLeft_VTG;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GST')
 
@@ -430,7 +453,7 @@ for file_idx = 1:num_files
 
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_VTG')
             sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-            rawData.GPS_SparkFun_RightRear_VTG = sparkfun_gps_rear_right_VTG;
+            rawData.Velocity_Estimate_SparkFun_RightRear = sparkfun_gps_rear_right_VTG;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_GST')
             sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
@@ -450,7 +473,7 @@ for file_idx = 1:num_files
 
         elseif contains(topic_name, 'GPS_SparkFun_Front_VTG')
             SparkFun_GPS_Front_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-            rawData.GPS_SparkFun_Front_VTG = SparkFun_GPS_Front_VTG;
+            rawData.Velocity_Estimate_SparkFun_Front = SparkFun_GPS_Front_VTG;
 
 
         elseif contains(topic_name, 'GPS_SparkFun_Front_GST')

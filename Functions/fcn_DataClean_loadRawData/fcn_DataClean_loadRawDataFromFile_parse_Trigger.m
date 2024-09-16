@@ -46,8 +46,7 @@ if strcmp(datatype,'trigger')
     datatable = readtable(file_path,opts);
     Npoints = height(datatable);
     parseTrigger = fcn_DataClean_initializeDataByType(datatype,Npoints);
-    secs = datatable.secs;
-    nsecs = datatable.nsecs;
+
     parseTrigger.mode = datatable.mode;
     time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
     % parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit

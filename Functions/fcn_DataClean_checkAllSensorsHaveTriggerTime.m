@@ -9,9 +9,15 @@ sensors_without_Trigger_Time = [];
 for idx_field = 1:length(fields)
     current_field_struct = dataStructure.(fields{idx_field});
     if ~isempty(current_field_struct)
-        
-       Trigger_Time = current_field_struct.Trigger_Time;
-        
+        try
+            Trigger_Time = current_field_struct.Trigger_Time;
+
+        catch
+            Trigger_Time = current_field_struct.Trigger_time;
+            all_sensors_have_trigger_time = 0;
+        end
+  
+      
     end
     if all(isnan(Trigger_Time))
         all_sensors_have_trigger_time = 0;
