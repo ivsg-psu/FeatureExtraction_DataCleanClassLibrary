@@ -119,26 +119,37 @@ array_centiSeconds = cell2mat(cell_array_centiSeconds);
 max_sample_centiSeconds = max(array_centiSeconds);
 %% Find Trigger Time
 [cell_array_Trigger_Time_start,sensor_names_Trigger_Time]       = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS','first_row');
-[cell_array_Trigger_Time_end,~]       = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS','last_row');
+[cell_array_original_Trigger_Time,~]       = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS');
+[cell_array_Trigger_Time_end,~]     = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS','last_row');
 %% Find ROS Time
 [cell_array_ROS_Time_start,sensor_names_ROS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS','first_row');
+[cell_array_original_ROS_Time,~]       = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS');
 [cell_array_ROS_Time_end,~]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS','last_row');
 % Confirm that both results are identical
 if ~isequal(sensor_names_ROS_Time,sensor_names_Trigger_Time)
     error('Sensors were found that were missing either GPS_Time or ROS_Time. Unable to calculate Trigger_Times.');
 end
-%%
-% Convert Trigger_Time_start to a column matrix
+%% Create common ROS_Time and Trigger_Time (GPS_Time) for GPS units
 array_Trigger_Time_start = max(cell2mat(cell_array_Trigger_Time_start));
 array_Trigger_Time_end = min(cell2mat(cell_array_Trigger_Time_end));
 
-array_ROS_Time_start = max(cell2mat(cell_array_ROS_Time_start));
-array_ROS_Time_end = min(cell2mat(cell_array_ROS_Time_end));
+% Since GPS data have been trimmed, grab the entire range of the ROS_Time
+array_ROS_Time_start = min(cell2mat(cell_array_ROS_Time_start));
+array_ROS_Time_end = max(cell2mat(cell_array_ROS_Time_end));
 
-%% Create common ROS_Time and GPS_Time for GPS units
 Trigger_Time_GPS_common = (array_Trigger_Time_start:max_sample_centiSeconds/100:array_Trigger_Time_end).';
 ROS_Time_GPS_common = (array_ROS_Time_start:max_sample_centiSeconds/100:array_ROS_Time_end).';
 
+%% Calculate offset between Trigger_Time (GPS_Time) and ROS_Time for GPS units
+array_timeOffset_ROS_Trigger = [];
+for idx_GPS_unit = 1:length(sensor_names_Trigger_Time)
+   original_Trigger_Time = cell_array_original_Trigger_Time{idx_GPS_unit};
+   original_ROS_Time = cell_array_original_ROS_Time{idx_GPS_unit};
+   timeOffset_ROS_Trigger = original_ROS_Time - original_Trigger_Time;
+   array_timeOffset_ROS_Trigger = [array_timeOffset_ROS_Trigger, timeOffset_ROS_Trigger];
+   
+end
+array_timeOffset_ROS_Trigger_ave = mean(array_timeOffset_ROS_Trigger,2);
 %% Step 2: Calculate Trigger_Time for other sensors
 N_sensors = size(sensors_without_Trigger_Time,1);
 fixed_dataStructure = dataStructure;
@@ -155,7 +166,7 @@ for idx_sensor = 1:N_sensors
             encoderBox_diag_field_name = sensorName;
         end
         text_displaying = sprintf('Trigger_time of %s will be calculated later',sensorName);
-        disp(text_displaying)
+        disp(text_displaying);
 
     elseif contains(lower(sensorName),'trigger')
         % Calculate Trigger_Time for trigger box
@@ -164,26 +175,17 @@ for idx_sensor = 1:N_sensors
         Triggered_indices = find(strcmp(modeID,'L'));
         if isempty(Triggered_indices)
             Triggered_indices = find(strcmp(modeID,'S'));
-        end
-        %     % Use -1 to fill trigger time
-        %     sensorFields.Trigger_Time = -1*ones(size(modeID));
-        %     % if trigBox_has_diag_field == 1
-        %     %     diag_sensorFields = dataStructure.(trigBox_diag_field_name);
-        %     %     diag_sensorFields.Trigger_Time = -1*ones(size(modeID));
-        %     %     fixed_dataStructure.(trigBox_diag_field_name) = diag_sensorFields;
-        %     % end
-        % 
-        % 
-        % else
-            
+        end            
             Triggered_modeCount = sensorFields.modeCount;
             ROS_Time = sensorFields.ROS_Time;
+            centiSeconds = sensorFields.centiSeconds;
             ROS_Time_triggered  = ROS_Time(Triggered_indices);
 
-            ROS_Time_triggered_start = ROS_Time_triggered(1);
-            time_diff = abs(ROS_Time_GPS_common-ROS_Time_triggered_start);
-            [~, idx_closest] = min(time_diff);
-            Trigger_Time_start = Trigger_Time_GPS_common(idx_closest);
+            ROS_Time_offsets = pdist2(ROS_Time_triggered,ROS_Time_GPS_common,'euclidean');
+            [~,closest_idxs] = min(ROS_Time_offsets,[],2);
+            Trigger_start_idx = closest_idxs(1);
+            
+            Trigger_Time_start = Trigger_Time_GPS_common(Trigger_start_idx);
             Trigger_Time_calculated = Trigger_Time_start + Triggered_modeCount(Triggered_indices) - 1;
             Trigger_Time(Triggered_indices) = Trigger_Time_calculated;
             sensorFields.Trigger_Time = Trigger_Time;
@@ -196,10 +198,19 @@ for idx_sensor = 1:N_sensors
     elseif contains(lower(sensorName),'encoder')
         % Calculate Trigger_Time for encoder box
         modeID = sensorFields.Mode;
+        centiSeconds = sensorFields.centiSeconds;
         Trigger_Time = nan(N_points,1);
         Triggered_indices = find(strcmp(modeID,'T'));
         ROS_Time = sensorFields.ROS_Time;
-        Trigger_Time(Triggered_indices) = ROS_Time(Triggered_indices);
+        ROS_Time_triggered  = ROS_Time(Triggered_indices);
+        ROS_Time_offsets = pdist2(ROS_Time_triggered,ROS_Time_GPS_common,'euclidean');
+         [~,closest_idxs] = min(ROS_Time_offsets,[],2);
+        Trigger_start_idx = closest_idxs(1);
+ 
+        Trigger_Time_start = Trigger_Time_GPS_common(Trigger_start_idx);
+     
+        Trigger_Time_calculated = Trigger_Time_start+centiSeconds/100*(Triggered_indices-1);
+        Trigger_Time(Triggered_indices) = Trigger_Time_calculated;
         sensorFields.Trigger_Time = Trigger_Time;
         if EncoderBox_has_diag_field == 1
             diag_sensorFields = dataStructure.(encoderBox_diag_field_name);
@@ -218,19 +229,48 @@ for idx_sensor = 1:N_sensors
         for idx_scan = 1:N_scans
             pointCloud = pointCloud_cell{idx_scan};
             % this is results stucture from old decoder
-            
+            % The unit of time offset is microsecond
             if size(pointCloud,2) == 6
-                time_offsets = pointCloud(:,6);
+                time_offsets = pointCloud(:,6)*10^-6;
                 
             % this is results stucture from new decoder
             elseif size(pointCloud,2) == 8
-                time_offsets = pointCloud(:,5);
+                time_offsets = pointCloud(:,5)*10^-6;
             end
             LiDARPoints_Time = ROS_Time(idx_scan,:) + time_offsets;
-            Trigger_time(idx_scan,1) = min(LiDARPoints_Time);
-            sensorFields.Trigger_Time = Trigger_time;
+            ROS_Time_corrected = min(LiDARPoints_Time);
+            ROS_Time_offsets = abs(ROS_Time_corrected - ROS_Time_GPS_common);
+            [~,closest_idx] = min(ROS_Time_offsets,[],1);
+            timeOffset_ROS_Trigger_closest = array_timeOffset_ROS_Trigger_ave(closest_idx,:);
+            Trigger_time(idx_scan,1) = ROS_Time_corrected - timeOffset_ROS_Trigger_closest;
+            
         end
+        sensorFields.Trigger_Time = Trigger_time;
 
+    elseif contains(lower(sensorName),'velocity')
+        original_ROS_Time = sensorFields.ROS_Time;
+        centiSeconds = sensorFields.centiSeconds;
+        start_ROS_Time = original_ROS_Time(1);
+        end_ROS_Time = original_ROS_Time(end);
+        % if abs(start_ROS_Time-ROS_Time_GPS_common(1)) <= 0.05
+        %     ROS_Time_calculated = ROS_Time_GPS_common;
+        % else
+        ROS_Time_calculated = (start_ROS_Time:centiSeconds/100:end_ROS_Time).';
+        % end
+        ROS_Time_offsets = pdist2(ROS_Time_calculated,ROS_Time_GPS_common,'euclidean');
+        [closest_offsets,closest_idxs] = min(ROS_Time_offsets,[],2);
+        % ROS_Time_calculated_valid = ROS_Time_calculated(closest_offsets<=0.05);
+        % valid_closest_idxs = closest_idxs(closest_offsets<=0.05);
+        Trigger_start_idx = closest_idxs(1); 
+        Trigger_Time_start = Trigger_Time_GPS_common(Trigger_start_idx);     
+        Triggered_indices = (1:length(ROS_Time_GPS_common)).';
+        Trigger_Time_calculated = Trigger_Time_start+centiSeconds/100*(Triggered_indices-1);
+
+        sensorFields.Trigger_Time = Trigger_Time_calculated;
+        sensorFields.Npoints = length(Trigger_Time_calculated);
+        SpdOverGrndKmph = sensorFields.SpdOverGrndKmph;
+        sensorFields.SpdOverGrndKmph = interp1(original_ROS_Time,SpdOverGrndKmph,ROS_Time_GPS_common, "linear","extrap");
+        sensorFields.ROS_Time = ROS_Time_GPS_common;
     end
 
     fixed_dataStructure.(sensorName) = sensorFields;

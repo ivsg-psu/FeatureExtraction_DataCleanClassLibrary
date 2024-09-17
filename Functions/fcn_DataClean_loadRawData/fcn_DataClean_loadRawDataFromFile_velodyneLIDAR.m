@@ -65,7 +65,7 @@ if strcmp(datatype,'lidar3d')
     Velodyne_Lidar_structure.ROS_Time           = host_time;  % This is the ROS time that the data arrived into the bag
     Velodyne_Lidar_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     Velodyne_Lidar_structure.Npoints            = Nscans;  % This is the number of data points in the array
-    
+    Velodyne_Lidar_structure.Device_Time        = device_time;
     % Save the data structure and layout information first, these data will
     % be used to process the actual point cloud data later
     % 2D structure of the point cloud. If the cloud is unordered, 

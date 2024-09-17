@@ -104,7 +104,6 @@ end
 
 start_Trigger_Time_all_sensors = max(start_Trigger_Times);
 end_Trigger_Time_all_sensors = min(end_Trigger_Times);
-
 time_range = [start_Trigger_Time_all_sensors, end_Trigger_Time_all_sensors];
 sensorfields = fieldnames(dataStructure);
 locked_dataStructure = dataStructure;
@@ -114,13 +113,23 @@ for idx_field = 1:length(sensorfields)
     current_field_struct = dataStructure.(sensor_field);
     trimmed_field_struct = current_field_struct;
     if isfield(current_field_struct,time_type)
-        current_field_struct_ROS_Time = current_field_struct.(time_type);
+        current_field_struct_Time = current_field_struct.(time_type);
     else
-        current_field_struct_ROS_Time = [];
+        current_field_struct_Time = [];
     end
-    valid_idxs = (current_field_struct_ROS_Time>=min(time_range))&(current_field_struct_ROS_Time<=max(time_range));
+ 
+    start_idx = find(current_field_struct_Time>min(time_range),1,'first');
+    end_idx = find((current_field_struct_Time<max(time_range)),1,'last');
+    valid_idxs = (start_idx:end_idx).';
     topicfields = fieldnames(current_field_struct);
     N_topics = length(topicfields);
+
+
+    % figure(13)
+    % clf
+    % plot(current_field_struct_Time)
+    % hold on
+    % plot(start_Trigger_Time_all_sensors:end_Trigger_Time_all_sensors)
     for idx_topic = 1:N_topics
         current_topic_content = current_field_struct.(topicfields{idx_topic});
         if length(current_topic_content) > 1

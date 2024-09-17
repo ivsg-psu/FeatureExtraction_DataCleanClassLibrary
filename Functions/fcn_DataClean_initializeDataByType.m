@@ -359,6 +359,7 @@ switch lower(dataType)
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.Device_Time        = default_value;
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         dataStructure.Height             = default_value; 
