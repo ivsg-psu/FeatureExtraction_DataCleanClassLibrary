@@ -92,6 +92,9 @@
 % -- added fcn_DataClean_stichStructures
 % -- deleted fcn_DataClean_stitchDataStructures (replaced by above)
 % -- added PlotRoad_v2024_09_14
+% -- added fcn_DataClean_loadMappingVanDataFromFile
+% -- added fcn_DataClean_loadRawDataFromDirectories
+% -- added fcn_DataClean_mergeRawDataStructures
 
 %
 % Known issues:

@@ -166,9 +166,6 @@ flags_initialIsStructure = fcn_INTERNAL_whichFieldsAreStructures(cellArrayOfStru
 
 % Is a merge needed?
 if N_datasets>1
-    if fid
-        fprintf(fid,'\n');
-    end
 
     % Check for overlapping field names along primary fields in the initial
     % data structure, that these are all in the subsequent structures. In
@@ -309,14 +306,15 @@ end
 
 flags_initialAllOverlap = flags_allShared(1:length(sensorfields_initial),:);
 
+fieldsNotCommon = find(0==flags_allShared);
 
 
 %% Print out failures?
-if fid
+if fid && ~isempty(fieldsNotCommon)
     Nheader = 20;
     Nfields = 30;
 
-    fprintf(fid,'CHECKING FIELD NAME AGREEMENT:\n');
+    fprintf(fid,'\n\nCHECKING FIELD NAME AGREEMENT:\n');
 
     % Print the fields
     fcn_INTERNAL_printFields(fid, sprintf('\tFields:'),sensorfields_allStructures,(1:length(sensorfields_allStructures))',Nheader,Nfields);
@@ -340,11 +338,10 @@ if fid
     end
     fprintf(fid,'\n');
 
-
 end
 
 %% Fill in the uncommon fields
-fieldsNotCommon = find(0==flags_allShared);
+
 uncommonFields = cell(length(fieldsNotCommon),1);
 for ith_field = 1:length(fieldsNotCommon)
     uncommonFields{ith_field} = sensorfields_allStructures{fieldsNotCommon(ith_field)};
@@ -355,9 +352,7 @@ for ith_field = 1:length(fieldsNotCommon)
             fprintf(fid,'\tThe field %s is marked for deletion because it does not exist across all structures.\n',uncommonFields{ith_field});
         end
     end
-end
 
-if fid
     fprintf(fid,'\n');
 end
 
@@ -386,8 +381,10 @@ scalarValues              = nan(NfieldsInitial,N_datasets);
 matrixFlags_isScalars     = zeros(NfieldsInitial,N_datasets);
 matrixFlags_isString      = zeros(NfieldsInitial,N_datasets);
 matrixFlags_stringsSame   = ones(NfieldsInitial,N_datasets);
+matrixFlags_isCell        = zeros(NfieldsInitial,N_datasets);
+matrixFlags_cellsSame     = ones(NfieldsInitial,N_datasets);
 referenceStrings          = cell(NfieldsInitial,1);
-
+referenceCells            = cell(NfieldsInitial,1);
 
 %% Fill in all the column/row dimensions, and scalar values
 % Do this for each structure, using only the overlapping fields
@@ -398,7 +395,7 @@ equality_Rows             = ones(NoverlappingFields,1);
 equality_Columns          = ones(NoverlappingFields,1);
 equality_Scalars          = ones(NoverlappingFields,1);
 equality_Strings          = ones(NoverlappingFields,1);
-
+equality_Cells            = ones(NoverlappingFields,1);
 
 for ith_structure = 1:N_datasets
     for jth_overlappingField = 1:NoverlappingFields
@@ -408,18 +405,34 @@ for ith_structure = 1:N_datasets
 
         % Is reference NOT a structure?
         if ~isstruct(dataToCheck)
-            if isstring(dataToCheck) || ischar(dataToCheck)
-                 sizeOfData = [1 1];    
-                 matrixFlags_isString(indexFieldToCheck,ith_structure) = 1;
-                 if 1==ith_structure
-                     referenceStrings{indexFieldToCheck,1} = char(dataToCheck);
-                 else
-                     if ~strcmp(char(dataToCheck),referenceStrings{indexFieldToCheck,1})
-                         matrixFlags_stringsSame(indexFieldToCheck,ith_structure) = 0;
-                     end
-                 end
-                 matrixFlags_isScalars(indexFieldToCheck,ith_structure) = 1;
+            if iscell(dataToCheck) 
+                % This is a cell array, usually of strings
+                matrixFlags_isCell(indexFieldToCheck,ith_structure) = 1;
+                sizeOfData = size(dataToCheck);
+                if all(sizeOfData==1)
+                    if 1==ith_structure
+                        referenceCells{indexFieldToCheck,1} = dataToCheck;
+                    else
+                        if ~isequal(dataToCheck,referenceCells{indexFieldToCheck,1})
+                            matrixFlags_cellsSame(indexFieldToCheck,ith_structure) = 0;
+                        end
+                    end
+                end
+ 
+            elseif isstring(dataToCheck) || ischar(dataToCheck)
+                % This is a string
+                sizeOfData = [1 1];
+                matrixFlags_isString(indexFieldToCheck,ith_structure) = 1;
+                if 1==ith_structure
+                    referenceStrings{indexFieldToCheck,1} = char(dataToCheck);
+                else
+                    if ~strcmp(char(dataToCheck),referenceStrings{indexFieldToCheck,1})
+                        matrixFlags_stringsSame(indexFieldToCheck,ith_structure) = 0;
+                    end
+                end
+                matrixFlags_isScalars(indexFieldToCheck,ith_structure) = 1;
             else
+                % This is a number
                 sizeOfData = size(dataToCheck);
                 if all(sizeOfData==1)
                     scalarValues(indexFieldToCheck,ith_structure) = dataToCheck;
@@ -436,11 +449,13 @@ for ith_structure = 1:N_datasets
     temp_equality_Columns     = fieldColumnDimensions(:,1)==fieldColumnDimensions(:,ith_structure);
     temp_equality_Scalars     = 1.0*(scalarValues(:,1)==scalarValues(:,ith_structure)) + 1.0*all(isnan([scalarValues(:,1) scalarValues(:,ith_structure)]),2);
     temp_equality_Strings     = matrixFlags_stringsSame(:,1)==matrixFlags_stringsSame(:,ith_structure);
+    temp_equality_Cells       = matrixFlags_cellsSame(:,1)==matrixFlags_cellsSame(:,ith_structure);
 
     equality_Rows             = equality_Rows.*temp_equality_Rows(fieldsOverlappingIndicies,1);
     equality_Columns          = equality_Columns.*temp_equality_Columns(fieldsOverlappingIndicies,1);
     equality_Scalars          = equality_Scalars.*temp_equality_Scalars(fieldsOverlappingIndicies,1);
     equality_Strings          = equality_Strings.*temp_equality_Strings(fieldsOverlappingIndicies,1);
+    equality_Cells            = equality_Cells.*temp_equality_Cells(fieldsOverlappingIndicies,1);
 end
 
 % Check that all columns are the same in designation
@@ -450,118 +465,53 @@ flags_sameScalars = 0*input_flags_initialAllOverlap;
 flags_sameScalars(fieldsOverlappingIndicies) = 1;
 flags_sameScalars = flags_sameScalars.*indexFieldsThatAreScalars;
 
-% Print out results?
-if fid
+%% Compare equalities to find if any are zero
+overallEquality = equality_Rows .* equality_Columns .* equality_Scalars .* equality_Strings .* equality_Cells;
+
+
+%% Print out results?
+if fid && any(0==overallEquality)
 
     fprintf(fid,'CHECKING VECTOR DIMENSION AGREEMENT:\n');
     Nheader = 20;
     Nfields = 30;
 
-    % Print the row results
-    fprintf(fid,'Row dimension test results: \n');
-    fcn_INTERNAL_printFields(fid, sprintf('\tCommonField:'),sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields)
-    for ith_structure = 1:N_datasets
-        stringHeader = sprintf('\tStructure %.0d:',ith_structure);
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-        for jth_overlappingField = 1:NoverlappingFields
-            indexFieldToCheck = fieldsOverlappingIndicies(jth_overlappingField);
-            stringField = sprintf('%.0f',fieldRowDimensions(indexFieldToCheck,ith_structure));
-            fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-        end
-        fprintf(fid,'\n');
-    end
-    stringHeader = sprintf('\tEquality?');
-    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-    for jth_overlappingField = 1:NoverlappingFields
-        stringField = sprintf('%.0f',equality_Rows(jth_overlappingField,1));
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-    end
-    fprintf(fid,'\n');
+    % Print row results
+    fcn_INTERNAL_printSummary(fid, 'Row dimension test results', fieldRowDimensions, equality_Rows, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
 
+    % Print column results
+    fcn_INTERNAL_printSummary(fid, 'Column dimension test results', fieldColumnDimensions, equality_Columns, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
 
-    % Print the column results
-    fprintf('Column dimension test results: \n');
-    fcn_INTERNAL_printFields(fid, sprintf('\tCommonField:'),sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields)
-    for ith_structure = 1:N_datasets
-        stringHeader = sprintf('\tStructure %.0d:',ith_structure);
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-        for jth_overlappingField = 1:NoverlappingFields
-            indexFieldToCheck = fieldsOverlappingIndicies(jth_overlappingField);
-            stringField = sprintf('%.0f',fieldColumnDimensions(indexFieldToCheck,ith_structure));
-            fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-        end
-        fprintf(fid,'\n');
-    end
-    stringHeader = sprintf('\tEquality?');
-    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-    for jth_overlappingField = 1:NoverlappingFields
-        stringField = sprintf('%.0f',equality_Columns(jth_overlappingField,1));
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-    end
-    fprintf(fid,'\n');
+    % Print if scalar
+    fcn_INTERNAL_printSummary(fid, 'Scalar present? ', matrixFlags_isScalars, equality_Scalars, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
 
     % Print the scalar results
-    fprintf('Scalar equivalence test results: \n');
-    fcn_INTERNAL_printFields(fid, sprintf('\tCommonField:'),sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields)
-    for ith_structure = 1:N_datasets
-        stringHeader = sprintf('\tStructure %.0d:',ith_structure);
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-        for jth_overlappingField = 1:NoverlappingFields
-            indexFieldToCheck = fieldsOverlappingIndicies(jth_overlappingField);
-            stringField = sprintf('%.0f',scalarValues(indexFieldToCheck,ith_structure));
-            fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-        end
-        fprintf(fid,'\n');
-    end
-    stringHeader = sprintf('\tEquality?');
-    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-    for jth_overlappingField = 1:NoverlappingFields
-        stringField = sprintf('%.0f',equality_Scalars(jth_overlappingField,1));
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-    end
-    fprintf(fid,'\n');
+    fcn_INTERNAL_printSummary(fid, 'Scalar equivalence test results', scalarValues, equality_Scalars, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
+
+    % Print if a string
+    fcn_INTERNAL_printSummary(fid, 'String present? ', matrixFlags_isString, equality_Strings, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
 
     % Print the string results
-    fprintf('String equivalence test results: \n');
-    fcn_INTERNAL_printFields(fid, sprintf('\tCommonField:'),sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields)
-    for ith_structure = 1:N_datasets
-        stringHeader = sprintf('\tStructure %.0d:',ith_structure);
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-        for jth_overlappingField = 1:NoverlappingFields
-            indexFieldToCheck = fieldsOverlappingIndicies(jth_overlappingField);
-            stringField = sprintf('%.0f',matrixFlags_stringsSame(indexFieldToCheck,ith_structure));
-            fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-        end
-        fprintf(fid,'\n');
-    end
-    stringHeader = sprintf('\tEquality?');
-    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-    for jth_overlappingField = 1:NoverlappingFields
-        stringField = sprintf('%.0f',equality_Strings(jth_overlappingField,1));
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-    end
-    fprintf(fid,'\n');
+    fcn_INTERNAL_printSummary(fid, 'String equivalence test results', matrixFlags_stringsSame, equality_Strings, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
+
+    % Print if a cell
+    fcn_INTERNAL_printSummary(fid, 'Cell present? ', matrixFlags_isCell, equality_Cells, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
+
+    % Print the cell results
+    fcn_INTERNAL_printSummary(fid, 'Cell equivalence test results', matrixFlags_cellsSame, equality_Cells, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
+
+    % Print the overall results
+    fcn_INTERNAL_printSummary(fid, 'Overall equality?', [], overallEquality, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields);
+
 end
 
 
-%% Compare equalities to find if any are zero
-ovarallEquality = equality_Rows .* equality_Columns .* equality_Scalars .* equality_Strings;
 
-if fid
-    fprintf('Overall equality?\n')
-    stringHeader = sprintf('\t  ');
-    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
-    for jth_overlappingField = 1:NoverlappingFields
-        stringField = sprintf('%.0f',ovarallEquality(jth_overlappingField,1));
-        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
-    end
-    fprintf(fid,'\n');
-end
-
+%% Remove fields that are not type equal
 flags_initialAllOverlap = input_flags_initialAllOverlap;
 
-if any(0==ovarallEquality)
-    badEqualities = find(0==ovarallEquality);
+if any(0==overallEquality)
+    badEqualities = find(0==overallEquality);
     for ith_badEquality = 1:length(badEqualities)
         indexFieldToCheck = fieldsOverlappingIndicies(badEqualities(ith_badEquality));
         fieldToCheck = sensorfields_initial{indexFieldToCheck};
@@ -719,4 +669,36 @@ for jth_overlappingField = 1:length(fieldsOverlappingIndicies)
 end
 fprintf(fid,'\n');
 
+end % Ends fcn_INTERNAL_printFields
+
+
+%% fcn_INTERNAL_printSummary
+function fcn_INTERNAL_printSummary(fid, summaryTitleString,matrixToPrint,equality_result, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields)
+
+
+fprintf(fid,'%s: \n',summaryTitleString);
+fcn_INTERNAL_printFields(fid, sprintf('\tCommonField:'),sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields)
+
+% Print structure results
+if ~isempty(matrixToPrint)
+    for ith_structure = 1:N_datasets
+        stringHeader = sprintf('\tStructure %.0d:',ith_structure);
+        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
+        for jth_overlappingField = 1:NoverlappingFields
+            indexFieldToCheck = fieldsOverlappingIndicies(jth_overlappingField);
+            stringField = sprintf('%.0f',matrixToPrint(indexFieldToCheck,ith_structure));
+            fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
+        end
+        fprintf(fid,'\n');
+    end
 end
+
+% Print equality results
+stringHeader = sprintf('\tEquality?');
+fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
+for jth_overlappingField = 1:NoverlappingFields
+    stringField = sprintf('%.0f',equality_result(jth_overlappingField,1));
+    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
+end
+fprintf(fid,'\n');
+end % Ends fcn_INTERNAL_printSummary
