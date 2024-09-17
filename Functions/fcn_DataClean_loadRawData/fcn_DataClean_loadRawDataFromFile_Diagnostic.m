@@ -63,7 +63,7 @@ if strcmp(datatype, 'diagnostic')
             % diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.ROS_Time           = time_stamp;
             diagnostic_structure.centiSeconds       = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             diagnostic_structure.Seq                = datatable.seq;
             diagnostic_structure.err_failed_mode_count             = datatable.err_failed_mode_count; 
             diagnostic_structure.err_failed_checkInformation       = datatable.err_failed_checkInformation;
@@ -84,8 +84,8 @@ if strcmp(datatype, 'diagnostic')
             % diagnostic_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             % diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.ROS_Time           = time_stamp;
-            diagnostic_structure.centiSeconds       = 1;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            diagnostic_structure.centiSeconds       = 1;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)            
+            % diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             diagnostic_structure.Seq                = datatable.seq;
             diagnostic_structure.err_wrong_element_length_encoder  = datatable.err_wrong_element_length;
             diagnostic_structure.err_bad_element_structure         = datatable.err_bad_element_structure;
@@ -103,7 +103,7 @@ if strcmp(datatype, 'diagnostic')
             % diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.ROS_Time           = time_stamp;
             diagnostic_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % Data related to trigger box and encoder box
             diagnostic_structure.Seq                = datatable.seq;  % This is the sequence of the topic
             % Data related to SparkFun GPS Diagnostic
@@ -123,7 +123,7 @@ if strcmp(datatype, 'diagnostic')
             diagnostic_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
             diagnostic_structure.ROS_Time           = time_stamp;
             diagnostic_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % diagnostic_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % Data related to trigger box and encoder box
             diagnostic_structure.Seq                = datatable.seq;  % This is the sequence of the topic
             % Data related to SparkFun GPS Diagnostic

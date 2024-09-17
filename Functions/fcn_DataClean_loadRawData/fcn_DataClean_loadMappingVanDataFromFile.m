@@ -1,17 +1,34 @@
-function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, varargin)
+function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, Identifiers, varargin)
 % fcn_DataClean_loadMappingVanDataFromFile
 % imports raw data from mapping van bag files, and if a figure number is
 % given, plots a summary that shows the area of data that was collected
 %
 % FORMAT:
 %
-%      rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, (bagName), (fid), (Flags), (fig_num))
+%      rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, Identifiers, (bagName), (fid), (Flags), (fig_num))
 %
 % INPUTS:
 %
 %      dataFolderString: the folder name where the bag files are located as a
 %      sub-directory within the LargeData subdirectory of the
 %      DataCleanClass library.
+%
+%      Identifiers: a required structure indicating the labels to attach to
+%      the files that are being loaded. The structure has the following
+%      format:
+%              
+%             clear Identifiers
+%             Identifiers.Project = 'PennDOT ADS Workzones'; % This is the project sponsoring the data collection
+%             Identifiers.ProjectStage = 'OnRoad'; % Can be 'Simulation', 'TestTrack', or 'OnRoad'
+%             Identifiers.WorkZoneScenario = 'I376ParkwayPitt'; % Can be one of the ~20 scenarios, see key
+%             Identifiers.WorkZoneDescriptor = 'WorkInRightLaneOfUndividedHighway'; % Can be one of the 20 descriptors, see key
+%             Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
+%             Identifiers.DataSource = 'MappingVan'; % Can be 'MappingVan', 'AV', 'CV2X', etc. see key
+%             Identifiers.AggregationType = 'PreRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
+%             Identifiers.SourceBagFileName =''; % This is filled in automatically for each file
+%
+%      For a list of allowable Identifiers, see:
+%      https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_LoadWorkZone
 %
 %      (OPTIONAL INPUTS)
 %
@@ -99,7 +116,7 @@ function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, v
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
 flag_max_speed = 0;
-if (nargin==5 && isequal(varargin{end},-1))
+if (nargin==6 && isequal(varargin{end},-1))
     flag_do_debug = 0; % % % % Flag to plot the results for debugging
     flag_check_inputs = 0; % Flag to perform input checking
     flag_max_speed = 1;
@@ -142,7 +159,7 @@ end
 if 0 == flag_max_speed
     if flag_check_inputs == 1
         % Are there the right number of inputs?
-        narginchk(1,5);
+        narginchk(2,6);
 
         % Check if dataFolderString is a directory. If directory is not there, warn
         % the user.
@@ -163,7 +180,7 @@ end
 
 % Does user want to specify bagName?
 bagName = [];
-if 2 <= nargin
+if 3 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
         bagName = temp;
@@ -172,7 +189,7 @@ end
 
 % Does user want to specify fid?
 fid = 1;
-if 3 <= nargin
+if 4 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
         fid = temp;
@@ -187,7 +204,7 @@ Flags.flag_do_load_Velodyne = 0;
 Flags.flag_do_load_cameras = 0;
 Flags.flag_select_scan_duration = 0;
 
-if 4 <= nargin
+if 5 <= nargin
     temp = varargin{3};
     if ~isempty(temp)
         Flags = temp;
@@ -212,7 +229,7 @@ end
 
 % Does user want to specify fig_num?
 flag_do_plots = 0;
-if (0==flag_max_speed) &&  (5<=nargin)
+if (0==flag_max_speed) &&  (6<=nargin)
     temp = varargin{end};
     if ~isempty(temp)
         fig_num = temp;
@@ -232,7 +249,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 rawData = fcn_INTERNAL_readRawDataFromFolder(dataFolderString, fid, Flags);
+if strcmp(dataFolderString(end),filesep)
+    dataFolderStringCorrect = dataFolderString(1:end-1);
+else
+    dataFolderStringCorrect = dataFolderString;
+end
 
+% Grab the data's name
+folderNames = split(dataFolderStringCorrect,filesep);
+Identifiers.SourceBagFileName = folderNames{end};
+rawData.Identifiers = Identifiers;
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -528,7 +554,9 @@ for file_idx = 1:num_files
 
 
         else
-            fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',topic_name);
+            if fid
+                fprintf(fid,'\t\tWARNING: Topic not processed: %s\n',topic_name);
+            end
 
         end
     end % Ends check if the directory list is a file

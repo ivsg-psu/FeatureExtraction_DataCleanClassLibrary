@@ -57,7 +57,7 @@ if strcmp(datatype, 'imu')
             % IMU_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             IMU_data_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             % IMU_data_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % IMU_data_structure.IMUStatus          = default_value; 
 
            
@@ -107,7 +107,7 @@ if strcmp(datatype, 'imu')
             % IMU_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             IMU_data_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             % IMU_data_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % IMU_data_structure.IMUStatus          = default_value; 
 
            
@@ -158,7 +158,7 @@ if strcmp(datatype, 'imu')
             % IMU_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             IMU_data_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             % IMU_data_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % IMU_data_structure.IMUStatus          = default_value;  
             IMU_data_structure.XAccel             = datatable.x; 
             % adis_IMU_filtered_rpy.XAccel_Sigma       = default_value; 
@@ -180,7 +180,7 @@ if strcmp(datatype, 'imu')
             % IMU_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
             IMU_data_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
             % IMU_data_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-            IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+            % IMU_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
             % IMU_data_structure.IMUStatus          = default_value; 
 
            

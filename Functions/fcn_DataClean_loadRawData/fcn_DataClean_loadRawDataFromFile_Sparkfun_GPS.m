@@ -37,7 +37,7 @@ if strcmp(datatype,'gps')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
-    Npoints = height(datatable);
+    % Npoints = height(datatable);
     % SparkFun_GPS_data_structure = struct; % fcn_DataClean_initializeDataByType(datatype,Npoints);
     
     if contains(topic_name,"GGA")
@@ -46,15 +46,15 @@ if strcmp(datatype,'gps')
         GPSmicrosecs = datatable.GPSMicroSecs; % For data collected after 2023-06-06, new fields GPSMicroSecs are added
         time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
         
-        secs = datatable.secs;
-        nsecs = datatable.nsecs;
+        % secs = datatable.secs;
+        % nsecs = datatable.nsecs;
 
         SparkFun_GPS_data_structure.GPS_Time           = GPSsecs + GPSmicrosecs*10^-6;  % This is the GPS time, UTC, as reported by the unit
         % SparkFun_GPS_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
         % SparkFun_GPS_data_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
          SparkFun_GPS_data_structure.ROS_Time           = time_stamp;  % This is the ROS time that the data arrived into the bag
         SparkFun_GPS_data_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        SparkFun_GPS_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+        % SparkFun_GPS_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
         SparkFun_GPS_data_structure.Latitude           = datatable.Latitude;  % The latitude [deg]
         SparkFun_GPS_data_structure.Longitude          = datatable.Longitude;  % The longitude [deg]
         SparkFun_GPS_data_structure.Altitude           = datatable.Altitude;  % The altitude above sea level [m]
@@ -92,13 +92,13 @@ if strcmp(datatype,'gps')
      %rawdata.SparkFun_GPS_RearLeft = SparkFun_GPS_RearLeft;
     elseif contains(topic_name,"VTG")
         SparkFun_GPS_data_structure = struct;
-        secs = datatable.secs;
-        nsecs = datatable.nsecs;
+        % secs = datatable.secs;
+        % nsecs = datatable.nsecs;
         time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
         % SparkFun_GPS_data_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
         SparkFun_GPS_data_structure.ROS_Time           = time_stamp;
         SparkFun_GPS_data_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        SparkFun_GPS_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+        % SparkFun_GPS_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
         SparkFun_GPS_data_structure.SpdOverGrndKmph    = datatable.SpdOverGrndKmph;
     elseif contains(topic_name,"GST")
         SparkFun_GPS_data_structure = struct;
@@ -107,12 +107,12 @@ if strcmp(datatype,'gps')
         time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
         SparkFun_GPS_data_structure.GPS_Time           = GPSsecs + GPSmicrosecs*10^-6;  % This is the GPS time, UTC, as reported by the unit
         % SparkFun_GPS_data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        secs = datatable.secs;
-        nsecs = datatable.nsecs;
+        % secs = datatable.secs;
+        % nsecs = datatable.nsecs;
         % SparkFun_GPS_data_structure.ROS_Time           = secs + nsecs*10^-9;
         SparkFun_GPS_data_structure.ROS_Time           = time_stamp;
         SparkFun_GPS_data_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-        SparkFun_GPS_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+        % SparkFun_GPS_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
         SparkFun_GPS_data_structure.StdLat             = datatable.StdLat;
         SparkFun_GPS_data_structure.StdLon             = datatable.StdLon;
         SparkFun_GPS_data_structure.StdAlt             = datatable.StdAlt;

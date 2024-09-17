@@ -42,7 +42,7 @@ if strcmp(datatype,'camera')
     Camera_structure.Seq                = image_hash_table.seq;
     Camera_structure.ROS_Time           = secs + nsecs*10^-9;  % This is the ROS time that the data arrived into the bag
     Camera_structure.centiSeconds       = 4;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    Camera_structure.Npoints            = N_images;  % This is the number of data points in the array
+    % Camera_structure.Npoints            = N_images;  % This is the number of data points in the array
     
     % Save the data structure and layout information first, these data will
     % be used to process the actual point cloud data later

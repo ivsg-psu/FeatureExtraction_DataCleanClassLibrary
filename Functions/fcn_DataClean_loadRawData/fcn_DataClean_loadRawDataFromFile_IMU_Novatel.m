@@ -44,7 +44,7 @@ if strcmp(datatype,'imu')
     % IMU_Novatel_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
     IMU_Novatel_structure.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
     % IMU_Novatel_structure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    IMU_Novatel_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+    % IMU_Novatel_structure.Npoints            = height(datatable);  % This is the number of data points in the array
     % IMU_Novatel_structure.IMUStatus          = default_value;
     IMU_Novatel_structure.XAccel             = datatable.x_2;
     % IMU_Novatel_structure.XAccel_Sigma       = default_value;

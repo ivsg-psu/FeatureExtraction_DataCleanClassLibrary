@@ -64,7 +64,7 @@ if strcmp(datatype,'gps')
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
     Hemisphere_DGPS.ROS_Time           = datatable.rosbagTimestamp;  % This is the ROS time that the data arrived into the bag
     Hemisphere_DGPS.centiSeconds       = 5;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    Hemisphere_DGPS.Npoints            = Npoints;  % This is the number of data points in the array
+    % Hemisphere_DGPS.Npoints            = Npoints;  % This is the number of data points in the array
     Hemisphere_DGPS.Latitude           = datatable.Latitude;  % The latitude [deg]
     Hemisphere_DGPS.Longitude          = datatable.Longitude;  % The longitude [deg]
     Hemisphere_DGPS.Altitude           = datatable.Height;  % The altitude above sea level [m]
