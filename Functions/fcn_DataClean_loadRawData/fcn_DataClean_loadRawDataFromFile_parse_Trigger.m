@@ -54,12 +54,12 @@ if strcmp(datatype,'trigger')
     % parseTrigger.ROS_Time                          = secs + nsecs*(10^-9);  % This is the ROS time that the data arrived into the bag
     parseTrigger.ROS_Time  = time_stamp;
     parseTrigger.centiSeconds                      = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    parseTrigger.Npoints                           = height(datatable);  % This is the number of data points in the array
+    % parseTrigger.Npoints                           = height(datatable);  % This is the number of data points in the array
     mode_cell = datatable.mode;  
     mode_string = string(mode_cell);
     mode_string_clean = erase(mode_string,"''");
     mode_string_clean = erase(mode_string_clean,"""");
-    parseTrigger.mode                              = mode_string_clean;     % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
+    parseTrigger.Mode                              = mode_string_clean;     % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
     parseTrigger.modeCount                         = datatable.mode_counts; % This is the count of the Locked mode (empty for other mode)
     parseTrigger.adjone                            = datatable.adjone;   % This is phase adjustment magnitude relative to the calculated period of the output pulse
     parseTrigger.adjtwo                            = datatable.adjtwo;   % This is phase adjustment magnitude relative to the calculated period of the output pulse

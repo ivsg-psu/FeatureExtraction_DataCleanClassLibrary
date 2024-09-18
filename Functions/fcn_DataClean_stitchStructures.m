@@ -1,5 +1,5 @@
-function [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cellArrayOfStructures, varargin)
-% fcn_DataClean_stichStructures
+function [stitchedStructure, uncommonFields] = fcn_DataClean_stitchStructures(cellArrayOfStructures, varargin)
+% fcn_DataClean_stitchStructures
 % given a cell array of structures, merges all the fields that are common
 % among the structures, and lists also the fields that are not common
 % across all. A "merge" consists of a vertical concatenation of data, e.g.
@@ -28,7 +28,7 @@ function [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cel
 %
 % FORMAT:
 %
-%      [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cellArrayOfStructures, (fid), (fig_num))
+%      [stitchedStructure, uncommonFields] = fcn_DataClean_stitchStructures(cellArrayOfStructures, (fid), (fig_num))
 %
 % INPUTS:
 %
@@ -41,7 +41,8 @@ function [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cel
 %
 %      fig_num: a figure number to plot results. If set to -1, skips any
 %      input checking or debugging, no figures will be generated, and sets
-%      up code to maximize speed.
+%      up code to maximize speed. When used recursively, fig_num can be a
+%      string to specify the "parent" input.
 %
 % OUTPUTS:
 %
@@ -57,7 +58,7 @@ function [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cel
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_stichStructures
+%     See the script: script_test_fcn_DataClean_stitchStructures
 %     for a full test suite.
 %
 % This function was written on 2024_09_11 by S. Brennan
@@ -352,7 +353,8 @@ for ith_field = 1:length(fieldsNotCommon)
             fprintf(fid,'\tThe field %s is marked for deletion because it does not exist across all structures.\n',uncommonFields{ith_field});
         end
     end
-
+end
+if fid
     fprintf(fid,'\n');
 end
 
@@ -568,7 +570,7 @@ for ith_structure = 2:N_datasets
             if fid
                 fprintf(fid,'\n\nCHECKING SUBSTRUCTURE: %s\n',fieldToMerge);
             end
-            [stitchedSubStructure, uncommonSubFields] = fcn_DataClean_stichStructures(cellArrayOfSubStructures,fid);
+            [stitchedSubStructure, uncommonSubFields] = fcn_DataClean_stitchStructures(cellArrayOfSubStructures,fid);
 
             if isempty(stitchedSubStructure)
                 flags_initialAllOverlap(indexFieldToMerge) = 0;
