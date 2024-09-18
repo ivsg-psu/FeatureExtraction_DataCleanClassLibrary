@@ -341,7 +341,7 @@ for ith_mergedData = 1:NmergedFiles
 
         cellArrayOfStructures{ith_dataFile} = rawDataCellArray{indiciesToMerge(ith_dataFile)};
     end
-    [stitchedStructure, uncommonFields] = fcn_DataClean_stichStructures(cellArrayOfStructures,fid);
+    [stitchedStructure, uncommonFields] = fcn_DataClean_stitchStructures(cellArrayOfStructures,fid);
 
     % Fill in the updated identifiers
     stitchedStructure.Identifiers = mergedIdentifiers;

@@ -64,7 +64,7 @@ plotFlags.fig_num_plotAllRawIndividually = 4444;
 % Call the data loading function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
 
-
+%%
 %%%%%%%%%%%%%%
 % Prepare for merging
 % Specify the nearby time
