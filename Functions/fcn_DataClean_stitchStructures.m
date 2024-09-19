@@ -409,13 +409,17 @@ for ith_structure = 1:N_datasets
  
             elseif isstring(dataToCheck) || ischar(dataToCheck)
                 % This is a string
-                sizeOfData = [1 1];
-                matrixFlags_isString(indexFieldToCheck,ith_structure) = 1;
-                if 1==ith_structure
-                    referenceStrings{indexFieldToCheck,1} = char(dataToCheck);
-                else
-                    if ~strcmp(char(dataToCheck),referenceStrings{indexFieldToCheck,1})
-                        matrixFlags_stringsSame(indexFieldToCheck,ith_structure) = 0;
+                sizeOfData = [1 1]; % Force this into a scalar type
+                
+                % Is it only a single row of strings?
+                if 1==length(dataToCheck(:,1))
+                    matrixFlags_isString(indexFieldToCheck,ith_structure) = 1;
+                    if 1==ith_structure
+                        referenceStrings{indexFieldToCheck,1} = char(dataToCheck);
+                    else
+                        if ~strcmp(char(dataToCheck),referenceStrings{indexFieldToCheck,1})
+                            matrixFlags_stringsSame(indexFieldToCheck,ith_structure) = 0;
+                        end
                     end
                 end
                 matrixFlags_isScalars(indexFieldToCheck,ith_structure) = 1;
@@ -553,10 +557,7 @@ for ith_structure = 2:N_datasets
             cellArrayOfSubStructures{1} = stitchedStructure.(fieldToMerge);
             cellArrayOfSubStructures{2} = cellArrayOfStructures{ith_structure}.(fieldToMerge);
 
-            if fid                
-                fprintf(fid,'\nTESTING %s\n',parentString);
-                fprintf(fid,'CHECKING SUBSTRUCTURE MERGING OF FIELD %s BETWEEN 1 AND %.0d\n',fieldToMerge, ith_structure);
-            end
+            % Perform stitch
             [stitchedSubStructure, uncommonSubFields] = fcn_DataClean_stitchStructures(cellArrayOfSubStructures,fid, cat(2,parentString,'.',fieldToMerge));
 
             if isempty(stitchedSubStructure)
@@ -567,7 +568,8 @@ for ith_structure = 2:N_datasets
             end
 
             % Update the uncommon field list?
-            if ~isempty(uncommonSubFields)
+            if ~isempty(uncommonSubFields)              
+                flag_printStructureInfo = 0;
                 for ith_subfield = 1:length(uncommonSubFields)
                     nameToAdd = cat(2,fieldToMerge,'.',uncommonSubFields{ith_subfield});
                     % Make sure this is not already added
@@ -575,6 +577,7 @@ for ith_structure = 2:N_datasets
                         % NuncommonFields = NuncommonFields+1;
                         uncommonFields{end+1} = nameToAdd; %#ok<AGROW>
                         if fid
+                            flag_printStructureInfo = 1;
                             if 1==fid
                                 fcn_DebugTools_cprintf('*Red','\tThe field %s is marked as uncommon as all its subfields in the first structure do not match the subfields in the %.0d structure.\n',uncommonFields{end},ith_structure);
                             else
@@ -583,7 +586,14 @@ for ith_structure = 2:N_datasets
                         end
                     end
                 end
-            end
+                if flag_printStructureInfo
+                    if fid
+                        fprintf(fid,'THE ABOVE OCCURRED WHEN TESTING %s\n',parentString);
+                        fprintf(fid,'DURING SUBSTRUCTURE MERGING OF FIELD %s BETWEEN 1 AND %.0d\n',fieldToMerge, ith_structure);
+                    end
+    
+                end
+            end % Ends if not empty
         end
     end
 end

@@ -339,7 +339,12 @@ for ith_mergedData = 1:NmergedFiles
             mergedIdentifiers = rawDataCellArray{indiciesToMerge(1)}.Identifiers;            
         end
 
-        cellArrayOfStructures{ith_dataFile} = rawDataCellArray{indiciesToMerge(ith_dataFile)};
+        % Remove the Identifiers field, as these do NOT ever match between
+        % rawData files
+        structureToAdd = rawDataCellArray{indiciesToMerge(ith_dataFile)};
+        structureToAdd = rmfield(structureToAdd,'Identifiers');
+
+        cellArrayOfStructures{ith_dataFile} = structureToAdd;
     end
     [stitchedStructure, uncommonFields] = fcn_DataClean_stitchStructures(cellArrayOfStructures,fid);
 

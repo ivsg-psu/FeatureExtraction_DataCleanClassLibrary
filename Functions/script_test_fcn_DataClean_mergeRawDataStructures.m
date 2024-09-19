@@ -46,7 +46,7 @@ Flags = [];
 % List which directory/directories need to be loaded
 clear rootdirs
 rootdirs{1} = fullfile(cd,'LargeData','2024-07-10');
-rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');
+% rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');
 
 % List what will be saved
 saveFlags.flag_saveMatFile = 1;
@@ -64,7 +64,6 @@ plotFlags.fig_num_plotAllRawIndividually = 4444;
 % Call the data loading function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
 
-%%
 %%%%%%%%%%%%%%
 % Prepare for merging
 % Specify the nearby time
