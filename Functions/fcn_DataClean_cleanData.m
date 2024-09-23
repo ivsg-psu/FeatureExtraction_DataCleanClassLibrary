@@ -233,6 +233,7 @@ while 1==flag_stay_in_main_loop
         nextDataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(nextDataStructure);
         flag_trim_with_ROSTime = 0;
     end
+    
     %% Name consistency checks start here
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
