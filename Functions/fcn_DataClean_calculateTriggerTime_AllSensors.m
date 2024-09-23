@@ -224,9 +224,11 @@ for idx_sensor = 1:N_sensors
         sensorFields.Trigger_Time = sensorFields.ROS_Time;
 
     elseif contains(lower(sensorName),'velodyne')
-
+        
         LiDAR_centiSeconds = sensorFields.centiSeconds;
         ROS_Time = sensorFields.ROS_Time;
+        N_scans = length(ROS_Time);
+        LiDAR_Trigger_time = nan(N_scans,1);
         ROS_Time_diff = pdist2(ROS_Time,ROS_Time_GPS_common,"euclidean");
         [~, closestIndex] = min(ROS_Time_diff, [], 2);
         GPS_start_idx = closestIndex(1);
@@ -237,8 +239,8 @@ for idx_sensor = 1:N_sensors
         LiDAR_Trigger_time_start = Trigger_Time_GPS_common(GPS_start_idx);
         LiDAR_centiSeconds_second = LiDAR_centiSeconds/100;
         LiDAR_Trigger_time_end = LiDAR_centiSeconds_second*(N_valid_scans-1)+LiDAR_Trigger_time_start;
-        LiDAR_Trigger_time = (LiDAR_Trigger_time_start:LiDAR_centiSeconds_second:LiDAR_Trigger_time_end).';
-
+        LiDAR_Trigger_time_calculated = (LiDAR_Trigger_time_start:LiDAR_centiSeconds_second:LiDAR_Trigger_time_end).';
+        LiDAR_Trigger_time(LiDAR_start_idx:LiDAR_end_idx,:) = LiDAR_Trigger_time_calculated;
         sensorFields.Trigger_Time = LiDAR_Trigger_time;
 
     elseif contains(lower(sensorName),'velocity')
