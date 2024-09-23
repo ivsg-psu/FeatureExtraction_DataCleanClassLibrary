@@ -1,4 +1,4 @@
-function rawdata_cell = fcn_DataClean_loadMappingVanDataFromMultipleBags(dataFolder,date,fid,varargin)
+function rawdata_cell = fcn_DataClean_loadMappingVanDataFromMultipleBags(dataFolder,date,Identifiers,fid,varargin)
 
 % imports raw data from mapping van bag files
 %
@@ -89,7 +89,7 @@ end
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    narginchk(3,5);
+    narginchk(4,6);
         
     % Check if dataFolder is a directory. If directory is not there, warn
     % the user.
@@ -107,15 +107,15 @@ if flag_check_inputs
 end
 
 
-if nargin <= 3
+if nargin <= 4
     dataFolder = fullfile(pwd, dataFolder, date); % No sub-folder
     flag_do_load_all_data = 1;
-elseif nargin == 4
+elseif nargin == 5
     Flags = varargin{1};
     dataFolder = fullfile(pwd, dataFolder, date);
     flag_do_load_all_data = Flags.flag_do_load_all_data;
     
-elseif nargin == 5
+elseif nargin == 6
     Flags = varargin{1};
     flag_do_load_all_data = Flags.flag_do_load_all_data;
     laneName = varargin{2};
@@ -168,7 +168,7 @@ for folder_idx = folder_range
         % Get the file name
         % date = 'none';
       
-        rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(dataFolder,bagFolderName,fid,Flags);
+        rawdata_temp = fcn_DataClean_loadMappingVanDataFromFile(bagFolderPath,Identifiers,[],fid,Flags);
      
         % Remove the extension
         rawdata_cell{folder_idx - skip_count} = rawdata_temp;

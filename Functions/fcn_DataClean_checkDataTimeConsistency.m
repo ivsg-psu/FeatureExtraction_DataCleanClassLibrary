@@ -1,4 +1,4 @@
-function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,varargin)
+function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(dataStructure,varargin)
 
 % fcn_DataClean_checkDataTimeConsistency
 % Checks a given dataset to verify whether data meets key time consistency
@@ -170,6 +170,7 @@ end
 
 % Initialize flags
 flags = struct;
+sensors_without_Trigger_Time = '';
 % flags.GPS_Time_exists_in_at_least_one_sensor = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -536,6 +537,25 @@ else
     disp("ROS_Time is rounded correctly")
 end
 
+%% Check if all sensors have Trigger Time
+% Check that the ROS Time, when rounded to the nearest sampling interval,
+% matches the Trigger time.
+%    ### ISSUES with this:
+%    * The data on some sensors are triggered, inlcuding the GPS sensors
+%    which are self-triggered
+%    * If the rounding does not work, this indicates a problem in the ROS
+%    master
+%    ### DETECTION:
+%    * Round the ROS Time and compare to the Trigger_Times
+%    ### FIXES:
+%    * Remove and interpolate time field if not strictly increasing
+[flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,flags);
+if 0==flags.all_sensors_have_trigger_time
+    warning('Not all sensors have Trigger Time')
+    return
+else
+    disp("All sensors have Trigger Time")
+end
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

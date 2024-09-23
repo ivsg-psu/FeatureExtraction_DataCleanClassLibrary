@@ -210,13 +210,13 @@ for i_data = 1:length(sensor_names)
     % disp(Rounded_Trigger_Time_samples_centiSeconds(1:10));
    
     % Make sure it counts strictly up ()
-    % if ~isequal(Rounded_Field_Time_samples_centiSeconds,Rounded_Trigger_Time_samples_centiSeconds)
-    %     flags_data_rounds_correctly = 0;
-    % end
-    % Temp version
-    if ~all(mod(Rounded_Field_Time_samples_centiSeconds, 1)==0)
+    if ~isequal(Rounded_Field_Time_samples_centiSeconds,Rounded_Trigger_Time_samples_centiSeconds)
         flags_data_rounds_correctly = 0;
     end
+    % Temp version
+    % if ~all(mod(Rounded_Field_Time_samples_centiSeconds, 1)==0)
+    %     flags_data_rounds_correctly = 0;
+    % end
         
     flags.(flag_name) = flags_data_rounds_correctly;
 

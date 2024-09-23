@@ -15,6 +15,7 @@ function fixed_dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructu
 %
 %      (OPTIONAL INPUTS)
 %
+%
 %      fid: a file ID to print results of analysis. If not entered, no
 %      output is given (FID = 0). Set fid to 1 for printing to console.
 %
@@ -62,27 +63,20 @@ flag_check_inputs = 1; % Flag to perform input checking
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    if nargin < 1 || nargin > 3
+    if nargin < 1 || nargin > 2
         error('Incorrect number of input arguments')
     end
         
 end
 
 % Does the user want to specify the sensor_type?
-sensor_type = '';
-if 2 <= nargin
-    temp = varargin{1};
-    if ~isempty(temp)
-        sensor_type = temp;
-    end
-end
-        
+sensor_type = 'gps';
 
 % Does the user want to specify the fid?
 % Check for user input
 fid = 0; % Default case is to NOT print to the console
 
-if 3 == nargin
+if 2 == nargin
     temp = varargin{end};
     if ~isempty(temp)
         % Check that the FID works
@@ -230,7 +224,6 @@ end
 %% Step 2: Round ROS_Time to centiSeconds
 
 [cell_array_ROS_Time,sensor_names_ROS_Time]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time',sensor_type);
-[cell_array_Trigger_Time,~]         = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time',sensor_type);
 
 % Initialize the result:
 fixed_dataStructure = dataStructure;
@@ -245,9 +238,7 @@ for ith_sensor = 1:length(sensor_names_ROS_Time)
     end
     % Grab centiSeconds
     centiSeconds = cell_array_centiSeconds{ith_sensor};
-    % Grab Trigger_Time
-    Trigger_Time_original = cell_array_Trigger_Time{ith_sensor};
-    rounded_centiSecond_Trigger_Time = round(100*Trigger_Time_original/centiSeconds)*centiSeconds;
+    % Grab Trigger_Time  
     
     
     % Calculate round ROS_Time
@@ -258,17 +249,26 @@ for ith_sensor = 1:length(sensor_names_ROS_Time)
     rounded_centiSecond_ROS_Time_diff = diff(rounded_centiSecond_ROS_Time);
     ROS_Time_strictly_ascends = all(rounded_centiSecond_ROS_Time_diff>0);
     rounded_centiSecond_ROS_Time_fixed = rounded_centiSecond_ROS_Time;
-
     if ROS_Time_strictly_ascends == 0
-        turning_indices = find(rounded_centiSecond_ROS_Time_diff ~= centiSeconds);
-        all_turning_indices = [turning_indices, turning_indices+1];
-        indices_need_to_be_refilled = all_turning_indices((all_turning_indices>0)&(all_turning_indices<=length(rounded_centiSecond_ROS_Time)));
-        unique_indices = unique(indices_need_to_be_refilled,'stable');
+        flat_indices = find(rounded_centiSecond_ROS_Time_diff == 0);
+        turning_indices = find(rounded_centiSecond_ROS_Time_diff > centiSeconds);
+        indices_need_to_be_refilled = [flat_indices;turning_indices];
+        for time_index = 1:length(flat_indices)
+            flat_index = flat_indices(time_index);
+            [~,closest_index] = min(abs(turning_indices - flat_index));
+            turning_index = turning_indices(closest_index);
+            if turning_index>flat_index
+                wrong_indices = (flat_index:1:turning_index).';
+            else
+                wrong_indices = (turning_index:1:flat_index).';
+            end
+            indices_need_to_be_refilled = [indices_need_to_be_refilled; wrong_indices];
+        end
+ 
+        unique_indices = unique(indices_need_to_be_refilled,'sorted');
         rounded_centiSecond_ROS_Time_fixed(unique_indices) = nan;
         rounded_centiSecond_ROS_Time_fixed = fillmissing(rounded_centiSecond_ROS_Time_fixed,'linear');
-    end
-
-   
+    end 
     fixed_dataStructure.(sensor_name).ROS_Time = rounded_centiSecond_ROS_Time_fixed/100;
 
 end

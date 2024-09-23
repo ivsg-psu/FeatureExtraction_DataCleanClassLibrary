@@ -56,6 +56,9 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 % Revision history
 % 2024_09_09 by S. Brennan
 % -- wrote the code originally pulling it out of the main script
+% 2024_09_23 by X. Cao
+% -- add fcn_DataClean_trimDataToCommonStartEndTriggerTimes to the while
+% loop
 
 
 %% Debugging and Input checks
@@ -228,12 +231,6 @@ while 1==flag_stay_in_main_loop
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
-    %% Trim data with ROS time?
-    if flag_trim_with_ROSTime == 1
-        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(nextDataStructure);
-        flag_trim_with_ROSTime = 0;
-    end
-    
     %% Name consistency checks start here
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
@@ -307,7 +304,7 @@ while 1==flag_stay_in_main_loop
         flag_keep_checking = 0;
     end
     
-%     dataset{2} = merged_dataStructure;
+
 %%
 % field_names = fieldnames(dataStructure.GPS_SparkFun_RightRear)
 %     %%
@@ -420,7 +417,7 @@ while 1==flag_stay_in_main_loop
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
     end
     
-    fid = 1;
+
 
     %% Check if GPS_Time_has_no_repeats_in_GPS_sensors
     %    ### ISSUES with this:
@@ -730,7 +727,7 @@ while 1==flag_stay_in_main_loop
     %% Check that ROS_Time_rounds_correctly_to_Trigger_Time 
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
         warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
-        nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,'GPS',fid);
+        nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
         flag_keep_checking = 0;
     end
     
@@ -745,14 +742,14 @@ while 1==flag_stay_in_main_loop
     if (1==flag_keep_checking) && (0==time_flags.all_sensors_have_trigger_time)
         warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
         nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure,sensors_without_Trigger_Time);
-        % dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure,'GPS',fid);
-        % flag_keep_checking = 0;
+        flag_all_trigger_time_calculated = 1;
+        flag_keep_checking = 0;
     end
     %%
   
     %% Start to work on other sensors, start with Velodyne LiDAR
-    if (1==flag_keep_checking)
-        nextDataStructure = fcn_DataClean_matchOtherSensorsToGPSUnits(nextDataStructure,fid);
+    if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)
+        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(nextDataStructure,fid);
         flag_keep_checking = 0;
     end
 
@@ -817,7 +814,7 @@ while 1==flag_stay_in_main_loop
       
     % Check if all the name_flags work, so we can exit!
     name_flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(name_flags);
-    
+ 
     if 0 == name_flag_stay_in_main_loop
         % Check if all the time_flags work, so we can exit!
         flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(time_flags);
@@ -835,7 +832,7 @@ end
 main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
 debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure;
 cleanDataStruct = currentDataStructure;
-
+subPathStrings = '';
 %% Save cleanData
 
 
@@ -1265,7 +1262,7 @@ cleanDataStruct = currentDataStructure;
 % %
 
 %%
-fprintf(fid,'\Cleaning completed\n');
+fprintf(fid,'Cleaning completed\n');
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,6 +1,6 @@
 function fixed_dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dataStructure,sensors_without_Trigger_Time)
 
-% fcn_DataClean_recalculateTriggerTimes
+% fcn_DataClean_calculateTriggerTime_AllSensors
 % Recalculates the Trigger_Time field for all sensors. This is done by
 % using the centiSeconds field and the effective start and end GPS_Times,
 % determined by taking the maximum start time and minimum end time over all
@@ -8,7 +8,7 @@ function fixed_dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dat
 %
 % FORMAT:
 %
-%      fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,(fid))
+%      fixed_dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dataStructure,sensors_without_Trigger_Time,(fid))
 %
 % INPUTS:
 %
@@ -17,9 +17,8 @@ function fixed_dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dat
 %
 %      (OPTIONAL INPUTS)
 %
-%      sensor_type: a string to indicate the type of sensor to query, for
-%      example 'gps' will query all sensors whose name contains 'gps'
-%      somewhere in the name
+%      sensors_without_Trigger_Time: a string to indicate the sensors
+%      missing Trigger Time
 %
 %      fid: a file ID to print results of analysis. If not entered, the
 %      console (FID = 1) is used.
@@ -35,20 +34,23 @@ function fixed_dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dat
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_recalculateTriggerTimes
+%     See the script: script_test_fcn_DataClean_calculateTriggerTime_AllSensors
 %     for a full test suite.
 %
-% This function was written on 2023_06_29 by S. Brennan
-% Questions or comments? sbrennan@psu.edu 
+% This function was written on 2024_08_29 by X.Cao
+% Questions or comments? xfc5113@psu.edu
 
 % Revision history:
 %     
-% 2023_06_29: sbrennan@psu.edu
+% 2024_08_29: xfc5113@psu.edu
 % -- wrote the code originally 
-% 2023_06_30: sbrennan@psu.edu
-% -- added the sensor_type field
+% 2024_09_22: xfc5113@psu.edu
+% -- fix error for Velodyne LiDAR
 
-% TO DO
+% TO DO:
+%
+% Trigger time for sick lidar need to be recalculated
+
 
 % Set default fid (file ID) first:
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
@@ -222,30 +224,22 @@ for idx_sensor = 1:N_sensors
         sensorFields.Trigger_Time = sensorFields.ROS_Time;
 
     elseif contains(lower(sensorName),'velodyne')
-        pointCloud_cell = sensorFields.PointCloud;
-        N_scans = N_points;
+
+        LiDAR_centiSeconds = sensorFields.centiSeconds;
         ROS_Time = sensorFields.ROS_Time;
-        Tigger_Time = nan(N_scans,1);
-        for idx_scan = 1:N_scans
-            pointCloud = pointCloud_cell{idx_scan};
-            % this is results stucture from old decoder
-            % The unit of time offset is microsecond
-            if size(pointCloud,2) == 6
-                time_offsets = pointCloud(:,6)*10^-6;
-                
-            % this is results stucture from new decoder
-            elseif size(pointCloud,2) == 8
-                time_offsets = pointCloud(:,5)*10^-6;
-            end
-            LiDARPoints_Time = ROS_Time(idx_scan,:) + time_offsets;
-            ROS_Time_corrected = min(LiDARPoints_Time);
-            ROS_Time_offsets = abs(ROS_Time_corrected - ROS_Time_GPS_common);
-            [~,closest_idx] = min(ROS_Time_offsets,[],1);
-            timeOffset_ROS_Trigger_closest = array_timeOffset_ROS_Trigger_ave(closest_idx,:);
-            Trigger_time(idx_scan,1) = ROS_Time_corrected - timeOffset_ROS_Trigger_closest;
-            
-        end
-        sensorFields.Trigger_Time = Trigger_time;
+        ROS_Time_diff = pdist2(ROS_Time,ROS_Time_GPS_common,"euclidean");
+        [~, closestIndex] = min(ROS_Time_diff, [], 2);
+        GPS_start_idx = closestIndex(1);
+        GPS_end_idx = closestIndex(end);
+        LiDAR_start_idx = find(closestIndex==GPS_start_idx,1,'last');
+        LiDAR_end_idx = find(closestIndex==GPS_end_idx,1,'first');
+        N_valid_scans = LiDAR_end_idx - LiDAR_start_idx + 1;
+        LiDAR_Trigger_time_start = Trigger_Time_GPS_common(GPS_start_idx);
+        LiDAR_centiSeconds_second = LiDAR_centiSeconds/100;
+        LiDAR_Trigger_time_end = LiDAR_centiSeconds_second*(N_valid_scans-1)+LiDAR_Trigger_time_start;
+        LiDAR_Trigger_time = (LiDAR_Trigger_time_start:LiDAR_centiSeconds_second:LiDAR_Trigger_time_end).';
+
+        sensorFields.Trigger_Time = LiDAR_Trigger_time;
 
     elseif contains(lower(sensorName),'velocity')
         original_ROS_Time = sensorFields.ROS_Time;

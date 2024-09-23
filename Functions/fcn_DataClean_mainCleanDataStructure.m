@@ -1,5 +1,118 @@
-function dataset = fcn_DataClean_mainCleanDataStructure(dataset,ref_basestation)
+function dataset_cell = fcn_DataClean_mainCleanDataStructure(dataset,ref_basestation)
+% fcn_DataClean_mainCleanDataStructure
+% Checks a given dataset to verify whether data meets key time consistency
+% requirements. 
+%
+%
+% FORMAT:
+%
+%      dataset_cell = fcn_DataClean_mainCleanDataStructure(dataset,ref_basestation)
+%
+% INPUTS:
+%
+%      dataset: a data structure that contain the rawdata structure
+%
+%      ref_basestation: LLA coordinate of the base station
+%
+%
+%
+% OUTPUTS:
+%
+%     dataset_cell: data cell that contains the dataStructures after each
+%     step
+%
+% 
+% DEPENDENCIES:
+%
+%       fcn_INTERNAL_checkFlagsForExit
+%
+%       fcn_INTERNAL_DebugTools_installDependencies
+%
+%       fcn_DataClean_checkDataNameConsistency
+% 
+%       fcn_DataClean_mergeSensorsByMethod
+% 
+%       fcn_DataClean_renameSensorsToStandardNames
+% 
+%       fcn_DataClean_checkDataTimeConsistency
+% 
+%       fcn_DataClean_trimRepeatsFromField
+% 
+%       fcn_DataClean_correctTimeZoneErrorsInGPSTime
+% 
+%       fcn_DataClean_trimDataToCommonStartEndGPSTimes
+% 
+%       fcn_DataClean_sortSensorDataByGPSTime
+% 
+%       fcn_DataClean_fillMissingsInGPSUnits
+% 
+%       fcn_DataClean_recalculateTriggerTimes
+% 
+%       fcn_DataClean_convertROSTimeToSeconds
+% 
+%       fcn_DataClean_roundROSTimeForGPSUnits
+% 
+%       fcn_DataClean_calculateTriggerTime_AllSensors
+% 
+%       fcn_DataClean_trimDataToCommonStartEndTriggerTimes
+%
+%
+% EXAMPLES:
+%
+%     See the script: script_test_fcn_DataClean_mainCleanDataStructure
+%     for a full test suite.
+%
+% This function was written on 2024_09_03 by X. Cao
+% Questions or comments? xfc5113@psu.edu 
 
+% Revision history:
+%     
+% 2024_09_03: xfc5113@psu.edu 
+% -- wrote the code originally 
+% 2024_09_22 - xfc5113@psu.edu 
+% -- fix the bug in trigger time calculation for Velodyne LiDAR
+
+%% check input arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____                   _
+%  |_   _|                 | |
+%    | |  _ __  _ __  _   _| |_ ___
+%    | | | '_ \| '_ \| | | | __/ __|
+%   _| |_| | | | |_) | |_| | |_\__ \
+%  |_____|_| |_| .__/ \__,_|\__|___/
+%              | |
+%              |_|
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flag_check_inputs = 1;
+if flag_check_inputs
+    % Are there the right number of inputs?
+    if nargin < 1 || nargin > 2
+        error('Incorrect number of input arguments')
+    end
+        
+end
+
+
+% Does the user want to specify the fid?
+fid = 0;
+
+if fid
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
+%% Main code starts here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   __  __       _
+%  |  \/  |     (_)
+%  | \  / | __ _ _ _ __
+%  | |\/| |/ _` | | '_ \
+%  | |  | | (_| | | | | |
+%  |_|  |_|\__,_|_|_| |_|
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Start the looping process to iteratively clean data
 % The method used below is as follows:
@@ -19,20 +132,21 @@ N_max_loops = 30;
 % Preallocate the data array
 
 main_data_clean_loop_iteration_number = 1; % The first iteration corresponds to the raw data loading
-flag_trim_with_ROSTime = 1;
+flag_all_trigger_time_calculated = 0;
 fid = 1;
+dataset_cell{1} = dataset;
 %%
 while 1==flag_stay_in_main_loop
-    dataStructure = dataset{end};    
+    dataStructure = dataset_cell{end};    
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
-    %% Trim data with ROS time
-    if flag_trim_with_ROSTime == 1
-        dataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(dataStructure);
-        flag_trim_with_ROSTime = 0;
-    end
+
+    % if flag_trim_with_ROSTime == 1
+    %     dataStructure = fcn_DataClean_trimDataToCommonStartEndROSTimes(dataStructure);
+    %     flag_trim_with_ROSTime = 0;
+    % end
     %% Name consistency checks start here
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
@@ -126,7 +240,7 @@ while 1==flag_stay_in_main_loop
     
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
     if (1==flag_keep_checking)
-        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
+        [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
     end
 
     %%
@@ -331,13 +445,6 @@ while 1==flag_stay_in_main_loop
     if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
         dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_basestation,fid);
         flag_keep_checking = 0;  
-
-         % figure(146)
-         % plot(dataStructure.GPS_SparkFun_RightRear.GPS_Time,dataStructure.GPS_SparkFun_RightRear.ROS_Time)
-         % hold on
-         % plot(dataStructure.GPS_SparkFun_LeftRear.GPS_Time,dataStructure.GPS_SparkFun_LeftRear.ROS_Time)
-         % plot(dataStructure.GPS_SparkFun_RightRear.GPS_Time,dataStructure.GPS_SparkFun_RightRear.ROS_Time)
-         % 1;
     end
     %%
    
@@ -509,28 +616,29 @@ while 1==flag_stay_in_main_loop
     %% Check that ROS_Time_rounds_correctly_to_Trigger_Time 
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
         warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
-        dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure,'GPS',fid);
+        dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructure,fid);
         flag_keep_checking = 0;
     end
     
 
     %% Entering this section indicates all time in GPS units have been checked and fixed
-    %% First, check whether all sensors have Trigger_Time
-    if (1==flag_keep_checking)         
-        [time_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,time_flags);
-    end
+    % %% First, check whether all sensors have Trigger_Time
+    % if (1==flag_keep_checking)         
+    %     [time_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,time_flags);
+    % end
 
     %% If not, calculate Trigger_Time to rest of sensors
     if (1==flag_keep_checking) && (0==time_flags.all_sensors_have_trigger_time)
         warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
         dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dataStructure,sensors_without_Trigger_Time);
+        flag_all_trigger_time_calculated = 1;
         flag_keep_checking = 0;
     end
-    %%
+
   
     %% Start to work on other sensors, start with Velodyne LiDAR
-    if (1==flag_keep_checking)
-        dataStructure = fcn_DataClean_matchOtherSensorsToGPSUnits(dataStructure,fid);
+    if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)
+        dataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(dataStructure,fid);
         flag_keep_checking = 0;
     end
 
@@ -591,13 +699,13 @@ while 1==flag_stay_in_main_loop
     %     clear dataset
     %     dataset{1} = temp;
     % end
-    dataset{end+1} = dataStructure; %#ok<SAGROW>
+    dataset_cell{end+1} = dataStructure; %#ok<SAGROW>
     
        
     % Check if all the name_flags work, so we can exit!
     name_flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(name_flags);
-    
-    if 0 == name_flag_stay_in_main_loop
+    time_flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(time_flags);
+    if 0 == time_flag_stay_in_main_loop
         % Check if all the time_flags work, so we can exit!
         flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(time_flags);
         
@@ -1042,9 +1150,6 @@ end
 if flag_do_plots
 
     % Nothing to do!
-
-
-
 end
 
 if flag_do_debug
@@ -1064,7 +1169,6 @@ end
 flag_stay_in_main_loop = 1;
 if all(flag_array==1)
     flag_stay_in_main_loop = 0;
-    flag_trim_with_ROSTime = 1;
 end
 end % Ends fcn_INTERNAL_checkFlagsForExit
     
