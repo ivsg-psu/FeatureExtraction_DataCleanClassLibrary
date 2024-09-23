@@ -285,7 +285,7 @@ end
 if (1==flag_do_plots)
 
     %% Plot all of them together?
-    if ~isempty(plotFlags.fig_num_plotAllMatTogether)
+    if ~isempty(plotFlags.fig_num_plotAllMatTogether) && (0<NgoodDataSets)
         fig_num_plotAllMatTogether = plotFlags.fig_num_plotAllMatTogether;
         figure(fig_num_plotAllMatTogether);
         clf;
@@ -329,7 +329,7 @@ if (1==flag_do_plots)
 
 
     %% Plot all individually?
-    if ~isempty(plotFlags.fig_num_plotAllMatIndividually)
+    if ~isempty(plotFlags.fig_num_plotAllMatIndividually)  && (0<NgoodDataSets)
         fig_num_plotAllMatIndividually = plotFlags.fig_num_plotAllMatIndividually;
 
 

@@ -59,6 +59,10 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 % 2024_09_23 by X. Cao
 % -- add fcn_DataClean_trimDataToCommonStartEndTriggerTimes to the while
 % loop
+% 2024_09_23 - S. Brennan
+% -- removed environment variable setting within function (not good
+% practice)
+
 
 
 %% Debugging and Input checks
@@ -184,11 +188,6 @@ end
 %  |_|  |_|\__,_|_|_| |_|
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Set the base station location
-setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE',sprintf('%.8f',ref_baseStationLLA(1)));
-setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE',sprintf('%.8f',ref_baseStationLLA(2)));
-setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE',sprintf('%.3f',ref_baseStationLLA(3)));
 
 
 %% Define the stitching points based on the site's start and end locations
