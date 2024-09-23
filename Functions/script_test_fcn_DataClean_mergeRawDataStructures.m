@@ -45,8 +45,8 @@ Flags = [];
 
 % List which directory/directories need to be loaded
 clear rootdirs
-rootdirs{1} = fullfile(cd,'LargeData','2024-07-10');
-% rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');
+rootdirs{1} = fullfile(cd,'LargeData','2024-07-10'); % There are 5 data here
+rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');  % There are 52 data here
 
 % List what will be saved
 saveFlags.flag_saveMatFile = 1;
@@ -64,7 +64,7 @@ plotFlags.fig_num_plotAllRawIndividually = 4444;
 % Call the data loading function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
 
-%%%%%%%%%%%%%%
+%%
 % Prepare for merging
 % Specify the nearby time
 thresholdTimeNearby = 2;
@@ -99,6 +99,7 @@ plotFlags.mergedplotFormat.MarkerSize = 5;
 
 % Check the results
 assert(iscell(mergedRawDataCellArray));
+assert(iscell(uncommonFieldsCellArray));
 
 %% Test 2: Simple merge using data from Site 2 - Falling Water
 
@@ -154,14 +155,13 @@ plotFlags.fig_num_plotAllRawIndividually = 4444;
 % Call the data loading function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
 
-%%
 %%%%%%%%%%%%%%
 % Prepare for merging
 % Specify the nearby time
 thresholdTimeNearby = 2;
 
 % Spedify the fid
-fid = 1; % 1 --> print to console
+% fid = 1; % 1 --> print to console
 consoleFname = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,Identifiers.WorkZoneScenario,'MergeProcessingMessages.txt');
 fid = fopen(consoleFname,'w');
 
@@ -190,6 +190,7 @@ plotFlags.mergedplotFormat.MarkerSize = 5;
 
 % Check the results
 assert(iscell(mergedRawDataCellArray));
+assert(iscell(uncommonFieldsCellArray));
 
 
 %% Test 999: Simple merge, not verbose
@@ -279,6 +280,7 @@ plotFlags.mergedplotFormat.MarkerSize = 5;
 
 % Check the results
 assert(iscell(mergedRawDataCellArray));
+assert(iscell(uncommonFieldsCellArray));
 
 
 %% Fail conditions

@@ -320,7 +320,11 @@ if fid && ~isempty(fieldsNotCommon)
     Nheader = 20;
     Nfields = 30;
 
-    fprintf(fid,'\nTESTING %s\n',parentString);
+    try
+        fprintf(fid,'\nTESTING %s\n',parentString);
+    catch
+        error('stop here');
+    end
     fprintf(fid,'CHECKING FIELD NAME AGREEMENT:\n');
     fcn_INTERNAL_printSummary(fid, 'Fields shared',flags_overlapMatrix,flags_allShared, sensorfields_allStructures,(1:length(sensorfields_allStructures)),Nheader,Nfields,N_datasets,length(sensorfields_allStructures));
 

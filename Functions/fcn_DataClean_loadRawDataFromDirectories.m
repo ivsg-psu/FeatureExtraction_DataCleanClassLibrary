@@ -275,40 +275,39 @@ if  1==saveFlags.flag_saveMatFile && saveFlags.flag_forceDirectoryCreation
 end
 
 
-%% Loop through all the directories
+%% Find all the directories that will be queried
+only_directory_filelist = [];
 for ith_rootDirectory = 1:length(rootdirs)
     rootdir = rootdirs{ith_rootDirectory};
+    if fid
+        fprintf(fid,'\n\nLoading directory candidates from directory: %s\n',rootdir);
+    end
     directoryQuery = fullfile(rootdir, '**',cat(2,bagQueryString,'*'));
     filelist = dir(directoryQuery);  % gets list of files and folders in any subfolder that start with name 'mapping_van_'
-    only_directory_filelist = filelist([filelist.isdir]);  % keep only directories from list
-
-    % Loop through all the directories to be queried
-    NdataSets = length(only_directory_filelist);
-    rawDataCellArray = cell(NdataSets,1);
-    NrawData = 0;
-
-    if fid
-        fprintf(fid,'\n\nLoading from directory: %s\n',rootdir);
-    end
-
-    % Loop through all the Bag folders in each directory
-    for ith_folder = 1:NdataSets
-
-        % Load the raw data
-        bagName = only_directory_filelist(ith_folder).name;
-        dataFolderString = only_directory_filelist(ith_folder).folder;
-        bagPath = fullfile(dataFolderString, bagName);
-
-        if fid
-            fprintf(fid,'\nLoading file %.0d of %.0d: %s\n', ith_folder, NdataSets, bagName);
-        end
-
-        NrawData = NrawData+1;
-        rawDataCellArray{NrawData} = fcn_DataClean_loadMappingVanDataFromFile(bagPath, Identifiers, (bagName), (fid), (Flags), (-1));
-
-    end
+    only_directory_filelist = [only_directory_filelist; filelist([filelist.isdir])];  %#ok<AGROW> % keep only directories from list
 end
 
+
+%% Loop through all the directories
+% Initialize key storage variables
+NdataSets = length(only_directory_filelist);
+rawDataCellArray = cell(NdataSets,1);
+
+% Loop through all the Bag folders in each directory
+for ith_folder = 1:NdataSets
+
+    % Load the raw data
+    bagName = only_directory_filelist(ith_folder).name;
+    dataFolderString = only_directory_filelist(ith_folder).folder;
+    bagPath = fullfile(dataFolderString, bagName);
+
+    if fid
+        fprintf(fid,'\nLoading file %.0d of %.0d: %s\n', ith_folder, NdataSets, bagName);
+    end
+
+    rawDataCellArray{ith_folder,1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath, Identifiers, (bagName), (fid), (Flags), (-1));
+
+end
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
