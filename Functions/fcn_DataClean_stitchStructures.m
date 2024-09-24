@@ -140,9 +140,11 @@ if (0==flag_max_speed) &&  (3<=nargin)
     if ~isempty(temp) && (~isstring(temp)||~ischar(temp))
         fig_num = temp; %#ok<NASGU>
         flag_do_plots = 1;
+    else
+        parentString = '(root)';
     end    
 
-    if (isstring(temp)|| ischar(temp))
+    if (isstring(temp) || ischar(temp))
         parentString = temp;
     end
 end
@@ -316,16 +318,12 @@ fieldsNotCommon = find(0==flags_allShared);
 
 
 %% Print out failures?
-if fid && ~isempty(fieldsNotCommon)
+if fid>0 && ~isempty(fieldsNotCommon)
     Nheader = 20;
     Nfields = 30;
 
-    try
-        fprintf(fid,'\nTESTING %s\n',parentString);
-    catch
-        error('stop here');
-    end
-    fprintf(fid,'CHECKING FIELD NAME AGREEMENT:\n');
+    fprintf(fid,'\nTESTING %s\n',parentString);
+    fprintf(fid,'CHECKING FIELD NAME AGREEMENT:\n');    
     fcn_INTERNAL_printSummary(fid, 'Fields shared',flags_overlapMatrix,flags_allShared, sensorfields_allStructures,(1:length(sensorfields_allStructures)),Nheader,Nfields,N_datasets,length(sensorfields_allStructures));
 
 end
@@ -334,7 +332,7 @@ end
 uncommonFields = cell(length(fieldsNotCommon),1);
 for ith_field = 1:length(fieldsNotCommon)
     uncommonFields{ith_field} = sensorfields_allStructures{fieldsNotCommon(ith_field)};
-    if fid
+    if fid>0
         if 1==fid
             fcn_DebugTools_cprintf('*Red','\tThe field %s is marked for deletion because it does not exist across all structures.\n',uncommonFields{ith_field});
         else
@@ -466,7 +464,7 @@ overallEquality = equality_Rows .* equality_Columns .* equality_Scalars .* equal
 
 
 %% Print out results?
-if fid && any(0==overallEquality)
+if fid>0 && any(0==overallEquality)
     fprintf(fid,'\nTESTING %s\n',parentString);    
     fprintf(fid,'CHECKING VECTOR DIMENSION AGREEMENT:\n');
     Nheader = 20;
@@ -515,7 +513,7 @@ if any(0==overallEquality)
         % Make sure this is not already added
         if ~any(strcmp(fieldToCheck,uncommonFields))
             uncommonFields{end+1} = fieldToCheck; %#ok<AGROW>
-            if fid
+            if fid>0
                 if 1==fid
                     fcn_DebugTools_cprintf('*Red','\tThe field %s is marked for deletion because its vector size does not agree across structures.\n',uncommonFields{end});
                 else
@@ -580,7 +578,7 @@ for ith_structure = 2:N_datasets
                     if ~any(strcmp(uncommonFields,nameToAdd))
                         % NuncommonFields = NuncommonFields+1;
                         uncommonFields{end+1} = nameToAdd; %#ok<AGROW>
-                        if fid
+                        if fid>0
                             flag_printStructureInfo = 1;
                             if 1==fid
                                 fcn_DebugTools_cprintf('*Red','\tThe field %s is marked as uncommon as all its subfields in the first structure do not match the subfields in the %.0d structure.\n',uncommonFields{end},ith_structure);
@@ -591,7 +589,7 @@ for ith_structure = 2:N_datasets
                     end
                 end
                 if flag_printStructureInfo
-                    if fid
+                    if fid>0
                         fprintf(fid,'THE ABOVE OCCURRED WHEN TESTING %s\n',parentString);
                         fprintf(fid,'DURING SUBSTRUCTURE MERGING OF FIELD %s BETWEEN 1 AND %.0d\n',fieldToMerge, ith_structure);
                     end

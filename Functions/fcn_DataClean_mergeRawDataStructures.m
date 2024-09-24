@@ -391,9 +391,11 @@ if (1==flag_do_plots)
             % Set up variables to do a raw data plot
             mergeName = mergedRawDataCellArray{ith_mergedData}.Identifiers.mergedName;
 
-            % Set the format for the "together" plot
-            mergedplotFormat.Color = fcn_geometry_fillColorFromNumberOrName(ith_mergedData);
-            mergedplotFormat.LineWidth = 1*(NmergedFiles - ith_mergedData + 1);
+            % Set the format for the "together" plot?
+            if ~isfield(plotFlags.mergedplotFormat,'Color')
+                mergedplotFormat.Color = fcn_geometry_fillColorFromNumberOrName(ith_mergedData);
+                mergedplotFormat.LineWidth = 1*(NmergedFiles - ith_mergedData + 1);
+            end
             colorMap = mergedplotFormat.Color;
 
             % Do the plot

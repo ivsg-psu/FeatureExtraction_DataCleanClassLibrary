@@ -95,6 +95,8 @@
 % -- added fcn_DataClean_loadMappingVanDataFromFile
 % -- added fcn_DataClean_loadRawDataFromDirectories
 % -- added fcn_DataClean_mergeRawDataStructures
+% -- added fcn_DataClean_loadMatDataFromDirectories
+% -- added reference GPS location for Aliquippa, site 3
 
 %
 % Known issues:
@@ -327,6 +329,11 @@ setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','327.428');
 % setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','39.995339');
 % setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.445472');
 % setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
+
+% % Location for Aliquippa, site 3
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.694871');
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-80.263755');
+% setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','223.294');
 
 
 %% Set environment flags for plotting
