@@ -7,10 +7,15 @@ function [flags, offending_sensor] = fcn_DataClean_checkDataNameConsistency(data
 % logically consistent. Consistency means that:
 %
 %    Sensors that are spread across multiple sensor feeds are merged, e.g.
-%    that there is only ONE field with that sensor in it. 
+%    that there is only ONE field with that sensor in it. This avoids
+%    having the same sensor accidentally being processed in different ways,
+%    breaking the same sensor data up in strange ways, etc.
 %
 %    Sensor names are consistent with convention, containing:
-%    {'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS'}
+%    {'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS
+%    The sensor names determine types of processing that occur in later
+%    steps. For example 'GPS' type sensors are processed differently than
+%    'LIDAR' sensors.
 %
 % The input is a structure that has as sub-fields each sensor, which in
 % turn is a structure that also has key recordings each saved as
@@ -71,10 +76,40 @@ function [flags, offending_sensor] = fcn_DataClean_checkDataNameConsistency(data
 % 2023_07_03: sbrennan@psu.edu
 % -- wrote the code originally, using
 % fcn_DataClean_checkDataTimeConsistency as a reference
+% 2024_09_24 - S. Brennan
+% -- updated the debug flags area
 
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+
+
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==2 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
+
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 
 %% check input arguments
@@ -89,20 +124,20 @@ flag_check_inputs = 1; % Flag to perform input checking
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if 0 == flag_max_speed
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        if nargin < 1 || nargin > 2
+            error('Incorrect number of input arguments')
+        end
 
-if flag_check_inputs
-    % Are there the right number of inputs?
-    if nargin < 1 || nargin > 2
-        error('Incorrect number of input arguments')
     end
-        
 end
-
 
 % Does the user want to specify the fid?
 fid = 0;
 % Check for user input
-if 2 <= nargin
+if (0 == flag_max_speed) && (2 <= nargin)
     temp = varargin{1};
     if ~isempty(temp)
         % Check that the FID works
