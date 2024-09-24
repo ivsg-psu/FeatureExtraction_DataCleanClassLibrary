@@ -119,7 +119,8 @@ correct_names = {...
 'IMU_Adis_TopCenter';
 'Velocity_Estimate_SparkFun_LeftRear';
 'Velocity_Estimate_SparkFun_RightRear';
-'Velocity_Estimate_SparkFun_Front'};
+'Velocity_Estimate_SparkFun_Front';
+'Identifiers'};
 Ngood = length(correct_names);
 
 name_pairs = {...
@@ -141,7 +142,8 @@ name_pairs = {...
 'GPS_SparkFun_Front_GGA','GPS_SparkFun_Front'
 'SparkFun_RearLeft_Velocity_Estimate','Velocity_Estimate_SparkFun_LeftRear';
 'SparkFun_RearRight_Velocity_Estimate','Velocity_Estimate_SparkFun_RightRear';
-'SparkFun_Front_Velocity_Estimate','Velocity_Estimate_SparkFun_Front'};
+'SparkFun_Front_Velocity_Estimate','Velocity_Estimate_SparkFun_Front';
+'GPS_SparkFun_Front_GGA','GPS_SparkFun_Front'};
 
 [Npairs,~] = size(name_pairs);
 for ith_pair = 1:Npairs    
