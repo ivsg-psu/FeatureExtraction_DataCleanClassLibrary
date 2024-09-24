@@ -158,7 +158,8 @@ fixed_dataStructure = dataStructure;
 for idx_sensor = 1:N_sensors
     sensorName = sensors_without_Trigger_Time(idx_sensor,:);
     sensorFields = dataStructure.(sensorName);
-    N_points = sensorFields.Npoints;
+    N_points = length(sensorFields.ROS_Time);
+    % N_points = sensorFields.Npoints;
     if contains(lower(sensorName),'diagnostic')
         if contains(lower(sensorName),'trigbox')
             trigBox_has_diag_field = 1;
@@ -173,8 +174,10 @@ for idx_sensor = 1:N_sensors
     elseif contains(lower(sensorName),'trigger')
         % Calculate Trigger_Time for trigger box
         modeID = sensorFields.mode;
+        modeID_string = string(modeID);
+        modeID_string_clean = erase(modeID_string,"""");
         Trigger_Time = nan(N_points,1);
-        Triggered_indices = find(strcmp(modeID,'L'));
+        Triggered_indices = find(strcmp(modeID_string_clean,'L'));
         if isempty(Triggered_indices)
             Triggered_indices = find(strcmp(modeID,'S'));
         end            
@@ -200,9 +203,16 @@ for idx_sensor = 1:N_sensors
     elseif contains(lower(sensorName),'encoder')
         % Calculate Trigger_Time for encoder box
         modeID = sensorFields.Mode;
+        if iscell(modeID)
+            modeID_string = string(modeID);
+            modeID_string_clean = erase(modeID_string,"""");
+        else
+            modeID_string_clean = modeID;
+
+        end
         centiSeconds = sensorFields.centiSeconds;
         Trigger_Time = nan(N_points,1);
-        Triggered_indices = find(strcmp(modeID,'T'));
+        Triggered_indices = find(strcmp(modeID_string_clean,'T'));
         ROS_Time = sensorFields.ROS_Time;
         ROS_Time_triggered  = ROS_Time(Triggered_indices);
         ROS_Time_offsets = pdist2(ROS_Time_triggered,ROS_Time_GPS_common,'euclidean');

@@ -443,7 +443,7 @@ for file_idx = 1:num_files
         elseif contains(topic_name, 'GPS_SparkFun_RearLeft_VTG')
 
             SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-            rawData.GPS_SparkFun_LeftRear_VTG = SparkFun_GPS_RearLeft_VTG;
+            rawData.Velocity_Estimate_SparkFun_LeftRear = SparkFun_GPS_RearLeft_VTG;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GST')
 
@@ -456,7 +456,7 @@ for file_idx = 1:num_files
 
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_VTG')
             sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-            rawData.GPS_SparkFun_RightRear_VTG = sparkfun_gps_rear_right_VTG;
+            rawData.Velocity_Estimate_SparkFun_RightRear  = sparkfun_gps_rear_right_VTG;
 
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_GST')
             sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
@@ -476,7 +476,7 @@ for file_idx = 1:num_files
 
         elseif contains(topic_name, 'GPS_SparkFun_Front_VTG')
             SparkFun_GPS_Front_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
-            rawData.GPS_SparkFun_Front_VTG = SparkFun_GPS_Front_VTG;
+            rawData.Velocity_Estimate_SparkFun_Front = SparkFun_GPS_Front_VTG;
 
 
         elseif contains(topic_name, 'GPS_SparkFun_Front_GST')
