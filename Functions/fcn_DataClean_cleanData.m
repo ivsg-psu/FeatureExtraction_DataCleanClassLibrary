@@ -333,12 +333,7 @@ while 1==flag_stay_in_main_loop
     end
 
     
-    %% Check data for errors in Time data related to GPS-enabled sensors -- Done
-    if (1==flag_keep_checking)
-        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
-    end
 
-    %%
     %% GPS_Time tests - all of these steps can be found in fcn_DataClean_checkDataTimeConsistency, the following sections need to be deleted later
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %    _____ _____   _____            _______ _                   _______        _
@@ -352,6 +347,13 @@ while 1==flag_stay_in_main_loop
     %
     % See: http://patorjk.com/software/taag/#p=display&f=Big&t=GPS%20_%20Time%20%20Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   
+    
+    %% Check data for errors in Time data related to GPS-enabled sensors -- Done
+    if (1==flag_keep_checking)
+        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
+    end
+
 
     %% Check if GPS_Time_exists_in_at_least_one_GPS_sensor
     %    ### ISSUES with this:
