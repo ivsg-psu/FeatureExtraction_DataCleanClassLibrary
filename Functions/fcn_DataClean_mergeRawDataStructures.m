@@ -61,10 +61,10 @@ function [mergedRawDataCellArray, uncommonFieldsCellArray]  = fcn_DataClean_merg
 % DEPENDENCIES:
 %
 %      fcn_DataClean_pullDataFromFieldAcrossAllSensors
-%
-%      fcn_DebugTools_checkInputsToFunctions
-%      fcn_DataClean_loadMappingVanDataFromFile
+%      fcn_DataClean_stitchStructures
+%      fcn_geometry_fillColorFromNumberOrName
 %      fcn_DataClean_plotRawData
+%      fcn_plotRoad_plotLL
 %
 % EXAMPLES:
 %
@@ -263,9 +263,17 @@ clear mergeIndexList shortMergedNames
 mergeIndexList   = cell(NmergedFiles,1);
 shortMergedNames = cell(NmergedFiles,1);
 
-% Loop through all the files
+% Loop through all the files, keeping track of which files were used
+NmaxLoops = 100; % What is the maximum number of files that can be merged?
+flag_fileWasMerged = zeros(NdataSets,1);
 for ith_merged = 1:NmergedFiles
     thisMergedIndex = firstInSequenceIndicies(ith_merged);
+
+    % Mark this file as being merged
+    flag_fileWasMerged(thisMergedIndex,1) = 1;
+
+    % Produce a name for this merge sequence. Names are inhereted from the
+    % _0 file.
     mergeName = sequenceNames{thisMergedIndex};
     shortMergedName = mergeName(1:end-2); % Cut off the '_0' at end
     shortMergedNames{ith_merged} = shortMergedName;
@@ -275,11 +283,16 @@ for ith_merged = 1:NmergedFiles
     Nmerged = 1;
     mergeIndexList{ith_merged} = thisMergedIndex;
 
-    flag_keepGoing = 1;
+    % Loop through all the files in each sequence, finding ones that are
+    % both starting when the previous one ended in time, and also has a
+    % numbered sequence that makes sense, e.g. the name goes from _0 to _1
+    % to _2, etc.
+    flag_keepGoing = 1; % Flag to keep the while loop going
     nextEndingTime = latestTimeGPS(thisMergedIndex); % This is the last time recorded on the current list
-    Nloops = 0;
+    Nloops = 0; % Number of times the while loop has run
     while 1==flag_keepGoing
         Nloops = Nloops+1;
+
         % Find any files whose earliest times are within the time nearby,
         % but requiring that the earliest time is AFTER the previous ending
         % time.
@@ -289,7 +302,9 @@ for ith_merged = 1:NmergedFiles
         if isempty(nextIndex)
             flag_keepGoing = 0;
         else
-            % Find all files that are next in sequence
+            % Find all files that are next in sequence. For example, if we
+            % just did all the _2 files, then we are looking for all the
+            % files that end with _3.
             indexDataFilesNextInSequence = find(sequenceNumbers==Nmerged);
             if isempty(indexDataFilesNextInSequence)
                 flag_keepGoing = 0;
@@ -300,6 +315,10 @@ for ith_merged = 1:NmergedFiles
                     Nmerged = Nmerged+1;
                     mergeIndexList{ith_merged} = [mergeIndexList{ith_merged}; nextIndex];
                     nextEndingTime = latestTimeGPS(nextIndex);
+
+                    % Mark this file as being merged
+                    flag_fileWasMerged(nextIndex,1) = 1;
+
                 else
                     flag_keepGoing = 0;
                 end
@@ -307,14 +326,28 @@ for ith_merged = 1:NmergedFiles
         end
 
         % Make sure code is not trapped in this while loop for some reason
-        if Nloops>100
+        if Nloops>NmaxLoops
             error('Very large number of files merged (N>100). Error likely and so exiting');
         end
 
     end % Ends while loop
 end % Ends for loop that loops through "starting" bag files
 
+%% Warn user of any files that were not merged?
+if fid>0
 
+    % Find which indicies were not merged
+    indiciesNotMerged = find(flag_fileWasMerged==0);
+    for ith_notMerged = 1:length(indiciesNotMerged)
+        if 1==ith_notMerged
+            fprintf(fid,'\nWARNING:\n');
+            fprintf(fid,'The following files did not participate in any merge:\n');
+        end
+        unmergedIndex = indiciesNotMerged(ith_notMerged);
+        mergeName = sequenceNames{unmergedIndex};
+        fprintf(fid,'\t%s\n',mergeName);
+    end
+end
 
 %% Perform merge
 mergedRawDataCellArray  = cell(NmergedFiles,1);

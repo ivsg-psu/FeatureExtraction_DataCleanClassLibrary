@@ -11,11 +11,13 @@ function [flags, offending_sensor] = fcn_DataClean_checkDataNameConsistency(data
 %    having the same sensor accidentally being processed in different ways,
 %    breaking the same sensor data up in strange ways, etc.
 %
-%    Sensor names are consistent with convention, containing:
-%    {'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS
-%    The sensor names determine types of processing that occur in later
-%    steps. For example 'GPS' type sensors are processed differently than
-%    'LIDAR' sensors.
+%    Sensor names must follow the format:
+%
+%        TYPE_Manufacturer_Location
+%
+%    where
+%        TYPES allowed include: 'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS'
+%        Locations allowed include: Rear, Front, Top, Right, Left, Center
 %
 % The input is a structure that has as sub-fields each sensor, which in
 % turn is a structure that also has key recordings each saved as
@@ -78,6 +80,7 @@ function [flags, offending_sensor] = fcn_DataClean_checkDataNameConsistency(data
 % fcn_DataClean_checkDataTimeConsistency as a reference
 % 2024_09_24 - S. Brennan
 % -- updated the debug flags area
+% -- fixed bug where offending sensor is set wrong
 
 
 
@@ -152,10 +155,13 @@ if (0 == flag_max_speed) && (2 <= nargin)
     end
 end
 
-if fid
+if fid>0
     st = dbstack; %#ok<*UNRCH>
     fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
+
+% Turn plotting off
+flag_do_plots = 0;
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,17 +207,26 @@ flags = struct;
 % sub-sections of the code:
 
 
-%% Check if Sparkfun_GPS_RearRight_sensors_are_merged
+%% Check if sensors are merged where a sensor may produce multiple topics
+% Check if sensors are merged where a sensor may produce multiple topics
+%    These sensors include:
+%    GPS_SparkFun_RightRear
+%    GPS_SparkFun_LeftRear
+%    GPS_SparkFun_Front
+%    ADIS
+%
 %    ### ISSUES with this:
-%    * The Sparkfun GPS unit requires several different datagrams to fully
-%    capture its output
+%    * Many sensors require several different datagrams to fully
+%    capture their outputs
 %    * The data grams are spread across different sensor datasets
 %    corresponding to each topic, but are actually one
-%    * If they are kept separate, the data are not correlated correctly
+%    * If they are kept separate, the data are not processed correctly with
+%    the same time alignment on each sensor, resulting in data that was
+%    from the same time being spread across different times
 %    ### DETECTION:
-%    * Examine if the Sparkfun sensors are fields within the current
+%    * Examine if the sensors have more than one field within the current
 %    datastructure, and if multiple fields have the same name (for example
-%    "GPS_SparkFun_Front"
+%    "GPS_SparkFun_Front") then they are NOT correctly merged
 %    ### FIXES:
 %    * Merge the data from the fields together
 
@@ -232,11 +247,13 @@ flags = struct;
 %    * The sensors used on the mapping van follow a standard naming
 %    convention, such as:
 %    {'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS'}
+%    and location in the form:
+%        TYPE_Manufacturer_Location
 %    ### DETECTION:
 %    * Examine if the sensor core names appear outside of the standard
 %    convention
 %    ### FIXES:
-%    * Rename the fields
+%    * User must manually rename the fields. 
 
 % Check if sensor_naming_standards_are_used
 [flags,~] = fcn_INTERNAL_checkSensorsFollowNameConvention(dataStructure,flags,fid);
@@ -286,6 +303,8 @@ end % Ends main function
 function [flags,offending_sensor] = fcn_INTERNAL_checkSensorsFollowNameConvention(dataStructure, flags, ~)
 % Checks to see if each sensor name follows standard convention:
 % TYPE_Manufacturer_Location
+% TYPES allowed include: 'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS'
+% Locations allowed include: Rear, Front, Top, Right, Left, Center
 
 % Produce a list of all the sensors (each is a field in the structure)
 sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
@@ -322,7 +341,7 @@ end % Ends fcn_INTERNAL_checkSensorsFollowNameConvention
 
 
 %% fcn_INTERNAL_checkSensorsAreMerged
-function [flags,offending_sensor] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,field_name,~)
+function [flags,offending_sensor] = fcn_INTERNAL_checkSensorsAreMerged(dataStructure,flags,field_name_to_check,~)
 % Checks if a sensor string exists in multiple sensors
 
 % Produce a list of all the sensors (each is a field in the structure)
@@ -330,7 +349,7 @@ sensor_names = fieldnames(dataStructure); % Grab all the fields that are in data
 names_match = zeros(length(sensor_names),1);
 for ith_sensor = 1:length(sensor_names)
     sensor_name = sensor_names{ith_sensor};
-    if contains(lower(sensor_name),lower(field_name))
+    if contains(lower(sensor_name),lower(field_name_to_check))
         names_match(ith_sensor,1) = 1;
     end
 end
@@ -339,14 +358,16 @@ end
 flag_sensors_are_merged = 1;
 
 num_matches = sum(names_match);
+offending_sensor = '';
 if num_matches>1
     flag_sensors_are_merged = 0;
+    firstmatch = find(names_match==1,1);
+    offending_sensor = sensor_names{firstmatch}; % Save the name of the first sensor match
 end
 
-flag_name = sprintf('%s_sensors_are_merged',field_name);
+flag_name = sprintf('%s_sensors_are_merged',field_name_to_check);
 flags.(flag_name) = flag_sensors_are_merged;
 
 
-offending_sensor = sensor_name; % Save the name of the sensor
 
 end % Ends fcn_INTERNAL_checkSensorsAreMerged

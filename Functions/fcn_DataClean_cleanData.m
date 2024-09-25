@@ -243,26 +243,48 @@ while 1==flag_stay_in_main_loop
     %                                                                               |___/
     % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Name%20Consistency%20Checks
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Check if sensors are merged where a sensor may produce multiple topics
+    %    These sensors include:
+    %    GPS_SparkFun_RightRear
+    %    GPS_SparkFun_LeftRear
+    %    GPS_SparkFun_Front
+    %    ADIS
+    %
+    %    ### ISSUES with this:
+    %    * Many sensors require several different datagrams to fully
+    %    capture their outputs
+    %    * The data grams are spread across different sensor datasets
+    %    corresponding to each topic, but are actually one
+    %    * If they are kept separate, the data are not processed correctly with
+    %    the same time alignment on each sensor, resulting in data that was
+    %    from the same time being spread across different times
+    %    ### DETECTION:
+    %    * Examine if the sensors have more than one field within the current
+    %    datastructure, and if multiple fields have the same name (for example
+    %    "GPS_SparkFun_Front") then they are NOT correctly merged
+    %    ### FIXES:
+    %    * Merge the data from the fields together
+    %
+    % Check if sensor_naming_standards_are_used
+    %    ### ISSUES with this:
+    %    * The sensors used on the mapping van follow a standard naming
+    %    convention, such as:
+    %    {'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS'}
+    %    and location in the form:
+    %        TYPE_Manufacturer_Location
+    %    ### DETECTION:
+    %    * Examine if the sensor core names appear outside of the standard
+    %    convention
+    %    ### FIXES:
+    %    * User must manually rename the fields.
     
-    
-    %% Check name flags -- Done
+    %% Check if sensors merged and name convention is followed -- Done
     
     [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(nextDataStructure,fid);
     
 
     
-    %% Check if sensor outputs are merged -- Done
-    %    ### ISSUES with this:
-    %    * The Sparkfun GPS unit requires several different datagrams to fully
-    %    capture its output
-    %    * The data grams are spread across different sensor datasets
-    %    corresponding to each topic, but are actually one
-    %    * If they are kept separate, the data are not correlated correctly
-    %    ### DETECTION:
-    %    * Examine if the Sparkfun sensors are fields within the current
-    %    datastructure
-    %    ### FIXES:
-    %    * Merge the data from the fields together
+    %% If NOT merged, fix these errors
 
     % Check GPS_SparkFun_RightRear_sensors_are_merged
     if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_RightRear_sensors_are_merged)
@@ -303,46 +325,7 @@ while 1==flag_stay_in_main_loop
         flag_keep_checking = 0;
     end
     
-
-%%
-% field_names = fieldnames(dataStructure.GPS_SparkFun_RightRear)
-%     %%
-%     figure(1243)
-%     clf
-%     % plot(dataStructure.GPS_SparkFun_RightRear.GPS_Time,'r')
-%     % hold on
-%     % plot(dataStructure.GPS_SparkFun_RightRear.ROS_Time,'g')
-%     % plot(dataStructure.GPS_SparkFun_RightRear.ROS_Time2,'b')
-%     % plot(dataStructure.GPS_SparkFun_RightRear.ROS_Time3,'k-.')
-%     plot(round(dataStructure.GPS_SparkFun_RightRear.GPS_Time*100/10)*10,'r')
-%     hold on
-%     plot(round(dataStructure.GPS_SparkFun_RightRear.ROS_Time*100/10)*10,'g')
-%     plot(round(dataStructure.GPS_SparkFun_RightRear.ROS_Time2*100/10)*10,'b')
-%     plot(round(dataStructure.GPS_SparkFun_RightRear.ROS_Time3*100/10)*10,'k-.')
-%     time_offsets = (dataStructure.GPS_SparkFun_RightRear.ROS_Time - dataStructure.GPS_SparkFun_RightRear.GPS_Time);
-%     % calculated_GPS_Time_2 = dataStructure.GPS_SparkFun_RightRear.ROS_Time2 - ave_time_offset;
-%     % calculated_GPS_Time_3 = dataStructure.GPS_SparkFun_RightRear.ROS_Time3 - ave_time_offset;
-%     calculated_GPS_Time_2_start = [];
-%     for idx_time = 1:length(time_offsets)
-%         calculated_GPS_Time_2_start(idx_time,:) = dataStructure.GPS_SparkFun_RightRear.ROS_Time2(1) - time_offsets(idx_time);  
-%     end
-% 
-% 
-%     [~,idx_start] = min(abs(calculated_GPS_Time_2_start - dataStructure.GPS_SparkFun_RightRear.GPS_Time))
-    % [~,idx_start] = min(abs(calculated_GPS_Time_3(1) - dataStructure.GPS_SparkFun_RightRear.GPS_Time))
-    % mean(dataStructure.GPS_SparkFun_RightRear.GPS_Time(1) - dataStructure.GPS_SparkFun_RightRear.ROS_Time2(1))
-    % mean(dataStructure.GPS_SparkFun_RightRear.GPS_Time(1) - dataStructure.GPS_SparkFun_RightRear.ROS_Time3(1))
-    %% Check if sensor_naming_standards_are_used
-    %    ### ISSUES with this:
-    %    * The sensors used on the mapping van follow a standard naming
-    %    convention, such as:
-    %    ### DETECTION:
-    %    * Examine if the sensor core names appear outside of the standard
-    %    convention
-    %    ### FIXES:
-    %    * Rename the fields
-    
-    % Check if sensor_naming_standards_are_used
+    % check if sensor_naming_standards_are_used. If not, fix this
     if (1==flag_keep_checking) && (0==name_flags.sensor_naming_standards_are_used)
         nextDataStructure = fcn_DataClean_renameSensorsToStandardNames(nextDataStructure,fid);
         flag_keep_checking = 1;

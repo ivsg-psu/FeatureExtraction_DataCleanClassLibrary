@@ -97,6 +97,8 @@
 % -- added fcn_DataClean_mergeRawDataStructures
 % -- added fcn_DataClean_loadMatDataFromDirectories
 % -- added reference GPS location for Aliquippa, site 3
+% -- deleted mainCleanDataStructure - this is now inside cleanData
+
 
 %
 % Known issues:

@@ -28,24 +28,78 @@ clc
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Name%20Consistency%20Checks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Check merging of sensors where all are true
+% Note that, if a field is missing, it still counts as 'merged'
 
-%% Check merging of sensors
+% Create some test data
+testStructure = struct;
+testStructure.GPS_SparkFun_RightRear = 'abc';
+
+% Check structure
+fid = 1;
+[flags, ~] = fcn_DataClean_checkDataNameConsistency(testStructure,fid);
+
+% Check flags
+assert(isequal(flags.GPS_SparkFun_RightRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_LeftRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_Front_sensors_are_merged,1));
+assert(isequal(flags.ADIS_sensors_are_merged,1));
+assert(isequal(flags.sensor_naming_standards_are_used,1));
+
+
+%% Check merging of sensors where one is repeated false
+
+% Create some test data
+testStructure = struct;
+testStructure.GPS_SparkFun_RightRear1 = 'abc';
+testStructure.GPS_SparkFun_RightRear2 = 'def';
+
+% Check structure
+fid = 1;
+[flags, ~] = fcn_DataClean_checkDataNameConsistency(testStructure,fid);
+
+% Check flags
+assert(isequal(flags.GPS_SparkFun_RightRear_sensors_are_merged,0));
+assert(isequal(flags.GPS_SparkFun_LeftRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_Front_sensors_are_merged,1));
+assert(isequal(flags.ADIS_sensors_are_merged,1));
+assert(isequal(flags.sensor_naming_standards_are_used,1));
+
+
+%% Check merging of sensors where location is bad
+
+% Create some test data
+testStructure = struct;
+testStructure.GPS_SparkFun_BadLocation = 'abc';
+
+% Check structure
+fid = 1;
+[flags, ~] = fcn_DataClean_checkDataNameConsistency(testStructure,fid);
+
+% Check flags
+assert(isequal(flags.GPS_SparkFun_RightRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_LeftRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_Front_sensors_are_merged,1));
+assert(isequal(flags.ADIS_sensors_are_merged,1));
+assert(isequal(flags.sensor_naming_standards_are_used,0));
+
+
+%% Check merging of sensors for a typical sensor
+
 
 % Fill in the initial data
-load('ExampleData_checkDataNameConsistency.mat','dataStructure')
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataNameConsistency.mat');
+load(fullExampleFilePath,'dataStructure')
 
-% Check Sparkfun_GPS_RearRight_sensors_are_merged 
+% Check structure
 fid = 1;
 [flags, ~] = fcn_DataClean_checkDataNameConsistency(dataStructure,fid);
-assert(isequal(flags.Sparkfun_GPS_RearRight_sensors_are_merged,0));
 
-% Check Sparkfun_GPS_RearRight_sensors_are_merged 
-assert(isequal(flags.Sparkfun_GPS_RearLeft_sensors_are_merged,0));
-
-% Check Sparkfun_GPS_RearRight_sensors_are_merged - the GPS_Time field is completely missing in all sensors
-assert(isequal(flags.ADIS_sensors_are_merged,0));
-
-% Check Sparkfun_GPS_RearRight_sensors_are_merged - the GPS_Time field is completely missing in all sensors
+% Check flags
+assert(isequal(flags.GPS_SparkFun_RightRear_sensors_are_merged,0));
+assert(isequal(flags.GPS_SparkFun_LeftRear_sensors_are_merged,0));
+assert(isequal(flags.GPS_SparkFun_Front_sensors_are_merged,0));
+assert(isequal(flags.ADIS_sensors_are_merged,1));
 assert(isequal(flags.sensor_naming_standards_are_used,0));
 
 
