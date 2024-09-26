@@ -15,7 +15,11 @@ function [mergedRawDataCellArray, uncommonFieldsCellArray]  = fcn_DataClean_merg
 %      (OPTIONAL INPUTS)
 %
 %      thresholdTimeNearby: the time, in seconds, allowed after one bag
-%      file ends and the next one starts, to allow a merge.
+%      file ends and the next one starts, to allow a merge. Default is 10
+%      seconds in either direction (positive or negative). NOTE: sometimes
+%      data is separated such that the subsequent data - portions of it at
+%      least - are before the end of the previous data, usually by about 3
+%      seconds.
 %
 %      fid: the fileID where to print. Default is 1, to print results to
 %      the console.
@@ -133,7 +137,7 @@ if 0 == flag_max_speed
 end
 
 % Does user want to specify thresholdTimeNearby?
-thresholdTimeNearby = 2; % 2 seconds is allowed between the start of one and end of another
+thresholdTimeNearby = 10; % 10 seconds is allowed between the start of one and end of another
 if 2 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
@@ -244,6 +248,25 @@ for ith_mergedData = 1:NdataSets
     sequenceNumbers(ith_mergedData,1) = fcn_INTERNAL_findSequenceNumber(sequenceNames{ith_mergedData});
 end
 
+%% Summarize results thus far?
+if fid>0
+
+    % Show details
+    fprintf(fid,'\nSUMMARY OF FILES FOUND:\n');
+    Nheader = 50;
+    Nfields = 20;
+    fieldStrings{1} = 'NUMBER:';
+    fieldStrings{2} = 'TIME_START: (sec)';
+    fieldStrings{3} = 'TIME_END: (sec)';
+    fcn_INTERNAL_printFields(fid, 'BAG FILE:',fieldStrings,Nheader,Nfields)
+    t_smallest = min([earliestTimeGPS latestTimeGPS],[],'all');
+    for ith_dataSet = 1:NdataSets
+        fieldStrings{1} =  sprintf('%.0f',sequenceNumbers(ith_dataSet,1));
+        fieldStrings{2} =  sprintf('%.2f',earliestTimeGPS(ith_dataSet,1)-t_smallest);
+        fieldStrings{3} =  sprintf('%.2f',latestTimeGPS(ith_dataSet,1)-t_smallest);
+        fcn_INTERNAL_printFields(fid, sequenceNames{ith_dataSet},fieldStrings,Nheader,Nfields)        
+    end
+end
 
 %% Identify data belonging to each merge sequence
 % Loop through all the files that are first in sequence, and for each, make
@@ -297,7 +320,14 @@ for ith_merged = 1:NmergedFiles
         % but requiring that the earliest time is AFTER the previous ending
         % time.
         time_difference = (earliestTimeGPS-nextEndingTime);
-        nextIndex = find((time_difference>=0).*(abs(time_difference)<=thresholdTimeNearby));
+        % nextIndex = find((time_difference>=0).*(abs(time_difference)<=thresholdTimeNearby));
+        nextIndex = find(abs(time_difference)<=thresholdTimeNearby);
+
+        % Make sure only one file was found
+        if length(nextIndex)>1
+            error('Multiple files found where the end of one file is time-aligned with the end of the next file.');
+        end
+
 
         if isempty(nextIndex)
             flag_keepGoing = 0;
@@ -359,12 +389,21 @@ for ith_mergedData = 1:NmergedFiles
     indiciesToMerge = mergeIndexList{ith_mergedData};
     mergedName = cat(2,shortMergedNames{ith_mergedData},'_merged');
 
+    % Update user
+    if fid>0
+        fprintf(fid,'\nMERGING group %.0d of %.0d: %s\n',ith_mergedData, NmergedFiles, mergedName);
+    end
+
     clear cellArrayOfStructures bagFileNames
     NfilesToMerge = length(indiciesToMerge);
     cellArrayOfStructures{NfilesToMerge} = struct; %#ok<AGROW>
     bagFileNames{NfilesToMerge} = ''; %#ok<AGROW>
     for ith_dataFile = 1:NfilesToMerge
         bagFileNames{ith_dataFile} = rawDataCellArray{indiciesToMerge(ith_dataFile)}.Identifiers.SourceBagFileName;
+        if fid>0
+            fprintf(fid,'\tAdding: %s\n',bagFileNames{ith_dataFile});
+        end
+
 
         % Keep the identifiers for the first one
         if 1==ith_dataFile
@@ -390,6 +429,15 @@ for ith_mergedData = 1:NmergedFiles
     
     mergedRawDataCellArray{ith_mergedData} = stitchedStructure;
     uncommonFieldsCellArray{ith_mergedData} = uncommonFields;
+
+    if fid>0
+        if ~isempty(uncommonFields)
+            fprintf(fid,'\tErrors found in the following fields: \n');
+            for ith_field = 1:length(uncommonFields)
+                fprintf(fid,'\t\t%s\n',uncommonFields{ith_field});
+            end
+        end
+    end
 end
 
 
@@ -605,3 +653,47 @@ end
 
 end % Ends fcn_INTERNAL_saveMATfile
 
+
+%% fcn_INTERNAL_printFields
+function fcn_INTERNAL_printFields(fid, leadString,fieldStrings,Nheader,Nfields)
+% Print the fields
+fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(leadString,Nheader));
+for jth_overlappingField = 1:length(fieldStrings)
+    fieldToCheck = fieldStrings{jth_overlappingField};
+    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(fieldToCheck,Nfields));
+end
+fprintf(fid,'\n');
+
+end % Ends fcn_INTERNAL_printFields
+
+
+%% fcn_INTERNAL_printSummary
+function fcn_INTERNAL_printSummary(fid, summaryTitleString,matrixToPrint,equality_result, sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields,N_datasets,NoverlappingFields)
+
+
+fprintf(fid,'%s: \n',summaryTitleString);
+fcn_INTERNAL_printFields(fid, sprintf('\tCommonField:'),sensorfields_initial,fieldsOverlappingIndicies,Nheader,Nfields)
+
+% Print structure results
+if ~isempty(matrixToPrint)
+    for ith_structure = 1:N_datasets
+        stringHeader = sprintf('\tStructure %.0d:',ith_structure);
+        fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
+        for jth_overlappingField = 1:NoverlappingFields
+            indexFieldToCheck = fieldsOverlappingIndicies(jth_overlappingField);
+            stringField = sprintf('%.0f',matrixToPrint(indexFieldToCheck,ith_structure));
+            fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
+        end
+        fprintf(fid,'\n');
+    end
+end
+
+% Print equality results
+stringHeader = sprintf('\tEquality?');
+fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringHeader,Nheader));
+for jth_overlappingField = 1:NoverlappingFields
+    stringField = sprintf('%.0f',equality_result(jth_overlappingField,1));
+    fprintf(fid,'%s ',fcn_DebugTools_debugPrintStringToNCharacters(stringField,Nfields));
+end
+fprintf(fid,'\n');
+end % Ends fcn_INTERNAL_printSummary
