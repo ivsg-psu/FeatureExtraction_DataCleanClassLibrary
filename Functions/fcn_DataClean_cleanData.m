@@ -44,6 +44,7 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 % DEPENDENCIES:
 %
 %      fcn_DebugTools_checkInputsToFunctions
+%      fcn_DataClean_mergeSensorsByMethod
 %
 % EXAMPLES:
 %
@@ -217,7 +218,6 @@ N_max_loops = 30;
 debugging_data_structure_sequence{N_max_loops} = struct;
 
 main_data_clean_loop_iteration_number = 0; % The first iteration corresponds to the raw data loading
-flag_trim_with_ROSTime = 1;
 currentDataStructure = rawDataStruct;
 %%
 while 1==flag_stay_in_main_loop   

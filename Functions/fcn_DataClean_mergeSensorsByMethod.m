@@ -1,11 +1,11 @@
-function updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,varargin)
+function updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure, sensors_to_merge, merged_sensor_name, method_name, varargin)
 
 % fcn_DataClean_mergeSensorsByMethod
 % Merges two sensors together by a selected method
 %
 % FORMAT:
 %
-%      updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure,sensors_to_merge,merged_sensor_name,method_name,varargin)
+%      updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructure, sensors_to_merge, merged_sensor_name, method_name, (fid))
 %
 % INPUTS:
 %
@@ -25,6 +25,11 @@ function updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructur
 %            is repeated from one sensor to another, the repeated name is
 %            appended with "2", then "3", etc.
 %
+%            'keep_unique': the fields from all sensors are kept only if
+%            their contents are different. If a field contains new data and
+%            is repeated from one sensor to another, the repeated name is
+%            appended with "2", then "3", etc.
+%
 %      (OPTIONAL INPUTS)
 %
 %      fid: a file ID to print results of analysis. If not entered, the
@@ -37,7 +42,8 @@ function updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructur
 %
 % DEPENDENCIES:
 %
-%      fcn_DebugTools_checkInputsToFunctions
+%      fcn_DataClean_findMatchingSensors
+%      fcn_DebugTools_debugPrintStringToNCharacters
 %
 % EXAMPLES:
 %
@@ -51,16 +57,40 @@ function updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructur
 %
 % 2023_07_04: sbrennan@psu.edu
 % -- wrote the code originally
+% 2024_09_26: sbrennan@psu.edu
+% -- updated to comments
+% -- added debug flag area
 
-% Set default fid (file ID) first:
-fid = 1; % Default case is to print to the console
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+%% Debugging and Input checks
 
-if fid~=0
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==5 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
+
+% flag_do_debug = 1;
+
+if flag_do_debug
     st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
 end
 
 
@@ -76,11 +106,12 @@ end
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if 0 == flag_max_speed
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(4,5);
 
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(4,5);
-    
+    end
 end
 
 
@@ -100,6 +131,7 @@ if 5 <= nargin
     end
 end
 
+flag_do_plots = 0; % Shut off plotting
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

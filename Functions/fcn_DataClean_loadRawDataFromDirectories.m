@@ -290,11 +290,11 @@ for ith_rootDirectory = 1:length(rootdirs)
     fileListToAdd = filelist([filelist.isdir]);
     only_directory_filelist = [only_directory_filelist; fileListToAdd];  %#ok<AGROW> % keep only directories from list
     if fid
-        fprintf(fid,'\tCandidates found in directory: %.0d\n',length(fileListToAdd));
+        fprintf(fid,'\tCandidates found in directory: %.0f\n',length(fileListToAdd));
     end
 end
 if fid
-    fprintf(fid,'Total candidates found: %.0d\n',length(only_directory_filelist));
+    fprintf(fid,'Total candidates found: %.0f\n',length(only_directory_filelist));
 end
 
 %% Loop through all the directories

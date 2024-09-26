@@ -218,6 +218,9 @@ end
 
 %% Find all the directories that will be queried
 only_directory_filelist = [];
+if fid
+    fprintf(fid,'\nSEARCHING DIRECTORIES FOR MAT FILES\n');
+end
 for ith_rootDirectory = 1:length(rootdirs)
     rootdir = rootdirs{ith_rootDirectory};
     if fid
@@ -225,9 +228,15 @@ for ith_rootDirectory = 1:length(rootdirs)
     end
     directoryQuery = fullfile(rootdir, '**',cat(2,matQueryString,'.mat'));
     filelist = dir(directoryQuery);  % gets list of files and folders in any subfolder that start with name 'mapping_van_'
-    only_directory_filelist = [only_directory_filelist; filelist([filelist.isdir]==0)];  %#ok<AGROW> % keep only files from list
+    fileListToAdd = filelist([filelist.isdir]==0);
+    only_directory_filelist = [only_directory_filelist; fileListToAdd];  %#ok<AGROW> % keep only directories from list
+    if fid
+        fprintf(fid,'\tCandidates found in directory: %.0f\n',length(fileListToAdd));
+    end
 end
-
+if fid
+    fprintf(fid,'Total candidates found: %.0f\n',length(only_directory_filelist));
+end
 
 %% Loop through all the directories
 % Initialize key storage variables

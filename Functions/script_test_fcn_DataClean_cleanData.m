@@ -92,7 +92,7 @@ plotFlags.fig_num_plotAllMatIndividually = [];
 rawDataCellArray = fcn_DataClean_loadMatDataFromDirectories(rootdirs, searchIdentifiers, (matQueryString), (fid), (plotFlags));
 
 
-%%
+%%%%
 ref_baseStationLLA = [40.44181017, -79.76090840, 327.428]; % Pittsburgh
 fid = 1;
 Flags = [];

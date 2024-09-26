@@ -326,9 +326,10 @@ end
 
 % Convert ENU data to LLA
 % Define reference location at test track
-reference_latitude = 40.8623031194444;
-reference_longitude = -77.8362636138889;
-reference_altitude = 333.817;
+reference_latitude = 40.86368573;
+reference_longitude = -77.83592832;
+reference_altitude = 344.189;
+
 
 gps_object = GPS(reference_latitude,reference_longitude,reference_altitude); % Initiate the class object for GPS
 % ENU_full_data = gps_object.WGSLLA2ENU(LLA_full_data(:,1), LLA_full_data(:,2), LLA_full_data(:,3));
