@@ -256,6 +256,7 @@ if ~isempty(good_indices)
     end
 else
     % The good_indices vector is empty
+    warning('on','backtrace');
     warning('Empty vector found for good indices - unclear how to fix.');
     new_data = data;
 end

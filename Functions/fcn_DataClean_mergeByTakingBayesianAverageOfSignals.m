@@ -131,18 +131,21 @@ for i_data = 1:length(sensors_list)
                 fprintf(1,'Time and data lengths mismatch in field: %s for sensor %s\n',field_name,sensor_name);
                 fprintf(1,'Time length: %d\n',length(temp_t(:,1)));
                 fprintf(1,'Data length: %d\n',length(temp_data(:,1)));
-
+                warning('on','backtrace');
+                warning('Time and data length mismatch detected.');
                 error('Time and data lengths mismatch in field: %s for sensor %s',field_name,sensor_name);
             end
             
             % Confirm there are non NaNs within data fields
             if any(isnan(temp_data))
+                warning('on','backtrace');
                 warning('NaN values found in field: %s for sensor %s',field_name,sensor_name);
                 flag_data_good = 0;
             end
             
             % Confirm there are non NaNs within sigma fields
             if any(isnan(temp_sigma))
+                warning('on','backtrace');
                 warning('NaN values found in data sigma field: %s for sensor %s',strcat(field_name,'_Sigma'),sensor_name);
                 flag_data_good = 0;
             end
@@ -150,6 +153,7 @@ for i_data = 1:length(sensors_list)
             % Confirm there are no negative or zero values within the sigma
             % field
             if any(temp_sigma<=0)
+                warning('on','backtrace');
                 warning('Zero or negative values found in data sigma field: %s for sensor %s',strcat(field_name,'_Sigma'),sensor_name);
                 flag_data_good = 0;
             end
@@ -157,6 +161,8 @@ for i_data = 1:length(sensors_list)
             % Cannot enter here unless all data is good
             if 1==flag_data_good
                 if this_centiSeconds ~= truth_centiSeconds
+                    warning('on','backtrace');
+                    warning('Unequal time sampling detected.');
                     cprintf('Errors','\tWARNING: Data is not equally time sampled. Interpolation will be used.\n');
                     fprintf(1,'\tThe truth sensor: %s, has a time sampling of %d centiSeconds.\n',truth_sensor,truth_centiSeconds);
                     fprintf(1,'\tThis sensor: %s, has a time sampling of %d centiSeconds.\n',sensor_name,this_centiSeconds);
@@ -181,6 +187,7 @@ for i_data = 1:length(sensors_list)
                 sigma_columns(:,n_data) = temp_sigma;   %#ok<AGROW>
                 
             else
+                warning('on','backtrace');
                 warning('NaN detected in %s.%s or its correspoding std-dev, but it works unless every field contains NaN',sensor_name,field_name);
                 
             end % ends if statement checking if there is any NaN values
@@ -247,23 +254,27 @@ end
 
 % Check that all the sigma values are positive
 if max(any(sigma_columns<0))
-    fprintf('\t\t WARNING: zero sigma values detected in following columns:\n');
-    fprintf('\t\t Column:   ');
-    fprintf('%d \t',1:length(sigma_columns(1,:)));
-    fprintf('\n');
-    fprintf('\t\t Detected? ');
-    fprintf('%d \t',any(sigma_columns<0));
-    fprintf('\n');
+    warning('on','backtrace');
+    warning('Sigma value errors detected.');
+    fprintf(1, '\t\t WARNING: zero sigma values detected in following columns:\n');
+    fprintf(1,'\t\t Column:   ');
+    fprintf(1,'%d \t',1:length(sigma_columns(1,:)));
+    fprintf(1,'\n');
+    fprintf(1,'\t\t Detected? ');
+    fprintf(1,'%d \t',any(sigma_columns<0));
+    fprintf(1,'\n');
 end
 
 if max(any(sigma_columns==0))
-    fprintf('\t\t WARNING: zero sigma values detected in following columns:\n');
-    fprintf('\t\t Column:   ');
-    fprintf('%d \t',1:length(sigma_columns(1,:)));
-    fprintf('\n');
-    fprintf('\t\t Detected? ');
-    fprintf('%d \t',any(sigma_columns==0));
-    fprintf('\n');
+    warning('on','backtrace');
+    warning('Sigma value errors detected.');
+    fprintf(1,'\t\t WARNING: zero sigma values detected in following columns:\n');
+    fprintf(1,'\t\t Column:   ');
+    fprintf(1,'%d \t',1:length(sigma_columns(1,:)));
+    fprintf(1,'\n');
+    fprintf(1,'\t\t Detected? ');
+    fprintf(1,'%d \t',any(sigma_columns==0));
+    fprintf(1,'\n');
 end
 
 

@@ -78,10 +78,10 @@ function [flags, offending_sensor] = fcn_DataClean_checkDataNameConsistency(data
 % 2023_07_03: sbrennan@psu.edu
 % -- wrote the code originally, using
 % fcn_DataClean_checkDataTimeConsistency as a reference
-% 2024_09_24 - S. Brennan
+% 2024_09_27 - S. Brennan
 % -- updated the debug flags area
 % -- fixed bug where offending sensor is set wrong
-
+% -- fixed fid bug where it is used in debugging
 
 
 % Check if flag_max_speed set. This occurs if the fig_num variable input
@@ -149,15 +149,11 @@ if (0 == flag_max_speed) && (2 <= nargin)
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
     end
-end
-
-if fid>0
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
 end
 
 % Turn plotting off
@@ -277,8 +273,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

@@ -8,7 +8,7 @@ function trimmed_dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructur
 % FORMAT:
 %
 %      trimmed_dataStructure = fcn_INTERNAL_trimRepeatsFromField(...
-%         dataStructure,(fid), (field_name),(sensors_to_check))
+%         dataStructure, (fid), (field_name), (sensors_to_check))
 %
 % INPUTS:
 %
@@ -46,19 +46,40 @@ function trimmed_dataStructure = fcn_DataClean_trimRepeatsFromField(dataStructur
 %
 % 2023_06_26: sbrennan@psu.edu
 % -- wrote the code originally
+% 2024_09_27 - S. Brennan
+% -- updated the debug flags area
+% -- fixed bug where offending sensor is set wrong
+% -- fixed fid bug where it is used in debugging
 
-% TO DO
 
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==4 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
 
-% Set default fid (file ID) first:
-fid = 1; % Default case is to print to the console
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+% flag_do_debug = 1;
 
-if fid~=0
+if flag_do_debug
     st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
 end
 
 
@@ -74,17 +95,17 @@ end
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(1,4);
-
+if (0==flag_max_speed)
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(1,4);
+    end
 end
-
 
 % Does the user want to specify the fid?
 
 % Check for user-defined fid input
+fid = 0;
 if 2 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
@@ -94,6 +115,7 @@ if 2 <= nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
@@ -119,6 +141,9 @@ if 3 <= nargin
     end
 end
 
+flag_do_plots = 0;  % % Flag to plot the final results
+
+
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   __  __       _
@@ -131,7 +156,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Report what we are doing
-if 0~=fid
+if 0<fid
     fprintf(fid,'Checking for repeats in %s data ',field_name);
     fprintf(fid,'in all %s sensors:\n', sensors_to_check);
 end
@@ -160,22 +185,31 @@ for ith_data = 1:length(sensorNames)
 
     Nrepeats = length(indicies_unique)-length(indicies_data);
     if 0==Nrepeats
-        fprintf(fid,'\t\t No repeats found\n');
+        if fid>0
+            fprintf(fid,'\t\t No repeats found\n');
+        end
     else
-        fprintf(fid,'\t\t A total of %.0d repeats discovered.\n',Nrepeats);
+        if fid>0
+            fprintf(fid,'\t\t A total of %.0d repeats discovered.\n',Nrepeats);
+        end
         
         % Warn the user if there are a ton of repeats!
         if Nrepeats/length(indicies_unique)>0.1
             if fid==1
+                warning('on','backtrace');
+                warning('Fault sensor detected.');
                 fcn_DebugTools_cprintf('-Red','\t\t WARNING: More than 10%% of data is repeated - this indicates a faulty sensor!\n');
             else
+                warning('on','backtrace');
                 warning('More than 10%% of data is repeated in a sensor field - this indicates a faulty sensor!');
                 fprintf(fid,'More than 10%% of data is repeated - this indicates a faulty sensor!\n');
             end
         end % Ends special warning for really bad data
         
-        % Tell the user what we are doing
-        fprintf(fid,'\t\t Looping through subfields to remove repeats on all data.\n');
+        % Tell the user what we are doing?
+        if fid>0
+            fprintf(fid,'\t\t Looping through subfields to remove repeats on all data.\n');
+        end
         
         % Define the reference length - all arrays in the sensor must match
         % this one
@@ -186,13 +220,16 @@ for ith_data = 1:length(sensorNames)
         for i_subField = 1:length(subfieldNames)
             % Grab the name of the ith subfield
             subFieldName = subfieldNames{i_subField};
-            
-            fprintf(fid,'\t\t\t Checking field: %s.\n',subFieldName);
+            if fid>0
+                fprintf(fid,'\t\t\t Checking field: %s.\n',subFieldName);
+            end
             
             if ~iscell(dataStructure.(sensor_name).(subFieldName)) % Is it a cell? If yes, skip it
                 if length(dataStructure.(sensor_name).(subFieldName)) ~= 1 % Is it a scalar? If yes, skip it
                     % It's an array, make sure it has right length
                     if lengthReference~= length(dataStructure.(sensor_name).(subFieldName))
+                        warning('on','backtrace');
+                        warning('Bad sensor detected.');
                         error('Sensor %s contains a datafield %s that has an amount of data not equal to the query field. This is usually because data is missing.',sensor_name,subFieldName);
                     end
                     
@@ -225,8 +262,8 @@ if flag_do_plots
 
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

@@ -120,20 +120,6 @@ if 0 == flag_max_speed
         % Are there the right number of inputs?
         narginchk(1,5);
 
-        % % Check if dataFolderString is a directory. If directory is not there, warn
-        % % the user.
-        % try
-        %     fcn_DebugTools_checkInputsToFunctions(dataFolderString, 'DoesDirectoryExist');
-        % catch ME
-        %     warning(['It appears that data was not pushed into a folder: ' ...
-        %         '\\DataCleanClassLibrary\LargeData ' ...
-        %         'which is the folder where large data is imported for processing. ' ...
-        %         'Note that this folder is too large to include in the code repository, ' ...
-        %         'so it must be copied over from a data storage location. Within IVSG, ' ...
-        %         'this storage location is the OndeDrive folder called GitHubMirror.']);
-        %     rethrow(ME)
-        % end
-
     end
 end
 

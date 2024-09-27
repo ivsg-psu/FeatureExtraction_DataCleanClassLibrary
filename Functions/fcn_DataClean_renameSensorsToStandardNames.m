@@ -39,18 +39,44 @@ function updated_dataStructure = fcn_DataClean_renameSensorsToStandardNames(data
 % -- wrote the code originally
 % 2024_07_15: xfc5113@psu.edu
 % -- update bad and good names of the fields
+% 2024_09_26: sbrennan@psu.edu
+% -- updated to comments
+% -- added debug flag area
+% -- fixed fid printing error
+% -- fixed names to match example
+% -- added Identifiers
 
-% Set default fid (file ID) first:
-fid = 1; % Default case is to print to the console
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+%% Debugging and Input checks
 
-if fid~=0
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==3 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
 end
 
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 %% check input arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,16 +90,16 @@ end
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if 0 == flag_max_speed
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(1,2);
 
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(1,2);
-    
+    end
 end
 
-
 % Does the user want to specify the fid?
-if 2 <= nargin
+if (0 == flag_max_speed) && (2 <= nargin)
     temp = varargin{end};
     if ~isempty(temp)
         % Check that the FID works
@@ -82,12 +108,14 @@ if 2 <= nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
     end
 end
 
+flag_do_plots = 0;
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,6 +127,9 @@ end
 %  |_|  |_|\__,_|_|_| |_|
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Loop through all the fields, fixing them
+
+sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
 
 %% Create a dictionary mapping bad names to good ones
 correct_names = {...
@@ -125,11 +156,16 @@ Ngood = length(correct_names);
 
 name_pairs = {...
 'Hemisphere_DGPS','GPS_Hemisphere_TopCenter';
+'diagnostic_encoder','DIAGNOSTIC_USDigital_RearAxle';
+'diagnostic_trigger','TRIGGER_TrigBox_RearTop';
+'Raw_Encoder','ENCODER_USDigital_RearAxle';
 'Diag_Encoder','DIAGNOSTIC_USDigital_RearAxle';
-'Diag_Trigger','DIAGNOSTIC_TrigBox_RearTop';
+'Diag_Trigger','TRIGGER_TrigBox_RearTop';
 'ntrip_info','NTRIP_Hotspot_Rear';
 'Encoder_Raw','ENCODER_USDigital_RearAxle';
 'Trigger_Raw','TRIGGER_TrigBox_RearTop';
+'Raw_Trigger','TRIGGER_TrigBox_RearTop';
+'RawTrigger','TRIGGER_TrigBox_RearTop';
 'SickLiDAR','LIDAR_Sick_Rear';
 'Lidar_Sick_Rear','LIDAR_Sick_Rear';
 'sparkfun_gps_diag_rear_left', 'DIAGNOSTIC_Sparkfun_LeftRear';
@@ -143,8 +179,26 @@ name_pairs = {...
 'SparkFun_RearLeft_Velocity_Estimate','Velocity_Estimate_SparkFun_LeftRear';
 'SparkFun_RearRight_Velocity_Estimate','Velocity_Estimate_SparkFun_RightRear';
 'SparkFun_Front_Velocity_Estimate','Velocity_Estimate_SparkFun_Front';
-'GPS_SparkFun_Front_GGA','GPS_SparkFun_Front'};
+'GPS_SparkFun_Front_GGA','GPS_SparkFun_Front';
+'GPS_SparkFun_RearRight','GPS_SparkFun_RightRear';
+'GPS_SparkFun_RearLeft','GPS_SparkFun_LeftRear';
+'IMU_Adis_CenterTop','IMU_Adis_TopCenter';
+'Identifiers','Identifiers';
+};
 
+%% Make sure all the sensor names are in the dictionary
+for ith_sensor = 1:length(sensor_names)
+    sensor_name = sensor_names{ith_sensor};
+    matches = strcmp(sensor_name, name_pairs);
+    if ~any(matches,"all")
+        warning('on','backtrace');
+        warning('Unable to find string in dictionary: %s',sensor_name)
+        error('Sensor name ''%s'' not found - unable to fix',sensor_name)
+    end
+end
+
+
+%% Prepare the dictionary
 [Npairs,~] = size(name_pairs);
 for ith_pair = 1:Npairs    
     badNames{ith_pair} = name_pairs{ith_pair,1}; %#ok<AGROW>
@@ -155,17 +209,17 @@ for ith_pair = 1:Ngood
     goodNames{ith_pair+Npairs} = correct_names{ith_pair};
 end
 
+% try
+%     % IF using 2022b or later, --> BETTER: d = dictionary(badNames,goodNames);
+%     dictionaryMap = dictionary(badNames,goodNames);
+% catch
+    dictionaryMap = containers.Map(badNames,goodNames);
+% end
 
-M = containers.Map(badNames,goodNames);
-% IF using 2022b or later, --> BETTER: d = dictionary(badNames,goodNames);
 
-
-%% Loop through all the fields, fixing them
-
-sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
 
 %% Print results so far?
-if fid
+if fid>0
     % Find the longest from name
     longest_from_string = 0;
     for ith_name = 1:length(sensor_names)
@@ -178,8 +232,8 @@ if fid
     % Find the longest to name
     longest_to_string = 0;
     for ith_name = 1:length(sensor_names)
-        if length(M(sensor_names{ith_name}))>longest_to_string
-            longest_to_string = length(M(sensor_names{ith_name}));
+        if length(dictionaryMap(sensor_names{ith_name}))>longest_to_string
+            longest_to_string = length(dictionaryMap(sensor_names{ith_name}));
         end
     end
     longest_to_string = max(longest_to_string,10);
@@ -196,17 +250,17 @@ if fid
     for ith_data = 1:length(sensor_names)
         row_data_string         = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d:',ith_data),7);
         sensor_from_data_string      = fcn_DebugTools_debugPrintStringToNCharacters(sensor_names{ith_data},longest_from_string);
-        sensor_to_data_string       = fcn_DebugTools_debugPrintStringToNCharacters(M(sensor_names{ith_data}),longest_to_string);
+        sensor_to_data_string       = fcn_DebugTools_debugPrintStringToNCharacters(dictionaryMap(sensor_names{ith_data}),longest_to_string);
         fprintf(fid,'\t \t %s \t %s \t %s \n',row_data_string, sensor_from_data_string,sensor_to_data_string);
     end
     fprintf(fid,'\n');
 end
 
-
+%% Do the conversion
 for ith_sensor = 1:length(sensor_names)
 
     sensor_name = sensor_names{ith_sensor};
-    updated_dataStructure.(M(sensor_name)) = dataStructure.(sensor_name);
+    updated_dataStructure.(dictionaryMap(sensor_name)) = dataStructure.(sensor_name);
 end
 
 
@@ -229,7 +283,7 @@ if flag_do_plots
     
 end
 
-if  fid~=0
+if  flag_do_debug
     fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 

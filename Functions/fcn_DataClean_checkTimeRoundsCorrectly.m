@@ -1,6 +1,5 @@
 %% fcn_DataClean_checkROSTimeRoundsCorrectly
 function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeRoundsCorrectly(dataStructure, field_name, varargin)
-% fcn_DataClean_checkTimeRoundsCorrectly(dataStructure, field_name,flags,time_field,sensors_to_check,fid
 % fcn_DataClean_checkTimeRoundsCorrectly
 % Given a data structure and the field name, checks every sensor to see if
 % the field, when rounded to the centiSecond value of the sensor, matches
@@ -10,14 +9,14 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeRoundsCor
 % FORMAT:
 %
 %      [flags,offending_sensor] = fcn_DataClean_checkTimeRoundsCorrectly(...
-%          dataStructure,field_name,...
-%          (flags),(time_field),(sensors_to_check),(fid))
+%          dataStructure, field_name,...
+%          (flags), (time_field), (sensors_to_check), (fid))
 %
 % INPUTS:
 %
 %      dataStructure: a data structure to be analyzed
 %
-%      field_name: the field to be checked
+%      field_name: the field to be tested against the time field
 %
 %      (OPTIONAL INPUTS)
 %
@@ -59,11 +58,44 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeRoundsCor
 %     
 % 2023_07_02: sbrennan@psu.edu
 % -- wrote the code originally 
+% 2024_09_27: sbrennan@psu.edu
+% -- updated top comments
+% -- added debug flag area
+% -- fixed fid printing error
+% -- added fig_num input, fixed the plot flag
+% -- fixed warning and errors
 
+%% Debugging and Input checks
 
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==6 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
+
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 
 %% check input arguments
@@ -78,10 +110,11 @@ flag_check_inputs = 1; % Flag to perform input checking
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(2,6);
+if (0 == flag_max_speed)
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(2,6);
+    end
 end
 
 % Does the user want to specify the flags?
@@ -115,26 +148,26 @@ end
 
 % Does the user want to specify the fid?
 fid = 0;
-% Check for user input
-if 6 <= nargin
-    temp = varargin{end};
-    if ~isempty(temp)
-        % Check that the FID works
-        try
-            temp_msg = ferror(temp); %#ok<NASGU>
-            % Set the fid value, if the above ferror didn't fail
-            fid = temp;
-        catch ME
-            warning('User-specified FID does not correspond to a file. Unable to continue.');
-            throwAsCaller(ME);
+% Check for user input?
+if (0 == flag_max_speed)
+    if 6 <= nargin
+        temp = varargin{end};
+        if ~isempty(temp)
+            % Check that the FID works
+            try
+                temp_msg = ferror(temp); %#ok<NASGU>
+                % Set the fid value, if the above ferror didn't fail
+                fid = temp;
+            catch ME
+                warning('on','backtrace');
+                warning('User-specified FID does not correspond to a file. Unable to continue.');
+                throwAsCaller(ME);
+            end
         end
     end
 end
 
-if fid
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
-end
+flag_do_plots = 0;
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -148,6 +181,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Set up flags based on input conditions
+% Should all sensors be checked?
 if isempty(sensors_to_check)
     flag_check_all_sensors = 1;    
 else
@@ -175,7 +209,7 @@ else
     [~,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, field_name,sensors_to_check);
 end
 
-if 0~=fid
+if 0<fid
     if isempty(sensors_to_check)
         temp_sensors_to_check = 'all';
     else
@@ -244,8 +278,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends fcn_DataClean_checkTimeRoundsCorrectly

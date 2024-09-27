@@ -114,7 +114,7 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataPoseConsistency(dataS
 % -- As of 2023_06_25, Finish header comments for every flag
 
 
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
+flag_do_debug = 1;  % % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
@@ -153,6 +153,7 @@ if 2 <= nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
@@ -719,7 +720,7 @@ end
 % 
 
 
-CODE THE BELOW
+% CODE THE BELOW
 
 
 % 
@@ -862,8 +863,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function
@@ -1119,6 +1120,8 @@ for i_data = 1:length(sensor_names)
     ROS_Time = sensor_data.ROS_Time;
 
     if length(GPS_Time(:,1)) ~= length(ROS_Time(:,1))
+        warning('on','backtrace');
+        warning('Throwing an error due to major sensor error.')
         error('Dissimilar ROS and GPS time lengths detected. This indicates a major sensor error.');
     end
     mean_ratio = mean(ROS_Time./GPS_Time);
@@ -1127,6 +1130,8 @@ for i_data = 1:length(sensor_names)
         flags_data_good(i_data,1) = 0;
         offending_sensor = sensor_name;
     elseif 0.95 > mean_ratio || mean_ratio>1.05
+        warning('on','backtrace');
+        warning('Throwing an error due to bad time agreements.')
         error('Strange ratio detected between ROS Time and GPS Time');
     end            
 end
@@ -1134,6 +1139,7 @@ end
 if all(flags_data_good==0)
     flags.ROS_Time_scaled_correctly_as_seconds = 0;
 elseif any(flags_data_good==0)
+    warning('on','backtrace');
     warning('Some GPS sensors appear to be scaled correctly, but some are not. This indicates a data loading error.');
     flags.ROS_Time_scaled_correctly_as_seconds = 0;
 else
@@ -1208,33 +1214,34 @@ end
 
 end % Ends fcn_INTERNAL_checkROSTimeRoundsCorrectly
 
-ADD A FUNCTION FOR THIS BELOW
-
 % 
-%                 % Check to see if there are time jumps out of the ordinary
-%                 diff_t = diff(t);
-%                 mean_dt = mean(diff_t);
-%                 std_dt = std(diff_t);
-%                 max_dt = mean_dt+5*std_dt;
-%                 min_dt = max(0.00001,mean_dt-5*std_dt);
-%                 flag_jump_error_detected = 0;
-%                 if any(diff_t>max_dt) || any(diff_t<min_dt)
-%                     flag_jump_error_detected = 1;
-%                 end
-%
-% AND (retiming data)
-%
-%                             tolerance = centiSeconds*0.5;
-%                             t_diff = (t(i_time)-t(i_time-1))*100;
-%                             if t_diff>(centiSeconds+tolerance) || t_diff<(centiSeconds-tolerance)
-%                                 flag_delta_errors_detected = 1;
-%                                 if flag_detecting_bad_now==0
-%                                     i_bad_start = i_time;
-%                                     flag_detecting_bad_now = 1;
-%                                 end
-%                             else
-
-MOVE THE FUNCTION BELOW
+% ADD A FUNCTION FOR THIS BELOW
+% 
+% % 
+% %                 % Check to see if there are time jumps out of the ordinary
+% %                 diff_t = diff(t);
+% %                 mean_dt = mean(diff_t);
+% %                 std_dt = std(diff_t);
+% %                 max_dt = mean_dt+5*std_dt;
+% %                 min_dt = max(0.00001,mean_dt-5*std_dt);
+% %                 flag_jump_error_detected = 0;
+% %                 if any(diff_t>max_dt) || any(diff_t<min_dt)
+% %                     flag_jump_error_detected = 1;
+% %                 end
+% %
+% % AND (retiming data)
+% %
+% %                             tolerance = centiSeconds*0.5;
+% %                             t_diff = (t(i_time)-t(i_time-1))*100;
+% %                             if t_diff>(centiSeconds+tolerance) || t_diff<(centiSeconds-tolerance)
+% %                                 flag_delta_errors_detected = 1;
+% %                                 if flag_detecting_bad_now==0
+% %                                     i_bad_start = i_time;
+% %                                     flag_detecting_bad_now = 1;
+% %                                 end
+% %                             else
+% 
+% MOVE THE FUNCTION BELOW
 
 %% fcn_INTERNAL_checkFieldCountMatchesGPSTime
 function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkFieldCountMatchesTriggerTime(fid, dataStructure, flags, field_name)
@@ -1301,7 +1308,7 @@ end
 
 end % Ends fcn_INTERNAL_checkFieldCountMatchesGPSTime
 
-MOVE THE ITEMS BELOW
+%% MOVE THE ITEMS BELOW
 
 %% fcn_INTERNAL_checkSigmasHaveNoNaN
 function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkSigmasHaveNoNaN(fid, dataStructure, flags)

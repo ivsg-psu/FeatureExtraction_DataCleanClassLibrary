@@ -60,6 +60,7 @@ function updated_dataStructure = fcn_DataClean_mergeSensorsByMethod(dataStructur
 % 2024_09_26: sbrennan@psu.edu
 % -- updated to comments
 % -- added debug flag area
+% -- fixed fid printing error
 
 %% Debugging and Input checks
 
@@ -125,6 +126,7 @@ if 5 <= nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
@@ -145,6 +147,8 @@ flag_do_plots = 0; % Shut off plotting
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Produce a list of all the sensors (each is a field in the structure)
+% This finds all the sensors in the dataStructure that have the
+% "sensors_to_merge" string insisde the sensor name
 sensor_names = fcn_DataClean_findMatchingSensors(dataStructure, sensors_to_merge);
 
 
@@ -153,7 +157,7 @@ sensor_names = fcn_DataClean_findMatchingSensors(dataStructure, sensors_to_merge
 
 % Create variables to store information
 all_field_names{1}  = '';
-all_sensor_names{1} = '';
+all_subfield_names{1} = '';
 
 % Loop through the fields
 Nfields = 0;
@@ -174,7 +178,7 @@ for ith_sensor = 1:length(sensor_names)
         
         % Save the results
         Nfields = Nfields + 1;        
-        all_sensor_names{Nfields} = sensor_name; %#ok<AGROW>
+        all_subfield_names{Nfields} = sensor_name; %#ok<AGROW>
         all_field_names{Nfields}  = subFieldName; %#ok<AGROW>
         
     end % ends loop through subFields
@@ -203,7 +207,7 @@ flags_field_data_is_repeated = zeros(Nfields,1);
 % Check if there are repeats in data
 for ith_field = 1:Nfields
     if all_total_repeats(ith_field)>1 % This is a repeat
-        sensor_name = all_sensor_names{ith_field};
+        sensor_name = all_subfield_names{ith_field};
         field_name = all_field_names{ith_field};
         
         % Check which ones match
@@ -214,7 +218,7 @@ for ith_field = 1:Nfields
         reference_data = dataStructure.(sensor_name).(field_name);
         for ith_repeat = 1:length(matched_indicies)
             comparison_field = matched_indicies(ith_repeat);
-            sensor_name_to_check = all_sensor_names{comparison_field};
+            sensor_name_to_check = all_subfield_names{comparison_field};
             field_name_to_check = all_field_names{comparison_field};
             data_to_check = dataStructure.(sensor_name_to_check).(field_name_to_check);
 
@@ -223,20 +227,18 @@ for ith_field = 1:Nfields
             if (isequal(reference_data,data_to_check))|(all([all(isnan(reference_data)), all(isnan(data_to_check))]))
                 flags_field_data_is_repeated(comparison_field) = ith_field;
             end
-            if strcmp(field_name_to_check,"SpdOverGrndKmph")
-                disp(field_name_to_check)
-            end
+
         end % Ends for loop through repeat checks
     end % Ends if statement to check if repeats on this field
 end % Ends loop down the field list
 
 %% Print results so far?
-if fid
+if fid>0
     % Find the longest sensor name
     longest_sensor_string = 0;
-    for ith_name = 1:length(all_sensor_names)
-        if length(all_sensor_names{ith_name})>longest_sensor_string
-            longest_sensor_string = length(all_sensor_names{ith_name});
+    for ith_name = 1:length(all_subfield_names)
+        if length(all_subfield_names{ith_name})>longest_sensor_string
+            longest_sensor_string = length(all_subfield_names{ith_name});
         end
     end
     longest_sensor_string = max(longest_sensor_string,10);
@@ -251,7 +253,7 @@ if fid
     longest_field_string = max(longest_field_string,10);
 
     % Print results
-    fprintf(fid,'\n\t Attempting merge of %s senors to create %s, using method %s on the following sensors and fields: \n',sensors_to_merge,merged_sensor_name,method_name);
+    fprintf(fid,'\n\t Attempting merge of ''%s'' sensors to create ''%s'', using method ''%s'' on the following sensors and fields: \n',sensors_to_merge,merged_sensor_name,method_name);
     
     % Print start time table
     row_title_string       = fcn_DebugTools_debugPrintStringToNCharacters('Row:',7);
@@ -262,9 +264,9 @@ if fid
     data_repeated_string   = fcn_DebugTools_debugPrintStringToNCharacters('Row this repeats?:',20);
     
     fprintf(fid,'\t \t %s \t %s \t %s \t %s \t %s \t %s \n',row_title_string, sensor_title_string,field_title_string,total_repeats_string,repeat_instance_string,data_repeated_string);
-    for ith_data = 1:length(all_sensor_names)
+    for ith_data = 1:length(all_subfield_names)
         row_data_string         = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d:',ith_data),7);
-        sensor_data_string      = fcn_DebugTools_debugPrintStringToNCharacters(all_sensor_names{ith_data},longest_sensor_string);
+        sensor_data_string      = fcn_DebugTools_debugPrintStringToNCharacters(all_subfield_names{ith_data},longest_sensor_string);
         field_data_string       = fcn_DebugTools_debugPrintStringToNCharacters(all_field_names{ith_data},longest_field_string);
         total_data_string       = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',all_total_repeats(ith_data)),20);
         repeat_instance_string  = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',all_repeat_count(ith_data)),20);
@@ -293,7 +295,7 @@ end
 for ith_field = 1:Nfields
     % Grab the sensor and field names
     field_name  = all_field_names{ith_field};
-    sensor_name = all_sensor_names{ith_field};
+    sensor_name = all_subfield_names{ith_field};
     
     if 0~=fid
         fprintf(fid,'\t Merging field %d of %d, %s from sensor %s\n',ith_field,Nfields,field_name, sensor_name);
@@ -320,9 +322,6 @@ for ith_field = 1:Nfields
                 %            another, the repeated name is appended
                 %            with "2", then "3", etc.
                 if flags_field_data_is_repeated(ith_field)==0
-                    if strcmp(field_name,'SpdOverGrndKmph')
-                        disp(field_name)
-                    end
                     if all(isnan(merged_sensor.(field_name)))
                         merged_sensor.(field_name)= dataStructure.(sensor_name).(field_name);
                     else
@@ -360,8 +359,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if  flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

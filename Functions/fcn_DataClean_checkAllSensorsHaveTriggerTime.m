@@ -1,5 +1,8 @@
 function [checked_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,flags)
 
+warning('on','backtrace');
+warning('unfinished function')
+error('This function is not yet done')
 
 checked_flags = flags;
 all_sensors_have_trigger_time = 1;

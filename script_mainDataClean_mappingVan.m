@@ -99,6 +99,8 @@
 % -- added reference GPS location for Aliquippa, site 3
 % -- deleted mainCleanDataStructure - this is now inside cleanData
 % -- updated fcn_INTERNAL_clearUtilitiesFromPathAndFolders
+% -- updated fcn_DataClean_renameSensorsToStandardNames
+
 
 %
 % Known issues:
@@ -107,16 +109,6 @@
 %  left encoder is clearly disconnected.
 %  UPDATE: encoder reattached in 2019_10_15, but still giving positive/negative flipping errors
 %  UPDATE2: encoders rebuilt in 2022 summer to fix this issue
-%
-%  (as of 2019_10_04) - Steering system is giving very poor data. A quick
-%  calculation shows that the resolution is no better than 0.05 inches, and
-%  with a stroke length of 10 inches, this is only 200 counts. The data
-%  show that we need a high resolution encoder on the steering shaft
-%  somehow.
-%  UPDATE: encoder added to steering in 2022 summer to fix this issue
-%
-%  (as of 2019_10_05) - Need the GPS time from all GPS receivers to ensure
-%  alignment with ROS time. (UPDATE: have this as of 10_07 for Hemisphere)
 %
 %  (as of 2019_11_05) - Need to update variance estimates for GPS mode
 %  changes in yaw calculations. Presently assumes 0.01 cm mode.
@@ -139,48 +131,8 @@
 % fcn_loadRawData line 255, and maybe add a flag for this type of error
 
 
-% (as of 2021_07_06 centiSeconds of each sensor is wrong, e.g. GPS is 50ms not 5 ms)
-
 %% TO_DO LIST
-% AS OF 2023_06_12
-% We should separate out codes that LOAD data from a source, away from
-% codes that process data. The function stack that starts with
-% fcn_DataClean_queryRawData, then goes to fcn_DataClean_loadRawData, which
-% then calls the sensor-specific calls:
-% fcn_DataClean_loadRawData_Hemisphere,
-% fcn_DataClean_loadRawData_Novatel_GPS, 
-% etc.
-% completely mix up data loading and data processing, and thus the data
-% processing is very confusing as it is done two different ways all the way
-% down to the sensor level; the codes are different from DB versus from
-% file.
-%
-% To fix this, we may need to:
-% 
-% Separate out the fcn_DataClean_queryRawData into two functions for loading data:
-% -- fcn_DataClean_queryRawDataFromDB
-% -- fcn_DataClean_queryRawDataFromFile
-% The first function should ONLY have the DB queries, the second should work
-% with a file input. We may need to write a third one to handle multiple
-% files similar to the formats now produced by the mapping van. 
-% 
-% Then,
-% Move the dB versus file functionality out of fcn_DataClean_loadRawData, 
-% and use this function to ONLY prepare data from each sensor. Perhaps
-% rename it to "loadSensorData"?
-% 
-% Then, 
-% Fix each sensor load call, for example,
-% fcn_DataClean_loadRawData_Hemisphere, try to unify the loading process
-% for these so that all the GPS systems have the same format, all Encoders,
-% all INS, etc. Each function type, say "GPS" should start off with a
-% template data structure that is filled at the top with empty values, and
-% then each field is fixed inside the file. The custom file for each sensor
-% can create a LOT of problems as we get deeper into the codes.
-%
-% ALSO: MUST ADD THE TRIGGER SOURCE as a SENSOR input!!!
-%
-% As well, for each sensor, we need to characterize three time sources:
+% For each sensor, we need to characterize three time sources:
 % 1) GPS_Time - if it has a "true" time source - such as a GPS sensor that reports UTC
 % time which is true to the nanosecond level. For sensors that do not have
 % this, let's leave this time field empty.
@@ -227,16 +179,13 @@
 %
 % *) insert start point to database
 %
-% 2024_09_14 - S. Brennan
-% -- Need to go through all warnings and add the following line before each
-% warning, to force the warning to be "verbose". Otherwise, we don't know
-% the line number of the warning.
-%             warning('on','backtrace');
+% 2024_09_28 - S. Brennan
+% -- need to change field names in fcn_DataClean_loadMappingVanDataFromFile so that
+% they pass the "standard" names listed in fcn_DataClean_renameSensorsToStandardNames
+
 
 %% Prep the workspace
 close all
-clear all % Comment out when make sure everything is working
-clc
 
 %% Dependencies and Setup of the Code
 % The code requires several other libraries to work, namely the following
@@ -622,7 +571,7 @@ if ~exist('dataset','var')
     if flag.DBquery == true
         % Load the raw data from the database
         queryCondition = 'trip'; % Default: 'trip'. raw data can be queried by 'trip', 'date', or 'driver'
-        [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); % more query condition can be set in the function
+        [rawData,trip_name,trip_id_cleaned,base_station,Hemisphere_gps_week] = fcn_DataClean_queryRawDataFromDB(flag.DBquery,'mapping_van_raw',queryCondition); %#ok<ASGLU> % more query condition can be set in the function
     else
         % Load the raw data from file, and if a fig_num is given, save the
         % image to a PNG file with same name as the bag file
@@ -811,6 +760,25 @@ assert(isequal(stitchedStructure.a,[1*ones(1,3) 2*ones(1,3) 3*ones(1,3)]'))
 assert(isequal(stitchedStructure.c,[1*ones(1,3) 2*ones(1,3) 3*ones(1,3)]'))
 assert(isequal(stitchedStructure.sub1.a,[1*ones(1,3) 2*ones(1,3) 3*ones(1,3)]'))
 
+%% fcn_DataClean_fillTestDataStructure
+% Creates five seconds of test data for testing functions
+%
+% FORMAT:
+%
+%      dataStructure =
+%      fcn_DataClean_fillTestDataStructure((time_time_corruption_type),(fid))
+
+% Basic call in verbose mode
+fprintf(1,'\n\nDemonstrating "verbose" mode by printing to console: \n');
+error_type = [];
+fid = 1;
+testDataStructure = fcn_DataClean_fillTestDataStructure(error_type,fid);
+
+% Make sure its type is correct
+assert(isstruct(testDataStructure));
+
+fprintf(1,'The data structure for testDataStructure: \n')
+disp(testDataStructure)
 
 %% Functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

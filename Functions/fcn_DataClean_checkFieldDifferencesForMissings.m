@@ -94,11 +94,43 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 %     
 % 2023_07_02: sbrennan@psu.edu
 % -- wrote the code originally 
+% 2024_09_27: sbrennan@psu.edu
+% -- updated comments
+% -- added debug flag area
+% -- fixed fid printing error
 
 
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+%% Debugging and Input checks
+
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==8 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
+
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 
 %% check input arguments
@@ -113,10 +145,11 @@ flag_check_inputs = 1; % Flag to perform input checking
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(2,8);
+if (0==flag_max_speed)
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(2,8);
+    end
 end
 
 % Does the user want to specify the flags?
@@ -168,27 +201,27 @@ end
 
 
 % Does the user want to specify the fid?
-fid = 0;
-% Check for user input
-if 8 <= nargin
-    temp = varargin{end};
-    if ~isempty(temp)
-        % Check that the FID works
-        try
-            temp_msg = ferror(temp); %#ok<NASGU>
-            % Set the fid value, if the above ferror didn't fail
-            fid = temp;
-        catch ME
-            warning('User-specified FID does not correspond to a file. Unable to continue.');
-            throwAsCaller(ME);
+if (0==flag_max_speed)
+    fid = 0;
+    % Check for user input
+    if 8 <= nargin
+        temp = varargin{end};
+        if ~isempty(temp)
+            % Check that the FID works
+            try
+                temp_msg = ferror(temp); %#ok<NASGU>
+                % Set the fid value, if the above ferror didn't fail
+                fid = temp;
+            catch ME
+                warning('on','backtrace');
+                warning('User-specified FID does not correspond to a file. Unable to continue.');
+                throwAsCaller(ME);
+            end
         end
     end
 end
 
-if fid
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
-end
+flag_do_plots = 0; % No plotting
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -338,8 +371,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

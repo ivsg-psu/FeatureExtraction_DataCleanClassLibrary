@@ -45,19 +45,40 @@ function trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTi
 %     
 % 2024_09_22: xfc5113@psu.edu
 % -- wrote the code originally based on fcn_DataClean_trimDataToCommonStartEndGPSTimes
+% 2024_09_28 - S. Brennan
+% -- updated the debug flags area
+% -- fixed bug where offending sensor is set wrong
+% -- fixed fid bug where it is used in debugging
 
 
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==2 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
 
+% flag_do_debug = 1;
 
-% Set default fid (file ID) first:
-fid = 1; % Default case is to print to the console
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
-
-if fid~=0
+if flag_do_debug
     st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
 end
 
 
@@ -73,33 +94,34 @@ end
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    if nargin < 1 || nargin > 2
-        error('Incorrect number of input arguments')
+if (0==flag_max_speed)
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(1,2);
     end
-        
 end
 
-
 % Does the user want to specify the fid?
-
-% Check for user input
-if 1 <= nargin
-    temp = varargin{1};
-    if ~isempty(temp)
-        % Check that the FID works
-        try
-            temp_msg = ferror(temp); %#ok<NASGU>
-            % Set the fid value, if the above ferror didn't fail
-            fid = temp;
-        catch ME
-            warning('User-specified FID does not correspond to a file. Unable to continue.');
-            throwAsCaller(ME);
+fid = 0;
+if (0==flag_max_speed)
+    if 1 <= nargin
+        temp = varargin{1};
+        if ~isempty(temp)
+            % Check that the FID works
+            try
+                temp_msg = ferror(temp); %#ok<NASGU>
+                % Set the fid value, if the above ferror didn't fail
+                fid = temp;
+            catch ME
+                warning('on','backtrace');
+                warning('User-specified FID does not correspond to a file. Unable to continue.');
+                throwAsCaller(ME);
+            end
         end
     end
 end
+
+flag_do_plots = 0;  % % Flag to plot the final results
 
 
 %% Main code starts here
@@ -193,6 +215,7 @@ master_end_time_Seconds = floor(master_end_time_centiSeconds*0.01);
 % master_end_time_Seconds = master_end_time_centiSeconds*0.01;
 
 if master_start_time_Seconds>=master_end_time_Seconds
+    warning('on','backtrace');
     warning('\n\nAn error will be thrown due to bad GPS timings. The following table should assist in debugging this issue: \n');
     fprintf('Sensor \t\t\t\t Start time: \t End_time\n');    
     for ith_sensor = 1:length(start_times_centiSeconds)
@@ -256,8 +279,10 @@ for i_data = 1:length(sensor_names)
                 % It's an array, make sure it has right length
                 if lengthReference~= length(dataStructure.(sensor_name).(subFieldName))
                     if strcmp(sensor_name,'SickLiDAR') && strcmp(subFieldName,'Sick_Time')
+                        warning('on','backtrace');
                         warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
                     else
+                        warning('on','backtrace');
                         warning('Sensor %s contains a datafield %s that has an amount of data not equal to the GPS_Time. This is usually because data is missing.',sensor_name,subFieldName);
                     end
                 end
@@ -290,8 +315,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

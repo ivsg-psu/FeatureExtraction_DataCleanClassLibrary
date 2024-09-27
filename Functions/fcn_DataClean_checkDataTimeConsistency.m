@@ -1,4 +1,4 @@
-function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(dataStructure,varargin)
+function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(dataStructure, varargin)
 
 % fcn_DataClean_checkDataTimeConsistency
 % Checks a given dataset to verify whether data meets key time consistency
@@ -30,7 +30,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,(fid),(fig_num))
+%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure, (fid), (fig_num))
 %
 % INPUTS:
 %
@@ -41,6 +41,10 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %
 %      fid: a file ID to print results of analysis. If not entered, no
 %      output is given (FID = 0). Set fid to 1 for printing to console.
+%
+%      fig_num: a figure number to plot results. If set to -1, skips any
+%      input checking or debugging, no figures will be generated, and sets
+%      up code to maximize speed.
 %
 % OUTPUTS:
 %
@@ -106,10 +110,44 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % -- fixed bug when GPS_Time and ROS_Time are different lengths
 % 2023_07_03 - sbrennan@psu.edu
 % -- added diff check on time
+% 2024_09_27: sbrennan@psu.edu
+% -- updated top comments
+% -- added debug flag area
+% -- fixed fid printing error
+% -- added fig_num input, fixed the plot flag
+% -- fixed warning and errors
 
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+%% Debugging and Input checks
+
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==3 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
+
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 
 %% check input arguments
@@ -124,15 +162,12 @@ flag_check_inputs = 1; % Flag to perform input checking
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    if nargin < 1 || nargin > 2
-        error('Incorrect number of input arguments')
+if (0 == flag_max_speed)
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(1,3);
     end
-        
 end
-
 
 % Does the user want to specify the fid?
 fid = 0;
@@ -146,16 +181,23 @@ if 2 <= nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
     end
 end
 
-if fid
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+% Does user want to specify fig_num?
+flag_do_plots = 0;
+if (0==flag_max_speed) &&  (3<=nargin)
+    temp = varargin{end};
+    if ~isempty(temp)
+        fig_num = temp; %#ok<NASGU>
+        flag_do_plots = 1;
+    end
 end
+
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -352,6 +394,7 @@ custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
 
 fcn_INTERNAL_checkDataStrictlyIncreasing(fid, dataStructure, flags, 'GPS_Time','GPS');
 if 0==flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+    warning('on','backtrace');
     warning('There are jumps in differences of GPS time, GPS time need to be interpolated')
     return
 end
@@ -374,6 +417,7 @@ custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
 
 fcn_INTERNAL_checkDataStrictlyIncreasing(fid, dataStructure, flags, 'GPS_Time','GPS');
 if 0==flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+    warning('on','backtrace');
     warning('There are missings in differences of GPS time, GPS time need to be interpolated')
     return
 end
@@ -408,6 +452,7 @@ end
 
 [flags,offending_sensor,~] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'Trigger_Time',flags,'all','GPS',fid);
 if 0==flags.Trigger_Time_exists_in_all_GPS_sensors
+    warning('on','backtrace');
     warning('Trigger time does not exist in GPS sensors')
     return
 end
@@ -531,6 +576,7 @@ end
 
 [flags,offending_sensor,~] = fcn_DataClean_checkTimeRoundsCorrectly(dataStructure, 'ROS_Time',flags,'Trigger_Time','GPS',fid);
 if 0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
+    warning('on','backtrace');
     warning('ROS_Time need to be rounded to Trigger_Time in all GPS sensors')
     return
 else
@@ -549,8 +595,10 @@ end
 %    * Round the ROS Time and compare to the Trigger_Times
 %    ### FIXES:
 %    * Remove and interpolate time field if not strictly increasing
+error('stop here');
 [flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,flags);
 if 0==flags.all_sensors_have_trigger_time
+    warning('on','backtrace');
     warning('Not all sensors have Trigger Time')
     return
 else
@@ -574,8 +622,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function
@@ -887,6 +935,7 @@ for i_data = 1:length(sensor_names)
 
     length_to_use = length(GPS_Time(:,1));
     if length(GPS_Time(:,1)) ~= length(ROS_Time(:,1))
+        warning('on','backtrace');
         warning('Dissimilar ROS and GPS time lengths detected. This indicates a major sensor error.');
         if length(GPS_Time(:,1))>length(ROS_Time(:,1))
             length_to_use = length(ROS_Time(:,1));
@@ -898,6 +947,8 @@ for i_data = 1:length(sensor_names)
         flags_data_good(i_data,1) = 0;
         offending_sensor = sensor_name;
     elseif 0.95 > mean_ratio || mean_ratio>1.05
+        warning('on','backtrace');
+        warning('Bad ratio detected.')
         error('Strange ratio detected between ROS Time and GPS Time');
     end            
 end
@@ -905,7 +956,8 @@ end
 if all(flags_data_good==0)
     flags.ROS_Time_scaled_correctly_as_seconds = 0;
 elseif any(flags_data_good==0)
-    warning('Some GPS sensors appear to be scaled correctly, but some are not. This indicates a data loading error.');
+    warning('on','backtrace');
+    warning('Some GPS sensors appear to be scaled incorrectly where ROS_Time is not in seconds. This indicates a data loading error.');
     flags.ROS_Time_scaled_correctly_as_seconds = 0;
 else
     flags.ROS_Time_scaled_correctly_as_seconds = 1;

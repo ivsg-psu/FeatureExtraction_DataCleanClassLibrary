@@ -47,14 +47,42 @@ function fixed_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(dataStructu
 %
 % 2023_07_01: sbrennan@psu.edu
 % -- wrote the code originally
+% 2024_09_28 - S. Brennan
+% -- updated the debug flags area
+% -- fixed bug where offending sensor is set wrong
+% -- fixed fid bug where it is used in debugging
 
-% TO DO
 
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==2 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
 
-% Set default fid (file ID) first:
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
+
 
 %% check input arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -68,13 +96,12 @@ flag_check_inputs = 1; % Flag to perform input checking
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    narginchk(1,4);
-
+if (0==flag_max_speed)
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(1,4);
+    end
 end
-
 
 % Check for user-defined field_name input
 field_name = 'GPS_Time'; % Set the default
@@ -96,25 +123,26 @@ end
 
 % Does the user want to specify the fid?
 fid = 0; % Default case is to NOT print to the console
-if 4 <= nargin
-    temp = varargin{end};
-    if ~isempty(temp)
-        % Check that the FID works
-        try
-            temp_msg = ferror(temp); %#ok<NASGU>
-            % Set the fid value, if the above ferror didn't fail
-            fid = temp;
-        catch ME
-            warning('User-specified FID does not correspond to a file. Unable to continue.');
-            throwAsCaller(ME);
+if (0==flag_max_speed)
+    if 4 <= nargin
+        temp = varargin{end};
+        if ~isempty(temp)
+            % Check that the FID works
+            try
+                temp_msg = ferror(temp); %#ok<NASGU>
+                % Set the fid value, if the above ferror didn't fail
+                fid = temp;
+            catch ME
+                warning('on','backtrace');
+                warning('User-specified FID does not correspond to a file. Unable to continue.');
+                throwAsCaller(ME);
+            end
         end
     end
 end
 
-if fid~=0
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
-end
+flag_do_plots = 0;  % % Flag to plot the final results
+
 
 
 %% Main code starts here
@@ -214,8 +242,8 @@ if flag_do_plots
 
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

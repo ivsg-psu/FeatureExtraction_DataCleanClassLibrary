@@ -300,8 +300,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'\nENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'\nENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

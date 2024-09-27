@@ -8,9 +8,6 @@
 
 %% Set up the workspace
 close all
-clc
-
-
 
 
 
@@ -83,6 +80,39 @@ assert(isequal(flags.GPS_SparkFun_Front_sensors_are_merged,1));
 assert(isequal(flags.ADIS_sensors_are_merged,1));
 assert(isequal(flags.sensor_naming_standards_are_used,0));
 
+%% Check merging of sensors where type is bad
+
+% Create some test data
+testStructure = struct;
+testStructure.Diag_Encoder = 'abc';
+
+% Check structure
+fid = 1;
+[flags, ~] = fcn_DataClean_checkDataNameConsistency(testStructure,fid);
+
+% Check flags
+assert(isequal(flags.GPS_SparkFun_RightRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_LeftRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_Front_sensors_are_merged,1));
+assert(isequal(flags.ADIS_sensors_are_merged,1));
+assert(isequal(flags.sensor_naming_standards_are_used,0));
+
+%% Check merging of sensors where type is good
+
+% Create some test data
+testStructure = struct;
+testStructure.Diagostic_IVSG_RearEncoders = 'abc';
+
+% Check structure
+fid = 1;
+[flags, ~] = fcn_DataClean_checkDataNameConsistency(testStructure,fid);
+
+% Check flags
+assert(isequal(flags.GPS_SparkFun_RightRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_LeftRear_sensors_are_merged,1));
+assert(isequal(flags.GPS_SparkFun_Front_sensors_are_merged,1));
+assert(isequal(flags.ADIS_sensors_are_merged,1));
+assert(isequal(flags.sensor_naming_standards_are_used,0));
 
 %% Check merging of sensors for a typical sensor
 

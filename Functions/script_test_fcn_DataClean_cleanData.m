@@ -7,7 +7,6 @@
 
 %% Set up the workspace
 close all
-clc
 
 
 %% Check assertions for basic path operations and function testing
@@ -92,7 +91,7 @@ plotFlags.fig_num_plotAllMatIndividually = [];
 rawDataCellArray = fcn_DataClean_loadMatDataFromDirectories(rootdirs, searchIdentifiers, (matQueryString), (fid), (plotFlags));
 
 
-%%%%
+%%
 ref_baseStationLLA = [40.44181017, -79.76090840, 327.428]; % Pittsburgh
 fid = 1;
 Flags = [];
@@ -107,3 +106,38 @@ assert(strcmp(subPathStrings,''))
 if 1==0
     %% ERROR situation: 
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

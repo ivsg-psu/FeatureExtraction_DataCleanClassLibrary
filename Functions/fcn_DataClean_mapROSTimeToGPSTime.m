@@ -98,6 +98,7 @@ if 1 <= nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
@@ -196,6 +197,7 @@ master_end_time_Seconds = floor(master_end_time_centiSeconds*0.01);
 % master_end_time_Seconds = master_end_time_centiSeconds*0.01;
 
 if master_start_time_Seconds>=master_end_time_Seconds
+    warning('on','backtrace');
     warning('\n\nAn error will be thrown due to bad GPS timings. The following table should assist in debugging this issue: \n');
     fprintf('Sensor \t\t\t\t Start time: \t End_time\n');    
     for ith_sensor = 1:length(start_times_centiSeconds)
@@ -259,8 +261,11 @@ for i_data = 1:length(sensor_names)
                 % It's an array, make sure it has right length
                 if lengthReference~= length(dataStructure.(sensor_name).(subFieldName))
                     if strcmp(sensor_name,'SickLiDAR') && strcmp(subFieldName,'Sick_Time')
+                        warning('on','backtrace');
                         warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
                     else
+                        warning('on','backtrace');
+                        warning('A datafield error was encountered.')
                         error('Sensor %s contains a datafield %s that has an amount of data not equal to the GPS_Time. This is usually because data is missing.',sensor_name,subFieldName);
                     end
                 end
@@ -292,8 +297,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

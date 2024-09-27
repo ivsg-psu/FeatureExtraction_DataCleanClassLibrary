@@ -108,6 +108,8 @@ function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, I
 % 2024_09_06 - S. Brennan
 % -- moved image output back out of the code
 % -- added subPathStrings output
+% 2024_09_27 - S. Brennan
+% -- fixed bad sensor names during loading
 
 
 %% Debugging and Input checks
@@ -332,7 +334,16 @@ if fid
     fprintf(fid,'Loading data from files from folder: \n\t%s\n',dataFolderString);
 end
 
-% Search the contents of the directory for data files
+% Search the contents of the directory for data files, creating a 'sensor'
+% for each.
+%    Sensor names must follow the format:
+%
+%        TYPE_Manufacturer_Location
+%
+%    where
+%        TYPES allowed include: 'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS'
+%        Locations allowed include: Rear, Front, Top, Right, Left, Center
+
 for file_idx = 1:num_files
 
     % Check that the list is the file. If it is a directory, the isdir flag

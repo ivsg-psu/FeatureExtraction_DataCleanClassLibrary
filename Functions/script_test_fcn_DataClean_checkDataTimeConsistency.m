@@ -10,16 +10,13 @@
 
 %% Set up the workspace
 close all
-clc
-fid = 1;
+
+
+%% CASE 1: Basic call - NOT verbose
 
 % Fill in the initial data
 dataStructure = fcn_DataClean_fillTestDataStructure;
 
-% Clear flags
-flags = struct;
-
-%% CASE 1: Basic call - NOT verbose
 fprintf(1,'\nCASE 1: basic consistency check, no errors, NOT verbose\n');
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure);
 fprintf(1,'\nCASE 1: Done!\n\n');
@@ -28,6 +25,11 @@ assert(isequal(flags.GPS_Time_exists_in_at_least_one_GPS_sensor,1));
 assert(strcmp(offending_sensor,''));
 
 %% CASE 2: Basic call - verbose mode
+
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+fid = 1;
+
 fprintf(1,'\nCASE 2: basic consistency check, no errors, verbose\n');
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
 fprintf(1,'\nCASE 2: Done!\n\n');
@@ -52,6 +54,11 @@ assert(strcmp(offending_sensor,''));
 
 
 %% Check GPS_Time_exists_in_at_least_one_GPS_sensor - the GPS_Time field is completely missing in all sensors
+
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+fid = 1;
+
 
 % Define a dataset with no GPS_Time fields
 BadDataStructure = dataStructure;

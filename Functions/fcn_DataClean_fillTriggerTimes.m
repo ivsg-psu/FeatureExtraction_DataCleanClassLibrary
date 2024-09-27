@@ -100,6 +100,7 @@ if 3 == nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
@@ -283,18 +284,24 @@ for ith_sensor = 1:length(sensor_names_GPS_Time)
     rounded_centiSecond_GPS_Time = round(100*GPS_Time_original/centiSeconds)*centiSeconds;
     start_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_started_GPS_Time,1,'first');
     if isempty(start_index)
+        warning('on','backtrace');
+        warning('GPS time does not match trigger time.');
         error('Unable to match GPS_Time to Trigger_Time for start time calculation');
     end
 
     % Find the end index
     end_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_ended_GPS_Time,1,'first');
     if isempty(end_index)
+        warning('on','backtrace');
+        warning('GPS time does not match trigger time.');
         error('Unable to match GPS_Time to Trigger_Time for end time calculation');
     end
     GPS_Time_in_Trigger = GPS_Time_original(start_index:end_index,:);
     fixed_dataStructure.(sensor_name).GPS_Time = GPS_Time_in_Trigger;
 
     if length(GPS_Time_in_Trigger)~=length(new_Trigger_Time)
+        warning('on','backtrace');
+        warning('GPS time does not match trigger time.');
         error('The GPS time calculated to match the Trigger_Time duration does not have same length. This is typically caused by GPS rounding errors, but it must be resolved to continue.\n');
     end
 
@@ -310,6 +317,7 @@ for ith_sensor = 1:length(sensor_names_GPS_Time)
                 % It's an array, make sure it has right length
                 if isequal(size(sensor_data.(subFieldName)),original_vector_size)
                     if strcmp(sensor_name,'LIDAR_Sick_Rear') 
+                        warning('on','backtrace');
                         warning('SICK lidar data processing not yet tested.');
                     else
                         % Resize the data to exact same indicies as trimmed
@@ -340,8 +348,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'\nENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'\nENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

@@ -5,8 +5,6 @@
 % 2023_06_19 - 
 % -- 
 %% Set up the workspace
-clc
-clear
 close all 
 
 %% 

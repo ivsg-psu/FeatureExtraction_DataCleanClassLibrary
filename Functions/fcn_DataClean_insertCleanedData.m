@@ -77,6 +77,7 @@ if isempty(DB.db_connection.Message) % check if the connection is successful
         switch ME.identifier
             case 'database:database:WriteTableDriverError'
                 if strfind(ME.message,'duplicate key value violates unique constraint')
+                    warning('on','backtrace');
                     warning(ME.message);
                     prompt = ['Do you want to replace the trip_id: ' num2str(trips.id) ' ?[y/n]'];
                     User_input_replace = input(prompt,'s');
@@ -172,6 +173,7 @@ if flag.DBinsert
             switch ME.identifier
                 case 'database:database:WriteTableDriverError'
                     if strfind(ME.message,'duplicate key value violates unique constraint')
+                        warning('on','backtrace');
                         warning(ME.message);
                         prompt = ['Do you want to replace the merged_gps data of trip_id: ' num2str(trips.id) ' ?[y/n]'];
                         User_input_replace = input(prompt,'s');
@@ -292,6 +294,7 @@ if flag.DBinsert
             switch ME.identifier
                 case 'database:database:WriteTableDriverError'
                     if strfind(ME.message,'duplicate key value violates unique constraint')
+                        warning('on','backtrace');
                         warning(ME.message);
                         prompt = ['Do you want to replace the laser data of trip_id: ' num2str(trips.id) ' ?[y/n/nn]'];
                         User_input_replace = input(prompt,'s');
@@ -386,6 +389,7 @@ if flag.DBinsert
             switch ME.identifier
                 case 'database:database:WriteTableDriverError'
                     if strfind(ME.message,'duplicate key value violates unique constraint')
+                        warning('on','backtrace');
                         warning(ME.message);
                         prompt = ['Do you want to replace the laser data of trip_id: ' num2str(trips.id) ' ?[y/n/nn]'];
                         User_input_replace = input(prompt,'s');

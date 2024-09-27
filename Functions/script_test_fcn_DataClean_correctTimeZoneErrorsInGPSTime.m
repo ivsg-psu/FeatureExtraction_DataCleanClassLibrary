@@ -7,14 +7,15 @@
 
 %% Set up the workspace
 close all
-clc
-fid = 1;
 
-% Fill in the initial data
-dataStructure = fcn_DataClean_fillTestDataStructure;
 
 %% Shifted time interval test - one of the sensors is very far off
 % Simulate a time zone error 
+
+% Fill in the initial data
+fid = 1;
+dataStructure = fcn_DataClean_fillTestDataStructure;
+
 
 BadDataStructure = dataStructure;
 hours_off = 1;
@@ -26,9 +27,7 @@ fprintf(1,'\nData created with following errors injected: shifted start point\n\
 assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
 
-
-
-%% Fix the data
+% Fix the data
 fixed_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(BadDataStructure,fid);
 
 % Make sure it worked

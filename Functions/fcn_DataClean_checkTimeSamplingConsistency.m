@@ -54,7 +54,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingC
 % 2023_07_01: sbrennan@psu.edu
 % -- wrote the code originally 
 
-flag_do_debug = 0;  %#ok<NASGU> % Flag to show the results for debugging
+flag_do_debug = 0;  % % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 
@@ -108,16 +108,13 @@ if 5 <= nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
     end
 end
 
-if fid
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
-end
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -177,6 +174,7 @@ for i_data = 1:length(sensor_names)
     end
     if centiSeconds ~= effective_centiSeconds
         try
+            warning('on','backtrace');
             warning('The sensor: %s is missing so much data that the field: %s effectively has an incorrect sample rate.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (sec): %.4f \n',...
                 sensor_name,field_name,centiSeconds,effective_centiSeconds,meanSamplingInterval);
         catch
@@ -216,8 +214,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if  flag_do_debug
+    fprintf(1,'ENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

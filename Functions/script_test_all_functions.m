@@ -14,7 +14,7 @@ all_scripts = dir(cat(2,'.',filesep,'Functions',filesep,'script_test_fcn_*.m'));
 N_files = length(all_scripts);
 testing_times = nan(N_files,1);
 
-diary 'script_test_fcn_geometry_all_stdout.txt';
+diary 'script_test_fcn_DataClean_all_stdout.txt';
 
 for i_script = 1:N_files
     file_name_extended = all_scripts(i_script).name;

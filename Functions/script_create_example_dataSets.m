@@ -56,3 +56,9 @@ assert(iscell(rawDataCellArray));
 dataStructure = rawDataCellArray{1}.rawDataMerged;
 fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataNameConsistency.mat');
 save(fullExampleFilePath,'dataStructure')
+
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_mergeSensorsByMethod.mat');
+save(fullExampleFilePath,'dataStructure')
+
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_findMatchingSensors.mat');
+save(fullExampleFilePath,'dataStructure')

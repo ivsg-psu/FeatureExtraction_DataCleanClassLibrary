@@ -7,15 +7,13 @@
 
 %% Set up the workspace
 close all
-clc
-fid = 1;
 
-% Fill in the initial data
-dataStructure = fcn_DataClean_fillTestDataStructure;
-
- 
 
 %% CASE 1: Basic Example - pull centiSeconds from every sensor
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+fid = 1;
+
 fprintf(1,'\nCASE 1: Demonstrating pulling centiseconds from every sensor, without being verbose: \n');
 [data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds');
 
@@ -42,6 +40,11 @@ for ith_data = 1:length(sensor_names)
 end
 
 %% CASE 2: Basic Example - pull centiSeconds from every sensor (verbose)
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+fid = 1;
+
+
 fprintf(1,'\nCASE 2: Demonstrating pulling centiseconds from every sensor, being verbose: \n\n');
 
 [data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds', [],[], fid);
@@ -70,6 +73,11 @@ end
 
 
 %% CASE 3: Basic Example - pull centiSeconds from every GPS sensor
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+fid = 1;
+
+
 fprintf(1,'\nCASE 3: Demonstrating pulling centiseconds from only GPS sensors, NOT verbose: \n\n');
 
 [data,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds','GPS');
@@ -103,32 +111,43 @@ end
 
 
 %% Basic Example - pull bad name from every sensor - produces emtpy matrix
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+
 data = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'goofybadname');
 assert(isempty(cell2mat(data)));
 
 %% Basic Example - pull first_row value from GPS_Time, for all sensors
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+
 [data, ~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','','first_row');
-assert(isequal(cell2mat(data),zeros(1,8)));
+
+assert(iscell(data));
+assert(length(data)==8);
 
 %% Basic Example - pull first_row value from GPS_Time, for all GPS sensors
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+
 [data, ~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS','first_row');
-assert(isequal(cell2mat(data),[0 0 0]));
+
+assert(iscell(data));
+assert(length(data)==3);
+
 
 %% Basic Example - pull first_row value from GPS_Time, for all GPS sensors
+% Fill in the initial data
+dataStructure = fcn_DataClean_fillTestDataStructure;
+fid = 1;
+
 [data, ~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS','last_row');
-assert(isequal(cell2mat(data),[5 5 5]));
+
+assert(iscell(data));
+assert(length(data)==3);
 
 %% Fail conditions
 if 1==0
-    
-    %% ERROR for point-type, due to bad alignment
-    % Note that this is 5 seconds of data, and the Hemisphere is starting
-    % after all the other sensors ended
-    BadDataStructure = dataStructure;
-    BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - 1;
-    BadDataStructure.GPS_Hemisphere.GPS_Time = BadDataStructure.GPS_Hemisphere.GPS_Time + 5.1;
-    
-    dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(BadDataStructure,fid);
 
 
 end

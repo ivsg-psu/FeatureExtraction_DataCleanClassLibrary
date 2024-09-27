@@ -205,6 +205,7 @@ if 2 == nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
@@ -241,14 +242,14 @@ end
 
 
 % Initialize all the sensors
-dataStructure.TRIGGER = fcn_DataClean_initializeDataByType('trigger');
+dataStructure.TRIGGER                = fcn_DataClean_initializeDataByType('trigger');
 dataStructure.GPS_Sparkfun_RearRight = fcn_DataClean_initializeDataByType('gps');
-dataStructure.GPS_Sparkfun_RearLeft = fcn_DataClean_initializeDataByType('gps');
-dataStructure.GPS_Hemisphere = fcn_DataClean_initializeDataByType('gps');
-dataStructure.ENCODER_RearLeft = fcn_DataClean_initializeDataByType('encoder');
-dataStructure.ENCODER_RearRight = fcn_DataClean_initializeDataByType('encoder');
-dataStructure.IMU_ADIS = fcn_DataClean_initializeDataByType('imu');
-dataStructure.LIDAR2D_Sick = fcn_DataClean_initializeDataByType('lidar2d');
+dataStructure.GPS_Sparkfun_RearLeft  = fcn_DataClean_initializeDataByType('gps');
+dataStructure.GPS_Hemisphere         = fcn_DataClean_initializeDataByType('gps');
+dataStructure.ENCODER_RearLeft       = fcn_DataClean_initializeDataByType('encoder');
+dataStructure.ENCODER_RearRight      = fcn_DataClean_initializeDataByType('encoder');
+dataStructure.IMU_ADIS               = fcn_DataClean_initializeDataByType('imu');
+dataStructure.LIDAR2D_Sick           = fcn_DataClean_initializeDataByType('lidar2d');
 % dataStructure.DIAGNOSTIC = fcn_DataClean_initializeDataByType('diagnostic');
 
 % Set the sampling intervals
@@ -386,7 +387,9 @@ for i_data = 1:length(names)
             % Vq = interp1(X,V,Xq)
             switch subFieldName
                 % TRIGGER fields
-                case {'mode'}
+                case {'mode', 'Mode'}
+                    sensor_structure.mode = onesSensor;
+                case {'modeCount'}
                     sensor_structure.mode = onesSensor;
                 case {'adjone'}
                     sensor_structure.adjone = onesSensor;
@@ -523,7 +526,7 @@ for i_data = 1:length(names)
                     % ENCODER fields
                 case {'CountsPerRev'}
                     sensor_structure.CountsPerRev = onesSensor;
-                case {'Counts'}
+                case {'Counts','C1Counts','C2Counts'}
                     sensor_structure.Counts = onesSensor;
                 case {'DeltaCounts'}
                     sensor_structure.DeltaCounts = onesSensor;
@@ -644,6 +647,8 @@ for i_data = 1:length(names)
                     
                 otherwise
                     try
+                        warning('on','backtrace');
+                        warning('Unable to find a subfield inside field ''%s'' called ''%s''. Throwing an error.', sensor_name, subFieldName);
                         callStack = dbstack('-completenames');
                         errorStruct.message = sprintf('Error in file: %s \n\t Line: %d \n\t Unknown field found! \n\t Sensor: %s \n\t Subfield: %s\n',callStack(1).file, callStack(1).line, sensor_name, subFieldName);
                         errorStruct.identifier = 'DataClean:fillTestDataStructure:BadSensorField';

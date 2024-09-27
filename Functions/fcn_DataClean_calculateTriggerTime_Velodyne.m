@@ -100,6 +100,7 @@ if 3 == nargin
             % Set the fid value, if the above ferror didn't fail
             fid = temp;
         catch ME
+            warning('on','backtrace');
             warning('User-specified FID does not correspond to a file. Unable to continue.');
             throwAsCaller(ME);
         end
@@ -312,6 +313,7 @@ for ith_sensor = 1:length(sensor_names_GPS_Time)
                 % It's an array, make sure it has right length
                 if isequal(size(sensor_data.(subFieldName)),original_vector_size)
                     if strcmp(sensor_name,'LIDAR_Sick_Rear') 
+                        warning('on','backtrace');
                         warning('SICK lidar data processing not yet tested.');
                     else
                         % Resize the data to exact same indicies as trimmed
@@ -342,8 +344,8 @@ if flag_do_plots
     
 end
 
-if  fid~=0
-    fprintf(fid,'\nENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
+if flag_do_debug
+    fprintf(1,'\nENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 
 end % Ends main function

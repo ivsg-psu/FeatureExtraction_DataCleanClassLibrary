@@ -294,6 +294,7 @@ while 1==flag_stay_in_main_loop
         fid = 1;
         nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 1;
+        name_flags.GPS_SparkFun_RightRear_sensors_are_merged = 1;
     end
     % Check GPS_SparkFun_LeftRear_sensors_are_merged
     if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_LeftRear_sensors_are_merged)
@@ -303,6 +304,7 @@ while 1==flag_stay_in_main_loop
         fid = 1;
         nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 1;
+        name_flags.GPS_SparkFun_LeftRear_sensors_are_merged = 1;
     end
 
     % Check GPS_SparkFun_Front_sensors_are_merged
@@ -313,6 +315,7 @@ while 1==flag_stay_in_main_loop
         fid = 1;
         nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
         flag_keep_checking = 1;
+        name_flags.GPS_SparkFun_Front_sensors_are_merged = 1;
     end
     
     % Check ADIS_sensors_are_merged 
@@ -322,10 +325,11 @@ while 1==flag_stay_in_main_loop
         method_name = 'keep_unique';
         fid = 1;
         nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
-        flag_keep_checking = 0;
+        flag_keep_checking = 1;
+        name_flags.ADIS_sensors_are_merged = 1;
     end
     
-    % check if sensor_naming_standards_are_used. If not, fix this
+    % check if sensor_naming_standards_are_used. If not, fix this.
     if (1==flag_keep_checking) && (0==name_flags.sensor_naming_standards_are_used)
         nextDataStructure = fcn_DataClean_renameSensorsToStandardNames(nextDataStructure,fid);
         flag_keep_checking = 1;
@@ -369,6 +373,8 @@ while 1==flag_stay_in_main_loop
     %    * Otherwise, complete failure of sensor recordings
     
     if (1==flag_keep_checking) && (0==time_flags.GPS_Time_exists_in_at_least_one_GPS_sensor)
+        warning('on','backtrace');
+        warning('Fundamental error on GPS_time: no sensors detected that have GPS time!?');
         error('Catastrophic data error detected: no GPS_Time data detected in any sensor.');
     end
     
@@ -384,6 +390,8 @@ while 1==flag_stay_in_main_loop
     %    * Remove this GPS data field
     
     if (1==flag_keep_checking) && (0==time_flags.GPS_Time_exists_in_all_GPS_sensors)
+        warning('on','backtrace');
+        warning('Fundamental error on GPS_time: a GPS sensor is missing GPS time!?');
         error('Catastrophic data error detected: the following GPS sensor is missing GPS_Time data: %s.',offending_sensor);        
     end
     
@@ -398,6 +406,8 @@ while 1==flag_stay_in_main_loop
     
     if (1==flag_keep_checking) && (0==time_flags.centiSeconds_exists_in_all_GPS_sensors)
         disp(nextDataStructure.(offending_sensor))
+        warning('on','backtrace');
+        warning('Fundamental error on GPS_time: a GPS sensor is missing centiSeconds!?');
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);                
     end
     
@@ -439,6 +449,8 @@ while 1==flag_stay_in_main_loop
     %    * Remove this sensor
     
     if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+        warning('on','backtrace');
+        warning('A GPS sensor has a sampling rate different than expected by centiSeconds!?');
         error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
     end
     
@@ -603,6 +615,8 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Catastrophic error. Sensor has failed and should be removed.
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_exists_in_all_GPS_sensors)
+        warning('on','backtrace');
+        warning('Fundamental error on ROS_time: a GPS sensor was found that has no ROS time!?');
         error('Catastrophic failure in one of the sensors in that it is missing ROS time. Stopping.');
     end
     
@@ -637,6 +651,8 @@ while 1==flag_stay_in_main_loop
     %    * Manually fix, or
     %    * Remove this sensor
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+        warning('on','backtrace');
+        warning('Fundamental error on ROS_time: a GPS sensor was found that has a ROS time sample rate different than the GPS sample rate!?');
         error('ROS time is mis-sampled.\');            
         flag_keep_checking = 0;
     end
@@ -656,6 +672,8 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends)
+        warning('on','backtrace');
+        warning('Fundamental error on ROS_time: it is not counting up!?');
         error('ROS time is not strictly ascending.');
         flag_keep_checking = 0;
     end
@@ -688,6 +706,8 @@ while 1==flag_stay_in_main_loop
     
     %% Check that ROS_Time data has expected count
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
+        warning('on','backtrace');
+        warning('Fundamental error on ROS_time: unexpected count');
         error('ROS time does not have expected count.\');
         flag_keep_checking = 0;
     end
@@ -710,6 +730,7 @@ while 1==flag_stay_in_main_loop
     
     %% Check that ROS_Time_rounds_correctly_to_Trigger_Time 
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
+        warning('on','backtrace');
         warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
         nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
         flag_keep_checking = 0;
@@ -719,11 +740,13 @@ while 1==flag_stay_in_main_loop
     %% Entering this section indicates all time in GPS units have been checked and fixed
     %% First, check whether all sensors have Trigger_Time
     if (1==flag_keep_checking)         
+        error('stop here');
         [time_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(nextDataStructure,fid,time_flags);
     end
 
     %% If not, calculate Trigger_Time to rest of sensors
     if (1==flag_keep_checking) && (0==time_flags.all_sensors_have_trigger_time)
+        warning('on','backtrace');
         warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
         nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure,sensors_without_Trigger_Time);
         flag_all_trigger_time_calculated = 1;
