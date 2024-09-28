@@ -301,6 +301,7 @@ if flag_do_plots
 end
 
 if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
     fprintf(1,'\nENDING function: %s, in file: %s\n\n',st(1).name,st(1).file);
 end
 

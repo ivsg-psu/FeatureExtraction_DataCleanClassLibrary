@@ -63,6 +63,10 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 % 2024_09_23 - S. Brennan
 % -- removed environment variable setting within function (not good
 % practice)
+% 2024_09_27 - X. Cao
+% -- move fcn_DataClean_checkAllSensorsHaveTriggerTime into fcn_DataClean_checkDataTimeConsistency
+% -- add a step to temporary remove Identifiers from rawDataStruct before
+% the while loop and fill it back later
 
 
 
@@ -219,13 +223,21 @@ debugging_data_structure_sequence{N_max_loops} = struct;
 
 main_data_clean_loop_iteration_number = 0; % The first iteration corresponds to the raw data loading
 currentDataStructure = rawDataStruct;
+% Grab the Indentifiers field from the rawDataStructure
+Identifiers_Hold = rawDataStruct.Identifiers;
+
 %%
 while 1==flag_stay_in_main_loop   
     %% Keep data thus far
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure;
-    nextDataStructure = currentDataStructure;
-
+    %% Remove 
+    if isfield(currentDataStructure, 'Identifiers')
+        nextDataStructure = rmfield(currentDataStructure,'Identifiers');
+    else
+        nextDataStructure = currentDataStructure;
+    end
+    
 
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
@@ -355,7 +367,7 @@ while 1==flag_stay_in_main_loop
     
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
     if (1==flag_keep_checking)
-        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
+        [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
     end
 
 
@@ -738,11 +750,12 @@ while 1==flag_stay_in_main_loop
     
 
     %% Entering this section indicates all time in GPS units have been checked and fixed
-    %% First, check whether all sensors have Trigger_Time
-    if (1==flag_keep_checking)         
-        error('stop here');
-        [time_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(nextDataStructure,fid,time_flags);
-    end
+    %% First, check whether all sensors have Trigger_Time 
+    % Moved into fcn_DataClean_checkDataTimeConsistency
+%     if (1==flag_keep_checking)         
+% %         error('stop here');
+%         [time_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(nextDataStructure,fid,time_flags);
+%     end
 
     %% If not, calculate Trigger_Time to rest of sensors
     if (1==flag_keep_checking) && (0==time_flags.all_sensors_have_trigger_time)
@@ -818,6 +831,7 @@ while 1==flag_stay_in_main_loop
     %     dataset{1} = temp;
     % end
     currentDataStructure = nextDataStructure;
+    currentDataStructure.Identifiers = Identifiers_Hold;
       
     % Check if all the name_flags work, so we can exit!
     name_flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(name_flags);

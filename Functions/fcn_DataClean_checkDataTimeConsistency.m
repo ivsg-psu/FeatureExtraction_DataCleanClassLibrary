@@ -74,6 +74,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % 
 % # Trigger_Time tests include:
 %     ## Trigger_Time_exists_in_all_GPS_sensors
+%     ## all_sensors_have_trigger_time
 % 
 % # ROS_Time tests include:GPS
 %     ## ROS_Time_exists_in_all_GPS_sensors
@@ -116,6 +117,9 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % -- fixed fid printing error
 % -- added fig_num input, fixed the plot flag
 % -- fixed warning and errors
+% 2024_09_27: xfc5113@psu.edu
+% -- move fcn_DataClean_checkAllSensorsHaveTriggerTime in the function
+% -- add sensors_without_Trigger_Time as the output of the function
 
 %% Debugging and Input checks
 
@@ -595,8 +599,8 @@ end
 %    * Round the ROS Time and compare to the Trigger_Times
 %    ### FIXES:
 %    * Remove and interpolate time field if not strictly increasing
-error('stop here');
-[flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,flags);
+% error('stop here');
+[flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,flags,fid);
 if 0==flags.all_sensors_have_trigger_time
     warning('on','backtrace');
     warning('Not all sensors have Trigger Time')
