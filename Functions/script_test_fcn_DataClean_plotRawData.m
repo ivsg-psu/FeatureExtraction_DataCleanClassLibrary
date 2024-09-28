@@ -8,39 +8,36 @@
 %% Set up the workspace
 close all
 
+% Location for Pittsburgh, site 1
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.44181017');
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.76090840');
+setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','327.428');
+
 
 %% Test 1: Plotting with defaults
 fig_num = 1;
 figure(fig_num);
 clf;
 
-clear rawData
-fid = 1;
-dataFolderString = "LargeData";
-dateString = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-41-49_0";
-bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
-Flags = [];
-[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (-1));
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_plotRawData.mat');
+load(fullExampleFilePath,'dataStructure')
+rawData = dataStructure;
+bagName = dataStructure.Identifiers.mergedName;
 
 % Plot the data
 plotFormat = [];
-colorMap = [];
-fcn_DataClean_plotRawData(rawData, (bagName), (plotFormat), (colorMap), (fig_num))
+colorMapToUse = [];
+fcn_DataClean_plotRawData(rawData, (bagName), (plotFormat), (colorMapToUse), (fig_num))
 
 %% Test 2: Plotting with formats
 fig_num = 2;
 figure(fig_num);
 clf;
 
-clear rawData
-fid = 1;
-dataFolderString = "LargeData";
-dateString = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-41-49_0";
-bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
-Flags = [];
-[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (-1));
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_plotRawData.mat');
+load(fullExampleFilePath,'dataStructure')
+rawData = dataStructure;
+bagName = dataStructure.Identifiers.mergedName;
 
 
 % Test the function
@@ -55,24 +52,17 @@ colorMapMatrix = colormap('hot');
 Ncolors = 20;
 colorMapToUse = fcn_plotRoad_reduceColorMap(colorMapMatrix, Ncolors, -1);
 
-fcn_DataClean_plotRawData(rawData, (bagName), (plotFormat), (colorMap), (fig_num))
+fcn_DataClean_plotRawData(rawData, (bagName), (plotFormat), (colorMapToUse), (fig_num))
 
 %% Test 3: Plotting a color
 fig_num = 3;
 figure(fig_num);
 clf;
 
-clear rawData
-fid = 1;
-dataFolderString = "LargeData";
-dateString = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-41-49_0";
-bagPath = fullfile(pwd, dataFolderString,dateString, bagName);
-Flags = [];
-[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(bagPath, (bagName), (fid), (Flags), (-1));
-
-% Plot the base station
-fcn_plotRoad_plotLL([],[],fig_num);
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_plotRawData.mat');
+load(fullExampleFilePath,'dataStructure')
+rawData = dataStructure;
+bagName = dataStructure.Identifiers.mergedName;
 
 % Test the function
 clear plotFormat
@@ -82,9 +72,9 @@ plotFormat.Marker = 'none';
 plotFormat.MarkerSize = 5;
 plotFormat.Color = fcn_geometry_fillColorFromNumberOrName(2);
 
-colorMap = plotFormat.Color;
-fcn_DataClean_plotRawData(rawData, (bagName), (plotFormat), (colorMap), (fig_num))
-h_legend = legend('Base station',bagName);
+colorMapToUse = plotFormat.Color;
+fcn_DataClean_plotRawData(rawData, (bagName), (plotFormat), (colorMapToUse), (fig_num))
+h_legend = legend(bagName);
 set(h_legend,'Interpreter','none')
 
 %% Fail conditions

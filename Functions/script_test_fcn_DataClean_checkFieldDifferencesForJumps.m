@@ -16,7 +16,10 @@
 %          (string_any_or_all),(sensors_to_check),(fid))
 %
 
-%% Fill in some silly test data
+
+
+%% CASE 1: basic example - no inputs, not verbose
+% Fill in some silly test data
 initial_test_structure = struct;
 good_data = (1:100)';
 std_dev = 0.05;
@@ -48,7 +51,6 @@ initial_test_structure.pig3.measurements = good_data;
 % NOTE: pigs have no 'values' field - this is to show that this sets the
 % flag to zero
 
-%% CASE 1: basic example - no inputs, not verbose
 field_name = 'data';
 flags = [];  %#ok<NASGU>
 threshold_in_standard_deviations = [];  %#ok<NASGU>
@@ -72,6 +74,38 @@ assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,1));
 assert(isequal(offending_sensor,''));
 
 %% CASE 2: basic example - no inputs, verbose
+% Fill in some silly test data
+initial_test_structure = struct;
+good_data = (1:100)';
+std_dev = 0.05;
+good_data = good_data + std_dev * randn(length(good_data(:,1)),1);
+
+jump = 10;
+bad_data  = [good_data(1:10); good_data(11:end)+jump];
+
+initial_test_structure.cow1.data = good_data;
+initial_test_structure.cow2.data = good_data;
+initial_test_structure.cow3.data = good_data;
+
+initial_test_structure.cow1.measurements = bad_data;
+initial_test_structure.cow2.measurements = bad_data;
+initial_test_structure.cow3.measurements = bad_data;
+
+initial_test_structure.cow1.values = good_data;
+initial_test_structure.cow2.values = good_data;
+initial_test_structure.cow3.values = good_data;
+
+initial_test_structure.pig1.data = good_data;
+initial_test_structure.pig2.data = good_data;
+initial_test_structure.pig3.data = bad_data;
+
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+% NOTE: pigs have no 'values' field - this is to show that this sets the
+% flag to zero
+
 field_name = 'data';
 flags = []; 
 threshold_in_standard_deviations = []; 
@@ -95,6 +129,36 @@ assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,1));
 assert(isequal(offending_sensor,''));
 
 %% CASE 3: basic example - show effect of fields
+% Fill in some silly test data
+initial_test_structure = struct;
+good_data = (1:100)';
+std_dev = 0.05;
+good_data = good_data + std_dev * randn(length(good_data(:,1)),1);
+
+jump = 10;
+bad_data  = [good_data(1:10); good_data(11:end)+jump];
+
+initial_test_structure.cow1.data = good_data;
+initial_test_structure.cow2.data = good_data;
+initial_test_structure.cow3.data = good_data;
+
+initial_test_structure.cow1.measurements = bad_data;
+initial_test_structure.cow2.measurements = bad_data;
+initial_test_structure.cow3.measurements = bad_data;
+
+initial_test_structure.cow1.values = good_data;
+initial_test_structure.cow2.values = good_data;
+initial_test_structure.cow3.values = good_data;
+
+initial_test_structure.pig1.data = good_data;
+initial_test_structure.pig2.data = good_data;
+initial_test_structure.pig3.data = bad_data;
+
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+
 field_name = 'data';
 flags = []; 
 threshold_in_standard_deviations = []; 
@@ -123,6 +187,38 @@ assert(strcmp(offending_sensor,'pig1'));
 
 
 %% CASE 4: show that flags passes through
+% Fill in some silly test data
+initial_test_structure = struct;
+good_data = (1:100)';
+std_dev = 0.05;
+good_data = good_data + std_dev * randn(length(good_data(:,1)),1);
+
+jump = 10;
+bad_data  = [good_data(1:10); good_data(11:end)+jump];
+
+initial_test_structure.cow1.data = good_data;
+initial_test_structure.cow2.data = good_data;
+initial_test_structure.cow3.data = good_data;
+
+initial_test_structure.cow1.measurements = bad_data;
+initial_test_structure.cow2.measurements = bad_data;
+initial_test_structure.cow3.measurements = bad_data;
+
+initial_test_structure.cow1.values = good_data;
+initial_test_structure.cow2.values = good_data;
+initial_test_structure.cow3.values = good_data;
+
+initial_test_structure.pig1.data = good_data;
+initial_test_structure.pig2.data = good_data;
+initial_test_structure.pig3.data = bad_data;
+
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+% NOTE: pigs have no 'values' field - this is to show that this sets the
+% flag to zero
+
 field_name = 'data';
 flags = struct; 
 threshold_in_standard_deviations = []; 
@@ -141,6 +237,38 @@ assert(isequal(flags.this_is_a_test,1));
 
 
 %% CASE 5: show that threshold_in_standard_deviations works
+% Fill in some silly test data
+initial_test_structure = struct;
+good_data = (1:100)';
+std_dev = 0.05;
+good_data = good_data + std_dev * randn(length(good_data(:,1)),1);
+
+jump = 10;
+bad_data  = [good_data(1:10); good_data(11:end)+jump];
+
+initial_test_structure.cow1.data = good_data;
+initial_test_structure.cow2.data = good_data;
+initial_test_structure.cow3.data = good_data;
+
+initial_test_structure.cow1.measurements = bad_data;
+initial_test_structure.cow2.measurements = bad_data;
+initial_test_structure.cow3.measurements = bad_data;
+
+initial_test_structure.cow1.values = good_data;
+initial_test_structure.cow2.values = good_data;
+initial_test_structure.cow3.values = good_data;
+
+initial_test_structure.pig1.data = good_data;
+initial_test_structure.pig2.data = good_data;
+initial_test_structure.pig3.data = bad_data;
+
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+% NOTE: pigs have no 'values' field - this is to show that this sets the
+% flag to zero
+
 field_name = 'data';
 flags = []; 
 threshold_in_standard_deviations = 5; 
@@ -172,6 +300,38 @@ assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
 
 
 %% CASE 6: basic example - custom_lower_threshold changed, verbose
+% Fill in some silly test data
+initial_test_structure = struct;
+good_data = (1:100)';
+std_dev = 0.05;
+good_data = good_data + std_dev * randn(length(good_data(:,1)),1);
+
+jump = 10;
+bad_data  = [good_data(1:10); good_data(11:end)+jump];
+
+initial_test_structure.cow1.data = good_data;
+initial_test_structure.cow2.data = good_data;
+initial_test_structure.cow3.data = good_data;
+
+initial_test_structure.cow1.measurements = bad_data;
+initial_test_structure.cow2.measurements = bad_data;
+initial_test_structure.cow3.measurements = bad_data;
+
+initial_test_structure.cow1.values = good_data;
+initial_test_structure.cow2.values = good_data;
+initial_test_structure.cow3.values = good_data;
+
+initial_test_structure.pig1.data = good_data;
+initial_test_structure.pig2.data = good_data;
+initial_test_structure.pig3.data = bad_data;
+
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+% NOTE: pigs have no 'values' field - this is to show that this sets the
+% flag to zero
+
 field_name = 'data';
 flags = []; 
 threshold_in_standard_deviations = 5; 
@@ -204,6 +364,39 @@ assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
 
 
 %% CASE 7 - string_any_or_all changed, verbose
+
+% Fill in some silly test data
+initial_test_structure = struct;
+good_data = (1:100)';
+std_dev = 0.05;
+good_data = good_data + std_dev * randn(length(good_data(:,1)),1);
+
+jump = 10;
+bad_data  = [good_data(1:10); good_data(11:end)+jump];
+
+initial_test_structure.cow1.data = good_data;
+initial_test_structure.cow2.data = good_data;
+initial_test_structure.cow3.data = good_data;
+
+initial_test_structure.cow1.measurements = bad_data;
+initial_test_structure.cow2.measurements = bad_data;
+initial_test_structure.cow3.measurements = bad_data;
+
+initial_test_structure.cow1.values = good_data;
+initial_test_structure.cow2.values = good_data;
+initial_test_structure.cow3.values = good_data;
+
+initial_test_structure.pig1.data = good_data;
+initial_test_structure.pig2.data = good_data;
+initial_test_structure.pig3.data = bad_data;
+
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+% NOTE: pigs have no 'values' field - this is to show that this sets the
+% flag to zero
+
 flags = []; 
 threshold_in_standard_deviations = []; 
 custom_lower_threshold = [];
@@ -254,6 +447,39 @@ assert(strcmp(offending_sensor,'cow1'));
 
 
 %% CASE 8: sensors_to_check changed, verbose
+
+% Fill in some silly test data
+initial_test_structure = struct;
+good_data = (1:100)';
+std_dev = 0.05;
+good_data = good_data + std_dev * randn(length(good_data(:,1)),1);
+
+jump = 10;
+bad_data  = [good_data(1:10); good_data(11:end)+jump];
+
+initial_test_structure.cow1.data = good_data;
+initial_test_structure.cow2.data = good_data;
+initial_test_structure.cow3.data = good_data;
+
+initial_test_structure.cow1.measurements = bad_data;
+initial_test_structure.cow2.measurements = bad_data;
+initial_test_structure.cow3.measurements = bad_data;
+
+initial_test_structure.cow1.values = good_data;
+initial_test_structure.cow2.values = good_data;
+initial_test_structure.cow3.values = good_data;
+
+initial_test_structure.pig1.data = good_data;
+initial_test_structure.pig2.data = good_data;
+initial_test_structure.pig3.data = bad_data;
+
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+% NOTE: pigs have no 'values' field - this is to show that this sets the
+% flag to zero
+
 field_name = 'data';
 flags = []; 
 threshold_in_standard_deviations = 5; 

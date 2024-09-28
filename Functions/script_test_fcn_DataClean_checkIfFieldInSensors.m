@@ -168,6 +168,15 @@ assert(isequal(flags.sound_exists_in_all_pig_sensors,0));
 assert(isequal(offending_sensor,'quiet_pig'));
 
 %% CASE 6: advanced example - all options used
+
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.cow1.sound = 'moo';
+initial_test_structure.cow2.sound = 'moo moo';
+initial_test_structure.cow3.sound = 'moo moo moo';
+initial_test_structure.pig1.sound  = 'oink';
+initial_test_structure.quiet_pig.weight  = 4;
+
 flags = struct; 
 flags.stuff = 1; 
 string_any_or_all = 'any';

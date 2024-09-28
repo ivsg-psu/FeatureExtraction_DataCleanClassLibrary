@@ -44,17 +44,17 @@ rootdirs{1} = fullfile(cd,'LargeData','2024-07-10');
 % rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');
 
 % List what will be saved
-saveFlags.flag_saveMatFile = 1;
+saveFlags.flag_saveMatFile = 0;
 saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
-saveFlags.flag_saveImages = 1;
+saveFlags.flag_saveImages = 0;
 saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
 saveFlags.flag_forceDirectoryCreation = 1;
 saveFlags.flag_forceImageOverwrite = 1;
 saveFlags.flag_forceMATfileOverwrite = 1;
 
 % List what will be plotted, and the figure numbers
-plotFlags.fig_num_plotAllRawTogether = 1111;
-plotFlags.fig_num_plotAllRawIndividually = 2222;
+plotFlags.fig_num_plotAllRawTogether = []; %1111;
+plotFlags.fig_num_plotAllRawIndividually = []; %2222;
 
 % Call the function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
@@ -93,17 +93,17 @@ rootdirs{1} = fullfile(cd,'LargeData','2024-07-10');
 rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');
 
 % List what will be saved
-saveFlags.flag_saveMatFile = 1;
+saveFlags.flag_saveMatFile = 0;
 saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
-saveFlags.flag_saveImages = 1;
+saveFlags.flag_saveImages = 0;
 saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
 saveFlags.flag_forceDirectoryCreation = 1;
 saveFlags.flag_forceImageOverwrite = 1;
 saveFlags.flag_forceMATfileOverwrite = 1;
 
 % List what will be plotted, and the figure numbers
-plotFlags.fig_num_plotAllRawTogether = 1111;
-plotFlags.fig_num_plotAllRawIndividually = 2222;
+plotFlags.fig_num_plotAllRawTogether = []; %1111;
+plotFlags.fig_num_plotAllRawIndividually = []; %2222;
 
 % Call the function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
@@ -151,8 +151,8 @@ saveFlags.flag_forceImageOverwrite = 0;
 saveFlags.flag_forceMATfileOverwrite = 0;
 
 % List what will be plotted, and the figure numbers
-plotFlags.fig_num_plotAllRawTogether = [];
-plotFlags.fig_num_plotAllRawIndividually = [];
+plotFlags.fig_num_plotAllRawTogether = []; %[];
+plotFlags.fig_num_plotAllRawIndividually = []; %[];
 
 % Call the function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));

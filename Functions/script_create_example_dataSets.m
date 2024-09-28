@@ -62,3 +62,12 @@ save(fullExampleFilePath,'dataStructure')
 
 fullExampleFilePath = fullfile(cd,'Data','ExampleData_findMatchingSensors.mat');
 save(fullExampleFilePath,'dataStructure')
+
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_pullDataFromFieldAcrossAllSensors.mat');
+save(fullExampleFilePath,'dataStructure')
+
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_plotRawData.mat');
+save(fullExampleFilePath,'dataStructure')
+
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData.mat');
+save(fullExampleFilePath,'dataStructure')

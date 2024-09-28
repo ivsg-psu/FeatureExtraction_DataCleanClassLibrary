@@ -584,26 +584,30 @@ else
 end
 
 %% Check if all sensors have Trigger Time
-% Check that the ROS Time, when rounded to the nearest sampling interval,
-% matches the Trigger time.
-%    ### ISSUES with this:
-%    * The data on some sensors are triggered, inlcuding the GPS sensors
-%    which are self-triggered
-%    * If the rounding does not work, this indicates a problem in the ROS
-%    master
-%    ### DETECTION:
-%    * Round the ROS Time and compare to the Trigger_Times
-%    ### FIXES:
-%    * Remove and interpolate time field if not strictly increasing
-error('stop here');
-[flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,flags);
-if 0==flags.all_sensors_have_trigger_time
-    warning('on','backtrace');
-    warning('Not all sensors have Trigger Time')
-    return
-else
-    disp("All sensors have Trigger Time")
-end
+warning('on','backtrace');
+warning('The function fcn_DataClean_checkAllSensorsHaveTriggerTime is not complete.')
+
+
+% % Check that the ROS Time, when rounded to the nearest sampling interval,
+% % matches the Trigger time.
+% %    ### ISSUES with this:
+% %    * The data on some sensors are triggered, inlcuding the GPS sensors
+% %    which are self-triggered
+% %    * If the rounding does not work, this indicates a problem in the ROS
+% %    master
+% %    ### DETECTION:
+% %    * Round the ROS Time and compare to the Trigger_Times
+% %    ### FIXES:
+% %    * Remove and interpolate time field if not strictly increasing
+% 
+% [flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,flags);
+% if 0==flags.all_sensors_have_trigger_time
+%     warning('on','backtrace');
+%     warning('Not all sensors have Trigger Time')
+%     return
+% else
+%     disp("All sensors have Trigger Time")
+% end
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

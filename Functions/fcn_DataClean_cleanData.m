@@ -521,6 +521,9 @@ while 1==flag_stay_in_main_loop
         flag_keep_checking = 0;
     end
     
+    warning('on','backtrace');
+    warning('fcn_DataClean_fillMissingsInGPSUnits is not working --- skipping');
+
     %% Check if no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
     %    ### ISSUES with this:
     %    * The GPS_Time may have small jumps which could occur if the sensor
@@ -535,25 +538,24 @@ while 1==flag_stay_in_main_loop
     if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
         nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
         flag_keep_checking = 0;
-        
     end
-
-    %% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
-    %    ### ISSUES with this:
-    %    * The GPS_Time may have small jumps which could occur if the sensor
-    %    pauses for a moment, then restarts
-    %    * If these jumps are large, the data from the sensor may be corrupted
-    %    ### DETECTION:
-    %    * Examine if the differences in GPS_Time are out of ordinary by
-    %    looking at the standard deviations of the differences relative to the
-    %    mean differences
-    %    ### FIXES:
-    %    * Interpolate time field if only a small segment is missing        
     
-    if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
-        nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
-        flag_keep_checking = 0;    
-    end
+    % %% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+    % %    ### ISSUES with this:
+    % %    * The GPS_Time may have small jumps which could occur if the sensor
+    % %    pauses for a moment, then restarts
+    % %    * If these jumps are large, the data from the sensor may be corrupted
+    % %    ### DETECTION:
+    % %    * Examine if the differences in GPS_Time are out of ordinary by
+    % %    looking at the standard deviations of the differences relative to the
+    % %    mean differences
+    % %    ### FIXES:
+    % %    * Interpolate time field if only a small segment is missing        
+    % 
+    % if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
+    %     nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
+    %     flag_keep_checking = 0;    
+    % end
 
      %% Trigger_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -581,10 +583,14 @@ while 1==flag_stay_in_main_loop
     %    * Examine if Trigger_Time fields exist
     %    ### FIXES:
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
-    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
-        nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
-        flag_keep_checking = 0;
-    end
+
+    warning('on','backtrace');
+    warning('time_flags.Trigger_Time_exists_in_all_GPS_sensors is not working --- skipping');
+
+    % if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
+    %     nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
+    %     flag_keep_checking = 0;
+    % end
     
     
 

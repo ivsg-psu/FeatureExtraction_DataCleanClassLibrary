@@ -16,13 +16,9 @@ close all
 %% Example call 1 - using only defaults, pull out GPS_Time
 
 % Grab example data
-fid = 1;
-date = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-41-49_0";
-largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
-[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_pullDataFromFieldAcrossAllSensors.mat');
+load(fullExampleFilePath,'dataStructure');
 
-dataStructure = rawData;
 field_string = 'GPS_Time';
 sensor_identifier_string = []; % 'GPS'
 entry_location = [];
@@ -41,14 +37,9 @@ assert(length(dataArray)==length(sensorNames))
 %% Example call 2 - pull out GPS_Time from only sensors that have "GPS" in name
 
 % Grab example data
-fid = 1;
-date = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-41-49_0";
-largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_pullDataFromFieldAcrossAllSensors.mat');
+load(fullExampleFilePath,'dataStructure');
 
-[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
-
-dataStructure = rawData;
 field_string = 'GPS_Time';
 sensor_identifier_string = 'GPS';
 entry_location = [];
@@ -67,18 +58,13 @@ assert(length(dataArray)==length(sensorNames))
 %% Example call 3 - pull out GPS_Time from only sensors that have "GPS" in name, keeping only 1st data and printing to console
 
 % Grab example data
-fid = 1;
-date = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-41-49_0";
-largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_pullDataFromFieldAcrossAllSensors.mat');
+load(fullExampleFilePath,'dataStructure');
 
-[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
-
-dataStructure = rawData;
 field_string = 'GPS_Time';
 sensor_identifier_string = 'GPS';
-entry_location = 'first_row';
-fid = 1;
+entry_location = [];
+fid = [];
 
 % Call the function
 [dataArray,sensorNames] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,field_string,(sensor_identifier_string), (entry_location), (fid));
@@ -93,14 +79,9 @@ assert(length(dataArray)==length(sensorNames))
 %% Example call 4 - pull out GPS_Time from only sensors that have "GPS" in name, keeping only last data and printing to console
 
 % Grab example data
-fid = 1;
-date = '2024-07-10';
-bagName = "mapping_van_2024-07-10-19-41-49_0";
-largeDataBagPath = fullfile(pwd, 'LargeData',date, bagName);
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_pullDataFromFieldAcrossAllSensors.mat');
+load(fullExampleFilePath,'dataStructure');
 
-[rawData, ~] = fcn_DataClean_loadMappingVanDataFromFile(largeDataBagPath, bagName, fid,[], []);
-
-dataStructure = rawData;
 field_string = 'GPS_Time';
 sensor_identifier_string = 'GPS';
 entry_location = 'last_row';

@@ -11,9 +11,9 @@
 %          (flags),(string_any_or_all),(sensors_to_check),(fid))
 
 close all
-clear all
 
-%% Fill in some silly test data
+%% CASE 1: basic example - no inputs, not verbose
+% Fill in some silly test data
 initial_test_structure = struct;
 initial_test_structure.sensor1.GPS_Time = (0:0.05:2)';
 initial_test_structure.sensor1.ROS_Time = (0:0.05:2)'; 
@@ -25,7 +25,6 @@ initial_test_structure.car3.GPS_Time = (0:0.1:2)';
 initial_test_structure.car3.ROS_Time = (0:0.1:2)';
 initial_test_structure.car3.centiSeconds = 10; 
 
-%% CASE 1: basic example - no inputs, not verbose
 flags = []; 
 sensors_to_check = '';
 fid = 0;
@@ -41,6 +40,18 @@ assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds,0));
 assert(isequal(offending_sensor,'sensor1'));
 
 %% CASE 2: basic example - no inputs, verbose
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.sensor1.GPS_Time = (0:0.05:2)';
+initial_test_structure.sensor1.ROS_Time = (0:0.05:2)'; 
+initial_test_structure.sensor1.centiSeconds = 5;
+initial_test_structure.sensor2.GPS_Time = (0:0.01:2)';
+initial_test_structure.sensor2.ROS_Time = (0:0.01:2)'; 
+initial_test_structure.sensor2.centiSeconds = 1;
+initial_test_structure.car3.GPS_Time = (0:0.1:2)';
+initial_test_structure.car3.ROS_Time = (0:0.1:2)';
+initial_test_structure.car3.centiSeconds = 10; 
+
 flags = []; 
 sensors_to_check = '';
 fid = 1;
@@ -56,6 +67,18 @@ assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds,0));
 assert(isequal(offending_sensor,'sensor1'));
 
 %% CASE 3: basic example - changing field_name, verbose
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.sensor1.GPS_Time = (0:0.05:2)';
+initial_test_structure.sensor1.ROS_Time = (0:0.05:2)'; 
+initial_test_structure.sensor1.centiSeconds = 5;
+initial_test_structure.sensor2.GPS_Time = (0:0.01:2)';
+initial_test_structure.sensor2.ROS_Time = (0:0.01:2)'; 
+initial_test_structure.sensor2.centiSeconds = 1;
+initial_test_structure.car3.GPS_Time = (0:0.1:2)';
+initial_test_structure.car3.ROS_Time = (0:0.1:2)';
+initial_test_structure.car3.centiSeconds = 10; 
+
 flags = []; 
 field_name = 'ROS_Time';
 sensors_to_check = '';
@@ -74,6 +97,18 @@ assert(isequal(offending_sensor,'sensor1'));
 
 
 %% CASE 4: basic example - changing sensors_to_check, verbose
+% Fill in some silly test data
+initial_test_structure = struct;
+initial_test_structure.sensor1.GPS_Time = (0:0.05:2)';
+initial_test_structure.sensor1.ROS_Time = (0:0.05:2)'; 
+initial_test_structure.sensor1.centiSeconds = 5;
+initial_test_structure.sensor2.GPS_Time = (0:0.01:2)';
+initial_test_structure.sensor2.ROS_Time = (0:0.01:2)'; 
+initial_test_structure.sensor2.centiSeconds = 1;
+initial_test_structure.car3.GPS_Time = (0:0.1:2)';
+initial_test_structure.car3.ROS_Time = (0:0.1:2)';
+initial_test_structure.car3.centiSeconds = 10; 
+
 flags = []; 
 field_name = 'ROS_Time';
 sensors_to_check = 'car';
