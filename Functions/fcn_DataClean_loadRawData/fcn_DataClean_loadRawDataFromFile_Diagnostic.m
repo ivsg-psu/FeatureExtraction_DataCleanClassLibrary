@@ -135,12 +135,15 @@ if strcmp(datatype, 'diagnostic')
             diagnostic_structure.NTRIP_Status       = datatable.NTRIP_Status;  % The status of NTRIP connection (Ture, conencted, False, disconencted)
    
         otherwise
+            warning('on','backtrace');
+            warning('Unrecognized toic found');
             error('Unrecognized topic requested: %s',topic_name)
     end
 
 else
-    error('Wrong data type requested: %s',dataType)
-
+    warning('on','backtrace');
+    warning('Diagnostic utility called with type that is not diagnostic.');
+    error('Wrong data type requested for datatype. Unable to proceed.')
 end
 
 % Close out the loading process

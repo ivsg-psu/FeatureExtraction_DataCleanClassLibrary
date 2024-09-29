@@ -155,20 +155,6 @@ if 4 <= nargin
     if ~isempty(temp)
         Flags = temp;
         
-        % try
-        %     temp = Flags.flag_select_scan_duration; %#ok<NASGU>
-        % catch
-        %     prompt = "Do you want to load the LiDAR scan for the entire route? y/n [y]";
-        %     user_input_txt = input(prompt,"s");
-        %     if isempty(user_input_txt)
-        %         user_input_txt = 'y';
-        %     end
-        %     if strcmp(user_input_txt,'y')
-        %         Flags.flag_select_scan_duration = 0;
-        %     else
-        %         Flags.flag_select_scan_duration = 1;
-        %     end
-        % end
     end
 end
 
@@ -231,7 +217,8 @@ while 1==flag_stay_in_main_loop
     %% Keep data thus far
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure;
-    %% Remove 
+
+    %% Remove Identifiers, temporarily
     if isfield(currentDataStructure, 'Identifiers')
         nextDataStructure = rmfield(currentDataStructure,'Identifiers');
     else

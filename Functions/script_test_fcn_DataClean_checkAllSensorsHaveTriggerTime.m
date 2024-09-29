@@ -33,6 +33,7 @@ testStructure.GPS_SparkFun_RightRear.Trigger_Time = 1;
 testStructure.GPS_SparkFun_Front.Trigger_Time = 1;
 testStructure.GPS_SparkFun_Front.Trigger_Time = 1;
 testStructure.LiDAR_Velodyne_Rear.Trigger_Time = 1;
+
 % Check structure
 fid = 1;
 flags = struct;
@@ -51,6 +52,7 @@ testStructure.GPS_SparkFun_RightRear.Trigger_Time = 1;
 testStructure.GPS_SparkFun_Front.Trigger_Time = 1;
 testStructure.GPS_SparkFun_Front.Trigger_Time = 1;
 testStructure.LiDAR_Velodyne_Rear.Trigger_Time = nan;
+
 % Check structure
 fid = 1;
 flags = struct;
@@ -60,6 +62,7 @@ flags = struct;
 % Check flags
 assert(isequal(checked_flags.all_sensors_have_trigger_time,0));
 assert(length(sensors_without_Trigger_Time)==1);
+assert(strcmp(sensors_without_Trigger_Time,"LiDAR_Velodyne_Rear"))
 
 %% Check merging of sensors where one has Trigger_Time as nan array
 
@@ -69,6 +72,7 @@ testStructure.GPS_SparkFun_RightRear.Trigger_Time = 1;
 testStructure.GPS_SparkFun_Front.Trigger_Time = 1;
 testStructure.GPS_SparkFun_Front.Trigger_Time = 1;
 testStructure.LiDAR_Velodyne_Rear.Trigger_Time = nan(3,1);
+
 % Check structure
 fid = 1;
 flags = struct;
@@ -78,6 +82,7 @@ flags = struct;
 % Check flags
 assert(isequal(checked_flags.all_sensors_have_trigger_time,0));
 assert(length(sensors_without_Trigger_Time)==1);
+assert(strcmp(sensors_without_Trigger_Time,"LiDAR_Velodyne_Rear"))
 
 
 %% Fail conditions

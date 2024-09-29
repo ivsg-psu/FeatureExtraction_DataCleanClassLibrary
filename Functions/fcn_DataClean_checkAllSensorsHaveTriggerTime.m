@@ -46,16 +46,44 @@ function [checked_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSe
 % -- wrote the code originally 
 % 2024_09_27: xfc5113@psu.edu
 % -- add comments for the function
+% 2024_09_28 - S. Brennan
+% -- fixed header, function isn't working because debug flag not set right
+% -- added verbose warning option
+% -- changed code to avoid try/get flag setting
+% -- fixed checked_flags, it was not being set with updated values
 
-% TO DO:
-%
 
+%% Debugging and Input checks
 
-% Set default fid (file ID) first:
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
-flag_do_plots = 0;  % % Flag to plot the final results
-flag_check_inputs = 1; % Flag to perform input checking
+% Check if flag_max_speed set. This occurs if the fig_num variable input
+% argument (varargin) is given a number of -1, which is not a valid figure
+% number.
+flag_max_speed = 0;
+if (nargin==5 && isequal(varargin{end},-1))
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 0; % Flag to perform input checking
+    flag_max_speed = 1;
+else
+    % Check to see if we are externally setting debug mode to be "on"
+    flag_do_debug = 0; % % % % Flag to plot the results for debugging
+    flag_check_inputs = 1; % Flag to perform input checking
+    MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS");
+    MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG = getenv("MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_DATACLEAN_FLAG_CHECK_INPUTS);
+    end
+end
 
+% flag_do_debug = 1;
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+    debug_fig_num = 999978; %#ok<NASGU>
+else
+    debug_fig_num = []; %#ok<NASGU>
+end
 
 %% check input arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -69,40 +97,36 @@ flag_check_inputs = 1; % Flag to perform input checking
 %              |_|
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if flag_check_inputs
-    % Are there the right number of inputs?
-    if nargin < 2 || nargin > 3
-        error('Incorrect number of input arguments')
+if (0==flag_max_speed)
+    if flag_check_inputs
+        % Are there the right number of inputs?
+        narginchk(2,3);
     end
-        
 end
-
         
 
 % Does the user want to specify the fid?
 % Check for user input
-fid = 0; % Default case is to NOT print to the console
-if 3 == nargin
-    temp = varargin{1};
-    if ~isempty(temp)
-        % Check that the FID works
-        try
-            temp_msg = ferror(temp); %#ok<NASGU>
-            % Set the fid value, if the above ferror didn't fail
-            fid = temp;
-        catch ME
-            warning('on','backtrace');
-            warning('User-specified FID does not correspond to a file. Unable to continue.');
-            throwAsCaller(ME);
+fid = 0; %#ok<NASGU> % Default case is to NOT print to the console
+if (0==flag_max_speed)
+    if 3 == nargin
+        temp = varargin{1};
+        if ~isempty(temp)
+            % Check that the FID works
+            try
+                temp_msg = ferror(temp); %#ok<NASGU>
+                % Set the fid value, if the above ferror didn't fail
+                fid = temp; %#ok<NASGU>
+            catch ME
+                warning('on','backtrace');
+                warning('User-specified FID does not correspond to a file. Unable to continue.');
+                throwAsCaller(ME);
+            end
         end
     end
 end
 
-if fid == 1
-    st = dbstack; %#ok<*UNRCH>
-    fprintf(fid,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
-end
+flag_do_plots = 0; % Nothing to plot
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -114,33 +138,43 @@ end
 %  |_|  |_|\__,_|_|_| |_|
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-checked_flags = flags;
-all_sensors_have_trigger_time = 1;
-checked_flags.all_sensors_have_trigger_time = all_sensors_have_trigger_time;
 fields = fieldnames(dataStructure);
-sensors_without_Trigger_Time = [];
-for idx_field = 1:length(fields)
+Nsensors = length(fields);
+checked_flags = flags;
+
+
+% Loop through all the sensors, checking each for trigger times
+flags_thisSensorHasTriggerTime = ones(Nsensors,1);
+for idx_field = 1:Nsensors
     current_field_struct = dataStructure.(fields{idx_field});
     if ~isempty(current_field_struct)
-        try
+        if isfield(current_field_struct,'Trigger_Time')
             Trigger_Time = current_field_struct.Trigger_Time;
-    
-        catch
-            warning_mesg = sprintf("%s does not have Trigger_Time field", fields{idx_field});
-            warning(warning_mesg)
-            all_sensors_have_trigger_time = 0;
+        else
+            warning('on','backtrace');
+            warning("%s does not have Trigger_Time field", fields{idx_field});
+            flags_thisSensorHasTriggerTime(idx_field,1) = 0;
         end
-  
-      
     end
     if all(isnan(Trigger_Time))
-        all_sensors_have_trigger_time = 0;
-        checked_flags.all_sensors_have_trigger_time = all_sensors_have_trigger_time;
-        sensors_without_Trigger_Time = [sensors_without_Trigger_Time; string(fields{idx_field})];
+        flags_thisSensorHasTriggerTime(idx_field,1) = 0;
     end
 
 end
+
+% Save outputs
+badSensorIndicies = find(flags_thisSensorHasTriggerTime==0);
+
+all_sensors_have_trigger_time = 1;
+sensors_without_Trigger_Time = [];
+if ~isempty(badSensorIndicies)
+    all_sensors_have_trigger_time = 0;
+    sensors_without_Trigger_Time = string(fields{badSensorIndicies});
+
+end
+checked_flags.all_sensors_have_trigger_time = all_sensors_have_trigger_time;
+
+
 
 
 %% Plot the results (for debugging)?

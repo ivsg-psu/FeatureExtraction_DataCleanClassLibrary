@@ -7,7 +7,6 @@
 
 %% Set up the workspace
 close all
-clc
 
 
 %% Check assertions for basic path operations and function testing
@@ -33,20 +32,20 @@ topic_name = '/GPS_fix';
 datatype = fcn_DataClean_determineDataType(topic_name);
 assert(strcmp(datatype,'gps'));
 
-%% Basic test - 'adis_msg' is 'ins'
+%% Basic test - 'adis_msg' is 'imu'
 topic_name = '/adis_msg';
 datatype = fcn_DataClean_determineDataType(topic_name);
-assert(strcmp(datatype,'ins'));
+assert(strcmp(datatype,'imu'));
 
-%% Basic test - 'adis_press' is 'ins'
+%% Basic test - 'adis_press' is 'imu'
 topic_name = '/adis_press';
 datatype = fcn_DataClean_determineDataType(topic_name);
-assert(strcmp(datatype,'ins'))
+assert(strcmp(datatype,'imu'))
 
-%% Basic test - 'adis_temp' is 'ins'
+%% Basic test - 'adis_temp' is 'imu'
 topic_name = '/adis_press';
 datatype = fcn_DataClean_determineDataType(topic_name);
-assert(strcmp(datatype,'ins'))
+assert(strcmp(datatype,'imu'))
 
 %% Basic test - 'diagnostic_encoder' is 'encoder'
 topic_name = '/diagnostic_encoder';
@@ -58,20 +57,20 @@ topic_name = '/diagnostic_trigger';
 datatype = fcn_DataClean_determineDataType(topic_name);
 assert(strcmp(datatype,'trigger'))
 
-%% Basic test - 'imu/data' is 'ins'
+%% Basic test - 'imu/data' is 'imu'
 topic_name = '/imu/data';
 datatype = fcn_DataClean_determineDataType(topic_name);
-assert(strcmp(datatype,'ins'))
+assert(strcmp(datatype,'imu'))
 
-%% Basic test - 'imu/data_raw' is 'ins'
+%% Basic test - 'imu/data_raw' is 'imu'
 topic_name = '/imu/data_raw';
 datatype = fcn_DataClean_determineDataType(topic_name);
-assert(strcmp(datatype,'ins'))
+assert(strcmp(datatype,'imu'))
 
-%% Basic test - 'imu/mag' is 'ins'
+%% Basic test - 'imu/mag' is 'imu'
 topic_name = '/imu/mag';
 datatype = fcn_DataClean_determineDataType(topic_name);
-assert(strcmp(datatype,'ins'))
+assert(strcmp(datatype,'imu'))
 
 %% Fail conditions
 if 1==0
