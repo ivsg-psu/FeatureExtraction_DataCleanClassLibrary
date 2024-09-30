@@ -353,6 +353,14 @@ while 1==flag_stay_in_main_loop
    
     
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
+
+    % Used to create test data
+    if 1==0
+        fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataTimeConsistency.mat');
+        dataStructure = nextDataStructure;
+        save(fullExampleFilePath,'dataStructure');
+    end
+
     if (1==flag_keep_checking)
         [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
     end

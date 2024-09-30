@@ -159,7 +159,9 @@ sensor_names = fcn_DataClean_findMatchingSensors(dataStructure, sensors_to_merge
 all_field_names{1}  = '';
 all_subfield_names{1} = '';
 
-% Loop through the fields
+% Loop through the fields and subfields to make a list of all the field and
+% subfield names.
+
 Nfields = 0;
 for ith_sensor = 1:length(sensor_names)
     % Grab the sensor subfield name
@@ -253,24 +255,25 @@ if fid>0
     longest_field_string = max(longest_field_string,10);
 
     % Print results
-    fprintf(fid,'\n\t Attempting merge of ''%s'' sensors to create ''%s'', using method ''%s'' on the following sensors and fields: \n',sensors_to_merge,merged_sensor_name,method_name);
+    fprintf(fid,'\n\t Attempting merge of ''%s'' sensors to create ''%s'', using method ''%s'' on the following sensors and fields: \n\n',sensors_to_merge,merged_sensor_name,method_name);
     
     % Print start time table
+    NdataColumn = 30;
     row_title_string       = fcn_DebugTools_debugPrintStringToNCharacters('Row:',7);
     sensor_title_string    = fcn_DebugTools_debugPrintStringToNCharacters('Sensors:',longest_sensor_string);
     field_title_string     = fcn_DebugTools_debugPrintStringToNCharacters('Fields:',longest_field_string);
-    total_repeats_string   = fcn_DebugTools_debugPrintStringToNCharacters('Field Repeat Total:',20);
-    repeat_instance_string = fcn_DebugTools_debugPrintStringToNCharacters('Repeat Instance:',20);
-    data_repeated_string   = fcn_DebugTools_debugPrintStringToNCharacters('Row this repeats?:',20);
+    total_repeats_string   = fcn_DebugTools_debugPrintStringToNCharacters('N Repeats Across Sensors:',NdataColumn);
+    repeat_instance_string = fcn_DebugTools_debugPrintStringToNCharacters('Field Repeat Instance:',NdataColumn);
+    data_repeated_string   = fcn_DebugTools_debugPrintStringToNCharacters('Data Repeated? (row):',NdataColumn);
     
     fprintf(fid,'\t \t %s \t %s \t %s \t %s \t %s \t %s \n',row_title_string, sensor_title_string,field_title_string,total_repeats_string,repeat_instance_string,data_repeated_string);
     for ith_data = 1:length(all_subfield_names)
         row_data_string         = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d:',ith_data),7);
         sensor_data_string      = fcn_DebugTools_debugPrintStringToNCharacters(all_subfield_names{ith_data},longest_sensor_string);
         field_data_string       = fcn_DebugTools_debugPrintStringToNCharacters(all_field_names{ith_data},longest_field_string);
-        total_data_string       = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',all_total_repeats(ith_data)),20);
-        repeat_instance_string  = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',all_repeat_count(ith_data)),20);
-        data_repeated_string    = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',flags_field_data_is_repeated(ith_data)),20);
+        total_data_string       = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',all_total_repeats(ith_data)),NdataColumn);
+        repeat_instance_string  = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',all_repeat_count(ith_data)),NdataColumn);
+        data_repeated_string    = fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%d',flags_field_data_is_repeated(ith_data)),NdataColumn);
         fprintf(fid,'\t \t %s \t %s \t %s \t %s \t %s \t %s \n',row_data_string, sensor_data_string,field_data_string,total_data_string,repeat_instance_string,data_repeated_string);
     end
     fprintf(fid,'\n');
