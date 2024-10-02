@@ -36,7 +36,7 @@ Identifiers.AggregationType = 'PreRun'; % Can be 'PreCalibration', 'PreRun', 'Ru
 Identifiers.SourceBagFileName =''; % This is filled in automatically for each file
 
 % Specify the bagQueryString
-bagQueryString = 'mapping_van_2024-07-1'; % The more specific, the better to avoid accidental loading of wrong information
+bagQueryString = 'mapping_van_2024-07-1*'; % The more specific, the better to avoid accidental loading of wrong information
 
 % Spedify the fid
 fid = 0; % 1 --> print to console

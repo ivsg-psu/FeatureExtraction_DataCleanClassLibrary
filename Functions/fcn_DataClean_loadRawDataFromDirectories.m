@@ -277,26 +277,7 @@ end
 
 
 %% Find all the directories that will be queried
-only_directory_filelist = [];
-if fid
-    fprintf(fid,'\nSEARCHING DIRECTORIES FOR BAG FILES\n');
-end
-for ith_rootDirectory = 1:length(rootdirs)
-    rootdir = rootdirs{ith_rootDirectory};
-    if fid
-        fprintf(fid,'Loading directory candidates from directory: %s\n',rootdir);
-    end
-    directoryQuery = fullfile(rootdir, '**',cat(2,bagQueryString,'*'));
-    filelist = dir(directoryQuery);  % gets list of files and folders in any subfolder that start with name 'mapping_van_'
-    fileListToAdd = filelist([filelist.isdir]);
-    only_directory_filelist = [only_directory_filelist; fileListToAdd];  %#ok<AGROW> % keep only directories from list
-    if fid
-        fprintf(fid,'\tCandidates found in directory: %.0f\n',length(fileListToAdd));
-    end
-end
-if fid
-    fprintf(fid,'Total candidates found: %.0f\n',length(only_directory_filelist));
-end
+only_directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (bagQueryString), (1), (fid));
 
 %% Loop through all the directories
 % Initialize key storage variables

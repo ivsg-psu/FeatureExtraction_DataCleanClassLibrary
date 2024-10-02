@@ -35,7 +35,7 @@ searchIdentifiers.DataSource = 'MappingVan'; % Can be 'MappingVan', 'AV', 'CV2X'
 searchIdentifiers.AggregationType = 'PreRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
 
 % Specify the bagQueryString
-matQueryString = 'mapping_van_2024-07-1*_merged'; % The more specific, the better to avoid accidental loading of wrong information
+matQueryString = 'mapping_van_2024-07-1*_merged.mat'; % The more specific, the better to avoid accidental loading of wrong information
 
 % Spedify the fid
 fid = 1; % 1 --> print to console

@@ -37,7 +37,7 @@ function matDataCellArray  = fcn_DataClean_loadMatDataFromDirectories(rootdirs, 
 %      matQueryString: the prefix used to perform the query to search for
 %      mat file directories. All directories within the rootdirectors, and
 %      any subdirectories of these, are processed. The default
-%      matQueryString, if left empty, is: 'mapping_van_'.
+%      matQueryString, if left empty, is: 'mapping_van_*.mat'.
 %
 %      fid: the fileID where to print. Default is 1, to print results to
 %      the console.
@@ -175,7 +175,7 @@ end
 
 
 % Does user want to specify matQueryString?
-matQueryString = 'mapping_van_';
+matQueryString = 'mapping_van_*.mat';
 if 3 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
@@ -217,27 +217,9 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Find all the directories that will be queried
-only_directory_filelist = [];
-if fid
-    fprintf(fid,'\nSEARCHING DIRECTORIES FOR MAT FILES\n');
-end
-for ith_rootDirectory = 1:length(rootdirs)
-    rootdir = rootdirs{ith_rootDirectory};
-    if fid
-        fprintf(fid,'\n\nLoading directory candidates from directory: %s\n',rootdir);
-    end
-    directoryQuery = fullfile(rootdir, '**',cat(2,matQueryString,'.mat'));
-    filelist = dir(directoryQuery);  % gets list of files and folders in any subfolder that start with name 'mapping_van_'
-    fileListToAdd = filelist([filelist.isdir]==0);
-    only_directory_filelist = [only_directory_filelist; fileListToAdd];  %#ok<AGROW> % keep only directories from list
-    if fid
-        fprintf(fid,'\tCandidates found in directory: %.0f\n',length(fileListToAdd));
-    end
-end
-if fid
-    fprintf(fid,'Total candidates found: %.0f\n',length(only_directory_filelist));
-end
+%% Find all the files that will be queried
+only_directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (matQueryString), (0), (fid));
+
 
 %% Loop through all the directories
 % Initialize key storage variables
