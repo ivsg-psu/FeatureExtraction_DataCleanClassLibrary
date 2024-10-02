@@ -142,14 +142,14 @@ directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (fileQueryStr
 assert(isstruct(directory_filelist));
 assert(length(directory_filelist)>1);
 
-%% Test 5: All bag files in a given directory
+%% Test 5: Find all bag files in a given directory, and sort them, then print
 % fig_num = 1;
 % figure(fig_num);
 % clf;
 
 % List which directory/directories need to be loaded
 clear rootdirs
-rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA51Aliquippa';
+rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
 
 
 % Specify the bagQueryString
@@ -167,6 +167,17 @@ directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (fileQueryStr
 % Check the results
 assert(isstruct(directory_filelist));
 assert(length(directory_filelist)>1);
+
+%%%%%
+% Sort them
+Nfiles = length(directory_filelist);
+for ith_file = 1:Nfiles
+    fileName = directory_filelist(ith_file).name;
+    if length(fileName)>4
+    end
+end
+
+
 %% Fail conditions
 if 1==0
     %% ERROR for bad data folder
