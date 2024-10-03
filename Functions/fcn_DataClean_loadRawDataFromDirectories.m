@@ -313,6 +313,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if (1==flag_do_plots)
 
+    if fid
+        fprintf(fid,'\nBEGINNING PLOTTING: \n');
+    end
+
     %% Plot all of them together?
     if ~isempty(plotFlags.fig_num_plotAllRawTogether)
         fig_num_plotAllRawTogether = plotFlags.fig_num_plotAllRawTogether;
@@ -329,6 +333,10 @@ if (1==flag_do_plots)
         legend_entries = cell(length(rawDataCellArray)+1,1);
         for ith_rawData = 1:length(rawDataCellArray)
             bagName = only_directory_filelist(ith_rawData).name;
+       
+            if fid
+                fprintf(fid,'\tPlotting file %.0d of %.0d: %s\n', ith_rawData, length(rawDataCellArray), bagName);
+            end
             plotFormat.Color = fcn_geometry_fillColorFromNumberOrName(ith_rawData);
             colorMap = plotFormat.Color;
             fcn_DataClean_plotRawData(rawDataCellArray{ith_rawData}, (bagName), (plotFormat), (colorMap), (fig_num_plotAllRawTogether))

@@ -149,18 +149,18 @@ assert(length(directory_filelist)>1);
 
 % List which directory/directories need to be loaded
 clear rootdirs
-% rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
-rootdirs{1} = fullfile(cd,'Data');
+rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
+% rootdirs{1} = fullfile(cd,'Data');
 
 
 % Specify the bagQueryString
-fileQueryString = 'mapping_van_*.mat'; % The more specific, the better to avoid accidental loading of wrong information
+fileQueryString = '*.bag'; % The more specific, the better to avoid accidental loading of wrong information
 
 % Specify the flag_fileOrDirectory
 flag_fileOrDirectory = 0; % A file
 
 % Specify the fid
-fid = 1; % 1 --> print to console
+fid = -1; % 1 --> print to console
 
 % Call the function
 directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (fileQueryString), (flag_fileOrDirectory), (fid));
@@ -183,6 +183,7 @@ end
 
 sorted_directory_filelist = directory_filelist(sortedIndex);
 
+fid = 1;
 fprintf(fid,'\nCONTENTS FOUND:\n');
 % Print the fields
 previousDirectory = '';
