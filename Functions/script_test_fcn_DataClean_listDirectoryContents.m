@@ -149,11 +149,12 @@ assert(length(directory_filelist)>1);
 
 % List which directory/directories need to be loaded
 clear rootdirs
-rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
+% rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
+rootdirs{1} = fullfile(cd,'Data');
 
 
 % Specify the bagQueryString
-fileQueryString = '*.bag'; % The more specific, the better to avoid accidental loading of wrong information
+fileQueryString = 'mapping_van_*.mat'; % The more specific, the better to avoid accidental loading of wrong information
 
 % Specify the flag_fileOrDirectory
 flag_fileOrDirectory = 0; % A file
@@ -169,18 +170,50 @@ assert(isstruct(directory_filelist));
 assert(length(directory_filelist)>1);
 
 %%%%%
-% Sort them
+% Sort them by time
 Nfiles = length(directory_filelist);
+timeNumbers = datetime(zeros(Nfiles,1), 0, 0);
 for ith_file = 1:Nfiles
     fileName = directory_filelist(ith_file).name;
-    if length(fileName)>4
-    end
+    timeNumbers(ith_file,1) = fcn_INTERNAL_findTimeFromName(fileName);
 end
 
+% Sort them
+[~,sortedIndex] = sort(timeNumbers);
+
+sorted_directory_filelist = directory_filelist(sortedIndex);
+
+fprintf(fid,'\nCONTENTS FOUND:\n');
+% Print the fields
+previousDirectory = '';
+for jth_file = 1:length(sorted_directory_filelist)
+    thisFolder = sorted_directory_filelist(jth_file).folder;
+    if ~strcmp(thisFolder,previousDirectory)
+        previousDirectory = thisFolder;
+        fprintf(fid,'Folder: %s\n',thisFolder);
+    end
+    if (0==flag_fileOrDirectory) || (2==flag_fileOrDirectory)
+        fprintf(fid,'\t%s\n',sorted_directory_filelist(jth_file).name);
+    end
+end
 
 %% Fail conditions
 if 1==0
     %% ERROR for bad data folder
     bagName = "badData";
     rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName, bagName);
+end
+
+function timeNumber = fcn_INTERNAL_findTimeFromName(fileName)
+
+timeString = [];
+if length(fileName)>4
+    splitName = strsplit(fileName,{'_','.'});
+    for ith_split = 1:length(splitName)
+        if contains(splitName{ith_split},'-')
+            timeString = splitName{ith_split};
+        end
+    end
+end
+timeNumber = datetime(timeString,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 end
