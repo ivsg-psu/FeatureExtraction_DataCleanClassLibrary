@@ -355,7 +355,7 @@ while 1==flag_stay_in_main_loop
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
 
     % Used to create test data
-    if 1==0
+    if 1==1
         fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataTimeConsistency.mat');
         dataStructure = nextDataStructure;
         save(fullExampleFilePath,'dataStructure');

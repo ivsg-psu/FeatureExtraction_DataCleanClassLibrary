@@ -141,6 +141,10 @@ assert(isequal(flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_car_sensor
 assert(isequal(offending_sensor,''));
 
 %% CASE 900: Real world data
+fig_num = 900;
+figure(fig_num);
+clf;
+
 fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataTimeConsistency.mat');
 load(fullExampleFilePath,'dataStructure');
 

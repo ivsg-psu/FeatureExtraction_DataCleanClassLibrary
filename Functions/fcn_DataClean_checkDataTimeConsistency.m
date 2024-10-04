@@ -399,6 +399,8 @@ if 0==flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
 end
 
 %% Check if ROS_Time_rounds_correctly_to_Trigger_Time
+
+error('NOT FINISHED')
 % Check that the ROS Time, when rounded to the nearest sampling interval,
 % matches the Trigger time.
 %    ### ISSUES with this:
@@ -420,7 +422,8 @@ else
     disp("ROS_Time is rounded correctly")
 end
 
-%% Check if all sensors have Trigger Time
+%% Check all_sensors_have_trigger_time
+% Do all sensors have Trigger Time, not just GPS sensors
 % Check that the ROS Time, when rounded to the nearest sampling interval,
 % matches the Trigger time.
 %    ### ISSUES with this:

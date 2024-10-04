@@ -149,7 +149,7 @@ assert(length(directory_filelist)>1);
 
 % List which directory/directories need to be loaded
 clear rootdirs
-rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
+rootdirs{1} = 'D:\MappingVanData\RawBags\TestTrack\Scenario 1.6';
 % rootdirs{1} = fullfile(cd,'Data');
 
 
@@ -183,6 +183,8 @@ end
 
 sorted_directory_filelist = directory_filelist(sortedIndex);
 
+%%%%
+% Print the results
 fid = 1;
 fprintf(fid,'\nCONTENTS FOUND:\n');
 % Print the fields
@@ -195,6 +197,41 @@ for jth_file = 1:length(sorted_directory_filelist)
     end
     if (0==flag_fileOrDirectory) || (2==flag_fileOrDirectory)
         fprintf(fid,'\t%s\n',sorted_directory_filelist(jth_file).name);
+    end
+end
+
+% Move the files to root?
+if 1==0
+    fprintf(fid,'\nMOVING FILES:\n');
+    desiredRootDirectory = 'D:\MappingVanData\RawBags\TestTrack\Scenario 1.6';
+
+    previousDirectory = '';
+    for jth_file = 1:length(sorted_directory_filelist)
+        thisFolder = sorted_directory_filelist(jth_file).folder;
+        if ~strcmp(thisFolder,previousDirectory)
+            previousDirectory = thisFolder;
+            fprintf(fid,'Clearing folder: %s\n',thisFolder);
+        end
+        if (0==flag_fileOrDirectory) || (2==flag_fileOrDirectory)
+            fprintf(fid,'\tMoving: %s  ',sorted_directory_filelist(jth_file).name);
+        end
+
+        thisFile = sorted_directory_filelist(jth_file).name;
+        fullPathFile = fullfile(thisFolder,thisFile);
+
+        if ~strcmp(desiredRootDirectory,thisFolder)
+            [status,message] = movefile(fullPathFile,desiredRootDirectory,'f');
+            if 1~=status
+                warning('on','backtrace');
+                warning('Unable to move file: \n\t%s \nto folder: \n\t%s',fullPathFile,desiredRootDirectory);
+                warning('Message given was: \n\t%s',message);
+                error('Unable to complete move of file?');
+            else
+                fcn_DebugTools_cprintf('*green','(success)\n');
+            end
+        else
+            fcn_DebugTools_cprintf('*blue','(no move needed)\n');
+        end
     end
 end
 
