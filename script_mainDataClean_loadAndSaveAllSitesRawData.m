@@ -500,7 +500,8 @@ Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'R
 Identifiers.SourceBagFileName =''; % This is filled in automatically for each file
 
 % Specify the bagQueryString
-bagQueryString = 'mapping_van_2024-09-17*'; % The more specific, the better to avoid accidental loading of wrong information
+mappingDate = '2024-09-17';
+bagQueryString = cat(2,'mapping_van_',mappingDate,'*'); % The more specific, the better to avoid accidental loading of wrong information
 
 % Spedify the fid
 fid = 1; % 1 --> print to console
@@ -510,13 +511,13 @@ Flags = [];
 
 % List which directory/directories need to be loaded
 clear rootdirs
-rootdirs{1} = fullfile(cd,'LargeData','ParsedBags_PoseOnly','TestTrack','Scenario 1.6','2024-09-17'); % There are 5 data here
+rootdirs{1} = fullfile(cd,'LargeData','ParsedBags_PoseOnly',Identifiers.ProjectStage,cat(2,'Scenario ',Identifiers.WorkZoneScenario),mappingDate); 
 
 % List what will be saved
 saveFlags.flag_saveMatFile = 1;
-saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
+saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,cat(2,'Scenario ',Identifiers.WorkZoneScenario));
 saveFlags.flag_saveImages = 1;
-saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
+saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,cat(2,'Scenario ',Identifiers.WorkZoneScenario));
 saveFlags.flag_forceDirectoryCreation = 1;
 saveFlags.flag_forceImageOverwrite = 1;
 saveFlags.flag_forceMATfileOverwrite = 1;
@@ -540,9 +541,9 @@ fid = 1; % 1 --> print to console
 
 % List what will be saved
 saveFlags.flag_saveMatFile = 1;
-saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
+saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,cat(2,'Scenario ',Identifiers.WorkZoneScenario));
 saveFlags.flag_saveImages = 1;
-saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
+saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,cat(2,'Scenario ',Identifiers.WorkZoneScenario));
 saveFlags.flag_saveImages_name = cat(2,Identifiers.WorkZoneScenario,'_merged');
 saveFlags.flag_forceDirectoryCreation = 1;
 saveFlags.flag_forceImageOverwrite = 1;
