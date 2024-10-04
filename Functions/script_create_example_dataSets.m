@@ -32,7 +32,7 @@ searchIdentifiers.DataSource = 'MappingVan'; % Can be 'MappingVan', 'AV', 'CV2X'
 searchIdentifiers.AggregationType = 'PreRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
 
 % Specify the bagQueryString
-matQueryString = 'mapping_van_2024-07-1*_merged'; % The more specific, the better to avoid accidental loading of wrong information
+matQueryString = 'mapping_van_2024-07-1*_merged.mat'; % The more specific, the better to avoid accidental loading of wrong information
 
 % Spedify the fid
 fid = 1; % 1 --> print to console
@@ -56,6 +56,12 @@ assert(iscell(rawDataCellArray));
 dataStructure = rawDataCellArray{1}.rawDataMerged;
 fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataNameConsistency.mat');
 save(fullExampleFilePath,'dataStructure')
+
+% NOTE: for 'ExampleData_checkDataTimeConsistency.mat', see: fcn_DataClean_cleanData
+% This data set is only going to be valid after some of the data
+% consistency checks are finished. In other words, it is a "halfway"
+% processed data set and therefore an example is generated in the middle of
+% an existing function.
 
 fullExampleFilePath = fullfile(cd,'Data','ExampleData_mergeSensorsByMethod.mat');
 save(fullExampleFilePath,'dataStructure')

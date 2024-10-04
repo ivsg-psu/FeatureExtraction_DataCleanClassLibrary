@@ -780,6 +780,65 @@ assert(isstruct(testDataStructure));
 fprintf(1,'The data structure for testDataStructure: \n')
 disp(testDataStructure)
 
+%% fcn_DataClean_listDirectoryContents
+% Creates a list of specified root directories, including all
+% subdirectories, of a given query. Allows specification whether to keep
+% either files, directories, or both.
+%
+% FORMAT:
+%
+%      directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (fileQueryString), (flag_fileOrDirectory), (fid))
+
+% List which directory/directories need to be loaded
+clear rootdirs
+% rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
+rootdirs{1} = fullfile(cd,'Data');
+
+
+% Specify the fileQueryString
+fileQueryString = '*.mat'; % The more specific, the better to avoid accidental loading of wrong information
+
+% Specify the flag_fileOrDirectory
+flag_fileOrDirectory = 0; % A file
+
+% Specify the fid
+fid = -1; % 1 --> print to console
+
+% Call the function
+directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (fileQueryString), (flag_fileOrDirectory), (fid));
+
+% Check the results
+assert(isstruct(directory_filelist));
+assert(length(directory_filelist)>1);
+
+%%%%%
+% Sort them by time
+Nfiles = length(directory_filelist);
+timeNumbers = datetime(zeros(Nfiles,1), 0, 0);
+for ith_file = 1:Nfiles
+    fileName = directory_filelist(ith_file).name;
+    timeNumbers(ith_file,1) = fcn_INTERNAL_findTimeFromName(fileName);
+end
+
+% Sort them
+[~,sortedIndex] = sort(timeNumbers);
+
+sorted_directory_filelist = directory_filelist(sortedIndex);
+
+fid = 1;
+fprintf(fid,'\nCONTENTS FOUND:\n');
+% Print the fields
+previousDirectory = '';
+for jth_file = 1:length(sorted_directory_filelist)
+    thisFolder = sorted_directory_filelist(jth_file).folder;
+    if ~strcmp(thisFolder,previousDirectory)
+        previousDirectory = thisFolder;
+        fprintf(fid,'Folder: %s\n',thisFolder);
+    end
+    if (0==flag_fileOrDirectory) || (2==flag_fileOrDirectory)
+        fprintf(fid,'\t%s\n',sorted_directory_filelist(jth_file).name);
+    end
+end
 %% Functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   ______                _   _
@@ -1228,4 +1287,19 @@ end
 
 end % Ends function fcn_DebugTools_installDependencies
 
-    
+
+
+%% fcn_INTERNAL_findTimeFromName
+function timeNumber = fcn_INTERNAL_findTimeFromName(fileName)
+
+timeString = [];
+if length(fileName)>4
+    splitName = strsplit(fileName,{'_','.'});
+    for ith_split = 1:length(splitName)
+        if contains(splitName{ith_split},'-')
+            timeString = splitName{ith_split};
+        end
+    end
+end
+timeNumber = datetime(timeString,'InputFormat','yyyy-MM-dd-HH-mm-ss');
+end % Ends fcn_INTERNAL_findTimeFromName

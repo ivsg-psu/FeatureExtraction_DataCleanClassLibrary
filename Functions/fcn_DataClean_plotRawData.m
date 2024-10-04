@@ -204,7 +204,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if (1==flag_do_plots) 
     % Plot some test data
-    LLdata = [rawData.GPS_SparkFun_Front_GGA.Latitude rawData.GPS_SparkFun_Front_GGA.Longitude];
+    if isfield(rawData,'GPS_SparkFun_Front_GGA')
+        LLdata = [rawData.GPS_SparkFun_Front_GGA.Latitude rawData.GPS_SparkFun_Front_GGA.Longitude];
+    else
+        warning('Front GPS not found - not able to plot!? This is usually a sign of a bad bag file conversion.');
+        LLdata = [];
+    end
+    
 
 
     if 1==0
@@ -216,10 +222,12 @@ if (1==flag_do_plots)
             pause(0.02);
         end
     else
-        Npoints = length(LLdata(:,1));
-        Idata = ((1:Npoints)-1)'/(Npoints-1);
-        fcn_plotRoad_plotLLI([LLdata Idata], (plotFormat), (colorMapToUse), (fig_num));
-        set(gca,'MapCenterMode','auto','ZoomLevelMode','auto');
+        if ~isempty(LLdata)
+            Npoints = length(LLdata(:,1));
+            Idata = ((1:Npoints)-1)'/(Npoints-1);
+            fcn_plotRoad_plotLLI([LLdata Idata], (plotFormat), (colorMapToUse), (fig_num));
+            set(gca,'MapCenterMode','auto','ZoomLevelMode','auto');
+        end
     end
     title(sprintf('%s',bagName_clean),'Interpreter','none');
 

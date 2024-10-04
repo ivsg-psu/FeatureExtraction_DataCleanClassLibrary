@@ -149,7 +149,8 @@ assert(length(directory_filelist)>1);
 
 % List which directory/directories need to be loaded
 clear rootdirs
-rootdirs{1} = 'D:\MappingVanData\RawBags\OnRoad\PA653Normalville\2024-08-22';
+rootdirs{1} = 'D:\MappingVanData\RawBags\TestTrack\Scenario 1.6';
+% rootdirs{1} = fullfile(cd,'Data');
 
 
 % Specify the bagQueryString
@@ -159,7 +160,7 @@ fileQueryString = '*.bag'; % The more specific, the better to avoid accidental l
 flag_fileOrDirectory = 0; % A file
 
 % Specify the fid
-fid = 1; % 1 --> print to console
+fid = -1; % 1 --> print to console
 
 % Call the function
 directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (fileQueryString), (flag_fileOrDirectory), (fid));
@@ -169,18 +170,88 @@ assert(isstruct(directory_filelist));
 assert(length(directory_filelist)>1);
 
 %%%%%
-% Sort them
+% Sort them by time
 Nfiles = length(directory_filelist);
+timeNumbers = datetime(zeros(Nfiles,1), 0, 0);
 for ith_file = 1:Nfiles
     fileName = directory_filelist(ith_file).name;
-    if length(fileName)>4
+    timeNumbers(ith_file,1) = fcn_INTERNAL_findTimeFromName(fileName);
+end
+
+% Sort them
+[~,sortedIndex] = sort(timeNumbers);
+
+sorted_directory_filelist = directory_filelist(sortedIndex);
+
+%%%%
+% Print the results
+fid = 1;
+fprintf(fid,'\nCONTENTS FOUND:\n');
+% Print the fields
+previousDirectory = '';
+for jth_file = 1:length(sorted_directory_filelist)
+    thisFolder = sorted_directory_filelist(jth_file).folder;
+    if ~strcmp(thisFolder,previousDirectory)
+        previousDirectory = thisFolder;
+        fprintf(fid,'Folder: %s\n',thisFolder);
+    end
+    if (0==flag_fileOrDirectory) || (2==flag_fileOrDirectory)
+        fprintf(fid,'\t%s\n',sorted_directory_filelist(jth_file).name);
     end
 end
 
+% Move the files to root?
+if 1==0
+    fprintf(fid,'\nMOVING FILES:\n');
+    desiredRootDirectory = 'D:\MappingVanData\RawBags\TestTrack\Scenario 1.6';
+
+    previousDirectory = '';
+    for jth_file = 1:length(sorted_directory_filelist)
+        thisFolder = sorted_directory_filelist(jth_file).folder;
+        if ~strcmp(thisFolder,previousDirectory)
+            previousDirectory = thisFolder;
+            fprintf(fid,'Clearing folder: %s\n',thisFolder);
+        end
+        if (0==flag_fileOrDirectory) || (2==flag_fileOrDirectory)
+            fprintf(fid,'\tMoving: %s  ',sorted_directory_filelist(jth_file).name);
+        end
+
+        thisFile = sorted_directory_filelist(jth_file).name;
+        fullPathFile = fullfile(thisFolder,thisFile);
+
+        if ~strcmp(desiredRootDirectory,thisFolder)
+            [status,message] = movefile(fullPathFile,desiredRootDirectory,'f');
+            if 1~=status
+                warning('on','backtrace');
+                warning('Unable to move file: \n\t%s \nto folder: \n\t%s',fullPathFile,desiredRootDirectory);
+                warning('Message given was: \n\t%s',message);
+                error('Unable to complete move of file?');
+            else
+                fcn_DebugTools_cprintf('*green','(success)\n');
+            end
+        else
+            fcn_DebugTools_cprintf('*blue','(no move needed)\n');
+        end
+    end
+end
 
 %% Fail conditions
 if 1==0
     %% ERROR for bad data folder
     bagName = "badData";
     rawdata = fcn_DataClean_loadMappingVanDataFromFile(bagName, bagName);
+end
+
+function timeNumber = fcn_INTERNAL_findTimeFromName(fileName)
+
+timeString = [];
+if length(fileName)>4
+    splitName = strsplit(fileName,{'_','.'});
+    for ith_split = 1:length(splitName)
+        if contains(splitName{ith_split},'-')
+            timeString = splitName{ith_split};
+        end
+    end
+end
+timeNumber = datetime(timeString,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 end

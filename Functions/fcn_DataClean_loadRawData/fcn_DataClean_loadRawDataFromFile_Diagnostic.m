@@ -27,6 +27,8 @@ function diagnostic_structure = fcn_DataClean_loadRawDataFromFile_Diagnostic(fil
 % -- fixed return at end of function to be 'end', keeping in function
 % format
 % -- added fid to fprint to allow printing to file
+% 2024_10_03 sbrennan@psu.edu
+% -- added debugging as it is throwing errors
 
 % To do lists:
 % 
@@ -142,7 +144,7 @@ if strcmp(datatype, 'diagnostic')
 
 else
     warning('on','backtrace');
-    warning('Diagnostic utility called with type that is not diagnostic.');
+    warning('Diagnostic utility called with type that is not ''diagnostic''. Type was: %s',datatype);
     error('Wrong data type requested for datatype. Unable to proceed.')
 end
 
