@@ -7,7 +7,7 @@
 % For example:
 % type('script_test_fcn_geometry_all_stdout.txt')
 
-clearvars; 
+% clearvars; 
 close all; 
 clc;
 

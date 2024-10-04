@@ -559,10 +559,10 @@ while 1==flag_stay_in_main_loop
     % %    ### FIXES:
     % %    * Interpolate time field if only a small segment is missing        
     % 
-    % if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
-    %     nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
-    %     flag_keep_checking = 0;    
-    % end
+    if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
+        nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
+        flag_keep_checking = 0;    
+    end
 
      %% Trigger_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -594,10 +594,10 @@ while 1==flag_stay_in_main_loop
     warning('on','backtrace');
     warning('time_flags.Trigger_Time_exists_in_all_GPS_sensors is not working --- skipping');
 
-    % if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
-    %     nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
-    %     flag_keep_checking = 0;
-    % end
+    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
+        nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
+        flag_keep_checking = 0;
+    end
     
     
 
@@ -745,11 +745,22 @@ while 1==flag_stay_in_main_loop
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
         warning('on','backtrace');
         warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
+        figure(123)
+        plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
+        hold on
+        plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
+        plot(nextDataStructure.GPS_SparkFun_Front.ROS_Time,'b','LineWidth',2)
         nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
         flag_keep_checking = 0;
+        clf
+        plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
+        hold on
+        plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
+        plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time,'k','LineWidth',2)
     end
     
-
+    %%
+    
     %% Entering this section indicates all time in GPS units have been checked and fixed
     %% First, check whether all sensors have Trigger_Time 
     % Moved into fcn_DataClean_checkDataTimeConsistency
@@ -770,8 +781,18 @@ while 1==flag_stay_in_main_loop
   
     %% Start to work on other sensors, start with Velodyne LiDAR
     if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)
+        % figure(123)
+        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
+        % hold on
+        % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
+        % plot(nextDataStructure.TRIGGER_TrigBox_RearTop.Trigger_Time)
         nextDataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(nextDataStructure,fid);
         flag_keep_checking = 0;
+        % figure(124)
+        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
+        % hold on
+        % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
+        % plot(nextDataStructure.TRIGGER_TrigBox_RearTop.Trigger_Time)
     end
 
     %% TO-DO - Create a time analysis function - and add it here

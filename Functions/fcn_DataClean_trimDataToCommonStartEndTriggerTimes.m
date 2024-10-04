@@ -1,7 +1,7 @@
 function trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(dataStructure,varargin)
 
 % fcn_DataClean_trimDataToCommonStartEndTriggerTimes
-% Trims all sensor data so that all start and end at the same GPS_Time
+% Trims all sensor data so that all start and end at the same Trigger_Time
 % values.
 %
 % The method this is done is to:
@@ -136,12 +136,12 @@ flag_do_plots = 0;  % % Flag to plot the final results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % The method this is done is to:
-% 1. Pull out the GPS_Time field from all Trigger-tagged sensors
+% 1. Pull out the Trigger_Time field from all Trigger-tagged sensors
 % 2. Find the start/end values for each. Take the maximum start time and
 %    minimum end time and assign these to the global start and end times.
 % 3. Crop all data in all sensors to these global start and end times
 
-%% Step 1: Pull out the GPS_Time field from all Trigger-tagged sensors
+%% Step 1: Pull out the Trigger_Time field from all Trigger-tagged sensors
 
 % Initialize arrays storing centiSeconds, start_times, and end_times across
 % all sensors
@@ -241,10 +241,10 @@ if master_start_time_Seconds>=master_end_time_Seconds
             end_times_centiSeconds(ith_sensor)-start_times_centiSeconds(ith_sensor));        
     end
     
-    error('Unable to synchronize GPS signals because one GPS sensor has a starting GPS_Time field that seems to "start" after another GPS sensor recording ended! This is not physically possible if the sensors are running at the same time.');
+    error('Unable to synchronize GPS signals because one GPS sensor has a starting Trigger_Time field that seems to "start" after another GPS sensor recording ended! This is not physically possible if the sensors are running at the same time.');
 end
 
-fprintf(fid,'\t The GPS_Time that overlaps all sensors has the following range: \n');
+fprintf(fid,'\t The Trigger_Time that overlaps all sensors has the following range: \n');
 fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',master_start_time_Seconds);
 fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',master_end_time_Seconds);
 
@@ -261,7 +261,7 @@ for i_data = 1:length(sensor_names)
     sensor_data = dataStructure.(sensor_name);
     
     if 0~=fid
-        fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end GPS_Time values: %s\n',i_data,length(sensor_names),sensor_name);
+        fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end Trigger_Time values: %s\n',i_data,length(sensor_names),sensor_name);
     end
     
     start_index = find(sensor_data.Trigger_Time >= master_start_time_Seconds,1);
@@ -283,7 +283,7 @@ for i_data = 1:length(sensor_names)
                         warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
                     else
                         warning('on','backtrace');
-                        warning('Sensor %s contains a datafield %s that has an amount of data not equal to the GPS_Time. This is usually because data is missing.',sensor_name,subFieldName);
+                        warning('Sensor %s contains a datafield %s that has an amount of data not equal to the Trigger_Time. This is usually because data is missing.',sensor_name,subFieldName);
                     end
                 end
                 

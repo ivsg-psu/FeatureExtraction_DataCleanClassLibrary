@@ -240,36 +240,52 @@ for ith_sensor = 1:length(sensor_names_ROS_Time)
     % Grab centiSeconds
     centiSeconds = cell_array_centiSeconds{ith_sensor};
     % Grab Trigger_Time  
-    
-    
+    [cell_array_Trigger_Time,sensor_names_Trigger_Time]  = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time',sensor_type);
+    %
+    if ~isequal(sensor_names_Trigger_Time,sensor_names_ROS_Time)
+        error("GPS sensors do not match, ROS_Time cannot be rounded to Trigger Time")
+        
+    end
+
     % Calculate round ROS_Time
     ROS_Time_original = cell_array_ROS_Time{ith_sensor};
+    Trigger_Time_original = cell_array_Trigger_Time{ith_sensor};
+    offsets_between_TriggerTime_and_ROSTime = ROS_Time_original - Trigger_Time_original;
     rounded_centiSecond_ROS_Time = round(100*ROS_Time_original/centiSeconds)*centiSeconds;
-    
+    rounded_centiSecond_Trigger_Time = round(100*Trigger_Time_original/centiSeconds)*centiSeconds;
+    N_points = length(ROS_Time_original);
+
     % Check if the rounded ROS_Time_strictly_ascends
     rounded_centiSecond_ROS_Time_diff = diff(rounded_centiSecond_ROS_Time);
-    ROS_Time_strictly_ascends = all(rounded_centiSecond_ROS_Time_diff>0);
-    rounded_centiSecond_ROS_Time_fixed = rounded_centiSecond_ROS_Time;
-    if ROS_Time_strictly_ascends == 0
-        flat_indices = find(rounded_centiSecond_ROS_Time_diff == 0);
-        turning_indices = find(rounded_centiSecond_ROS_Time_diff > centiSeconds);
-        indices_need_to_be_refilled = [flat_indices;turning_indices];
-        for time_index = 1:length(flat_indices)
-            flat_index = flat_indices(time_index);
-            [~,closest_index] = min(abs(turning_indices - flat_index));
-            turning_index = turning_indices(closest_index);
-            if turning_index>flat_index
-                wrong_indices = (flat_index:1:turning_index).';
-            else
-                wrong_indices = (turning_index:1:flat_index).';
-            end
-            indices_need_to_be_refilled = [indices_need_to_be_refilled; wrong_indices];
-        end
- 
-        unique_indices = unique(indices_need_to_be_refilled,'sorted');
-        rounded_centiSecond_ROS_Time_fixed(unique_indices) = nan;
-        rounded_centiSecond_ROS_Time_fixed = fillmissing(rounded_centiSecond_ROS_Time_fixed,'linear');
-    end 
+    if rounded_centiSecond_ROS_Time_diff(1) == 0
+        rounded_centiSecond_ROS_Time_start = rounded_centiSecond_ROS_Time(1) - centiSeconds/100;
+    else
+        rounded_centiSecond_ROS_Time_start = rounded_centiSecond_ROS_Time(1);
+    end
+    rounded_centiSecond_ROS_Time_end = rounded_centiSecond_ROS_Time_start+(N_points-1)*centiSeconds;
+    % ROS_Time_strictly_ascends = all(rounded_centiSecond_ROS_Time_diff>0);
+    % rounded_centiSecond_ROS_Time_fixed = rounded_centiSecond_ROS_Time;
+    % if ROS_Time_strictly_ascends == 0
+    %     flat_indices = find(rounded_centiSecond_ROS_Time_diff == 0);
+    %     turning_indices = find(rounded_centiSecond_ROS_Time_diff > centiSeconds);
+    %     indices_need_to_be_refilled = [flat_indices;turning_indices];
+    %     for time_index = 1:length(flat_indices)
+    %         flat_index = flat_indices(time_index);
+    %         [~,closest_index] = min(abs(turning_indices - flat_index));
+    %         turning_index = turning_indices(closest_index);
+    %         if turning_index>flat_index
+    %             wrong_indices = (flat_index:1:turning_index).';
+    %         else
+    %             wrong_indices = (turning_index:1:flat_index).';
+    %         end
+    %         indices_need_to_be_refilled = [indices_need_to_be_refilled; wrong_indices];
+    %     end
+    % 
+    %     unique_indices = unique(indices_need_to_be_refilled,'sorted');
+    %     rounded_centiSecond_ROS_Time_fixed(unique_indices) = nan;
+    %     rounded_centiSecond_ROS_Time_fixed = fillmissing(rounded_centiSecond_ROS_Time_fixed,'linear');
+    % end 
+    rounded_centiSecond_ROS_Time_fixed = (rounded_centiSecond_ROS_Time_start:centiSeconds:rounded_centiSecond_ROS_Time_end).';
     fixed_dataStructure.(sensor_name).ROS_Time = rounded_centiSecond_ROS_Time_fixed/100;
 
 end

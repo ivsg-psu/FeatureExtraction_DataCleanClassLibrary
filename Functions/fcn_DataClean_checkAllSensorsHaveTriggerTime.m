@@ -169,7 +169,7 @@ all_sensors_have_trigger_time = 1;
 sensors_without_Trigger_Time = [];
 if ~isempty(badSensorIndicies)
     all_sensors_have_trigger_time = 0;
-    sensors_without_Trigger_Time = string(fields{badSensorIndicies});
+    sensors_without_Trigger_Time = string(fields(badSensorIndicies));
 
 end
 checked_flags.all_sensors_have_trigger_time = all_sensors_have_trigger_time;

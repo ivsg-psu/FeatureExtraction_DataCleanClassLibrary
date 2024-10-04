@@ -96,9 +96,9 @@ if any([contains(topic_name_lower,'gps'), contains(topic_name_lower,'bin1')])
     datatype = 'gps';
 elseif any([contains(topic_name_lower,'ins'), contains(topic_name_lower,'imu'),contains(topic_name_lower, 'adis')])
     datatype = 'imu';
-elseif contains(topic_name_lower,'trigger')
+elseif contains(topic_name_lower,'trigger')&&(~contains(topic_name_lower,'diag'))
     datatype = 'trigger';
-elseif contains(topic_name_lower,'encoder')
+elseif contains(topic_name_lower,'encoder')&&(~contains(topic_name_lower,'diag'))
     datatype = 'encoder';
 elseif any([contains(topic_name,'sick_lms500/scan') contains(topic_name,'sick_lms_5xx/scan')])
     datatype = 'lidar2d';
