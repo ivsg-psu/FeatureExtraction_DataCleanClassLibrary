@@ -149,7 +149,7 @@ assert(length(directory_filelist)>1);
 
 % List which directory/directories need to be loaded
 clear rootdirs
-rootdirs{1} = 'D:\MappingVanData\RawBags\TestTrack\Scenario 1.6';
+rootdirs{1} = 'C:\Users\snb10\Temp\Scenario 5.1a';
 % rootdirs{1} = fullfile(cd,'Data');
 
 
@@ -201,10 +201,18 @@ for jth_file = 1:length(sorted_directory_filelist)
 end
 
 % Move the files to root?
-if 1==0
+if 1==1
     fprintf(fid,'\nMOVING FILES:\n');
-    desiredRootDirectory = 'D:\MappingVanData\RawBags\TestTrack\Scenario 1.6';
+    desiredRootDirectory = 'C:\Users\snb10\Temp\Scenario 5.1a\2024-09-04';
 
+    % Make sure folder exists!
+    if 7~=exist(desiredRootDirectory,'dir')
+        warning('on','backtrace');
+        warning('Unable to find folder: \n\t%s',desiredRootDirectory);
+        error('Desired directory: %s does not exist!',desiredRootDirectory);
+    end
+
+    % Move files into folders
     previousDirectory = '';
     for jth_file = 1:length(sorted_directory_filelist)
         thisFolder = sorted_directory_filelist(jth_file).folder;
