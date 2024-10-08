@@ -353,9 +353,19 @@ while 1==flag_stay_in_main_loop
    
     
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
+    % Fills in the following
+    %                   GPS_Time_exists_in_at_least_one_GPS_sensor: 1
+    %                           GPS_Time_exists_in_all_GPS_sensors: 1
+    %                       centiSeconds_exists_in_all_GPS_sensors: 1
+    %                       GPS_Time_has_no_repeats_in_GPS_sensors: 1
+    % GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors: 1
+    %            start_time_GPS_sensors_agrees_to_within_5_seconds: 1
+    %            consistent_start_and_end_times_across_GPS_sensors: 1
+    %                                    GPS_Time_strictly_ascends: 1
+    %       no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors: 1
 
     % Used to create test data
-    if 1==1
+    if 1==0
         fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataTimeConsistency.mat');
         dataStructure = nextDataStructure;
         save(fullExampleFilePath,'dataStructure');
@@ -527,9 +537,7 @@ while 1==flag_stay_in_main_loop
         nextDataStructure = fcn_DataClean_sortSensorDataByGPSTime(nextDataStructure, field_name,sensors_to_check,fid);               
         flag_keep_checking = 0;
     end
-    
-    warning('on','backtrace');
-    warning('fcn_DataClean_fillMissingsInGPSUnits is not working --- skipping');
+
 
     %% Check if no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
     %    ### ISSUES with this:
