@@ -211,11 +211,11 @@ Ndata = length(sensor_names);
 allTimeDifferences = cell(Ndata,1);
 for i_data = 1:Ndata
     % Grab the sensor subfield name
-    sensor_name = sensor_names{i_data};
-    sensor_data = dataStructure.(sensor_name);
+    GPS_sensor_name = sensor_names{i_data};
+    sensor_data = dataStructure.(GPS_sensor_name);
     
     if 0~=fid
-        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
+        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),GPS_sensor_name);
     end
     
     flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
@@ -236,7 +236,7 @@ for i_data = 1:Ndata
         try
             warning('on','backtrace');
             warning('The sensor: %s is missing so much data that the field: %s effectively has an incorrect sample rate.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (centiSec): %.4f \n',...
-                sensor_name,field_name,centiSeconds,effective_centiSeconds,meanSamplingInterval*100);
+                GPS_sensor_name,field_name,centiSeconds,effective_centiSeconds,meanSamplingInterval*100);
         catch
             disp('Debug here');
         end
@@ -251,7 +251,7 @@ for i_data = 1:Ndata
     flags.(flag_name) = flags_dataTimeIntervalMatchesIntendedSamplingRate;
     
     if 0==flags.(flag_name)
-        offending_sensor = sensor_name; % Save the name of the sensor
+        offending_sensor = GPS_sensor_name; % Save the name of the sensor
         return_flag = 1; % Indicate that the return was forced
         return; % Exit the function immediately to avoid more processing
     end
@@ -271,11 +271,11 @@ end
 if flag_do_plots
 
     % check whether the figure already has data
-    temp_h = figure(fig_num); %#ok<NASGU>
-    % flag_rescale_axis = 0;
-    % if isempty(get(temp_h,'Children'))
-    %     flag_rescale_axis = 1;
-    % end
+    temp_h = figure(fig_num); 
+    flag_rescale_axis = 0;
+    if isempty(get(temp_h,'Children'))
+        flag_rescale_axis = 1;
+    end
 
     tiledlayout('flow')
 
@@ -291,6 +291,59 @@ if flag_do_plots
         ylabel('Percentage');
     end
 
+    %% Plot GPS locations
+
+    % Test the function
+    clear plotFormat
+
+    plotFormat.Color = [0 0.7 0];
+    plotFormat.Marker = '.';
+    plotFormat.MarkerSize = 5;
+    plotFormat.LineStyle = 'none';
+    plotFormat.LineWidth = 3;
+
+    % Does user want to specify colorMapToUse?
+    % Fill in large colormap data using turbo
+    colorMapMatrix = colormap('turbo');
+    colorMapMatrix = colorMapMatrix(100:end,:); % Keep the scale from green to red
+    % Reduce the colormap
+    Ncolors = 20;
+    colorMapToUse = fcn_plotRoad_reduceColorMap(colorMapMatrix, Ncolors, -1);
+
+    % Is this a GPS sensor
+    GPS_indicies = find(contains(sensor_names,'GPS'));
+    GPS_sensor_names = cell(length(GPS_indicies),1);
+    for ith_sensor = 1:length(GPS_indicies)
+        GPS_sensor_names{ith_sensor} = sensor_names{GPS_indicies(ith_sensor)}; 
+    end
+
+    % legend_entries = GPS_sensor_names;
+    for ith_sensor = 1:length(GPS_sensor_names)
+
+        nexttile
+
+        % Grab the sensor subfield name
+        GPS_sensor_name = GPS_sensor_names{ith_sensor};
+        sensor_data = dataStructure.(GPS_sensor_name);
+
+        LLdata = [sensor_data.Latitude sensor_data.Longitude];
+        NdataThisSensor = length(allTimeDifferences{ith_sensor,1}(:,1));
+        Idata = 0.1*ones(NdataThisSensor,1);
+        Idata(round(allTimeDifferences{ith_sensor,1}*100)>centiSeconds) = 0.9;
+        
+
+
+        fcn_plotRoad_plotLLI([LLdata Idata], (plotFormat), colorMapToUse, (fig_num));
+
+        % h_legend = legend(legend_entries);
+        % set(h_legend,'Interpreter','none','FontSize',6)
+
+        % Force the plot to fit
+        geolimits('auto');
+        title(sprintf('GPS errors for %s',GPS_sensor_name),'interpreter','none','FontSize',12)
+    end
+
+    
     sgtitle('Histograms of time samples');
 
     % % Make axis slightly larger?

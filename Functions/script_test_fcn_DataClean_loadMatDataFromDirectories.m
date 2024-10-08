@@ -24,18 +24,28 @@ setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.44181017');
 setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.76090840');
 setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','327.428');
 
+% 
+% clear searchIdentifiers
+% searchIdentifiers.Project = 'PennDOT ADS Workzones'; % This is the project sponsoring the data collection
+% searchIdentifiers.ProjectStage = 'OnRoad'; % Can be 'Simulation', 'TestTrack', or 'OnRoad'
+% searchIdentifiers.WorkZoneScenario = 'I376ParkwayPitt'; % Can be one of the ~20 scenarios, see key
+% searchIdentifiers.WorkZoneDescriptor = 'WorkInRightLaneOfUndividedHighway'; % Can be one of the 20 descriptors, see key
+% searchIdentifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
+% searchIdentifiers.DataSource = 'MappingVan'; % Can be 'MappingVan', 'AV', 'CV2X', etc. see key
+% searchIdentifiers.AggregationType = 'PreRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
 
 clear searchIdentifiers
 searchIdentifiers.Project = 'PennDOT ADS Workzones'; % This is the project sponsoring the data collection
 searchIdentifiers.ProjectStage = 'OnRoad'; % Can be 'Simulation', 'TestTrack', or 'OnRoad'
-searchIdentifiers.WorkZoneScenario = 'I376ParkwayPitt'; % Can be one of the ~20 scenarios, see key
-searchIdentifiers.WorkZoneDescriptor = 'WorkInRightLaneOfUndividedHighway'; % Can be one of the 20 descriptors, see key
+searchIdentifiers.WorkZoneScenario = 'PA51Aliquippa'; % Can be one of the ~20 scenarios, see key
+searchIdentifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzone'; % Can be one of the 20 descriptors, see key
 searchIdentifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
 searchIdentifiers.DataSource = 'MappingVan'; % Can be 'MappingVan', 'AV', 'CV2X', etc. see key
 searchIdentifiers.AggregationType = 'PreRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
 
+
 % Specify the bagQueryString
-matQueryString = 'mapping_van_2024-07-1*_merged.mat'; % The more specific, the better to avoid accidental loading of wrong information
+matQueryString = 'mapping_van_*_merged.mat'; % The more specific, the better to avoid accidental loading of wrong information
 
 % Spedify the fid
 fid = 1; % 1 --> print to console
