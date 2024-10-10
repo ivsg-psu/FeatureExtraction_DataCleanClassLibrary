@@ -559,7 +559,7 @@ while 1==flag_stay_in_main_loop
     end
 
     if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
-        nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
+        nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure, fid);
         flag_keep_checking = 0;
     end
     
@@ -576,7 +576,7 @@ while 1==flag_stay_in_main_loop
     % %    * Interpolate time field if only a small segment is missing        
     % 
     if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
-        nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
+        nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure, fid);
         flag_keep_checking = 0;    
     end
 

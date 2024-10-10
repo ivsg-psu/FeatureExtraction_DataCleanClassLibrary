@@ -210,11 +210,8 @@ end_GPSTime_centiSeconds = round(100*end_GPSTime/centiSeconds)*centiSeconds;
 fixed_GPSTime_centiSeconds = (start_GPSTime_centiSeconds:centiSeconds:end_GPSTime_centiSeconds).';
 fixed_GPSTime = fixed_GPSTime_centiSeconds/100;
 
-%%
-% GST_Fields = ["GPS_Time2","ROS_Time2","StdLat","StdLon","StdAlt"];
 
-
-%% Interate over GPS units and interpolate data
+%% Interate over GPS units and interpolate data in each field
 fixed_dataStructure = dataStructure;
 beforeData = cell(N_GPS_Units,1);
 afterData  = cell(N_GPS_Units,1);
