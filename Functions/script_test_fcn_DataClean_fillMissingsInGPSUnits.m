@@ -31,7 +31,11 @@ close all
 % setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-77.83592832');
 % setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
 
-%% Check merging of sensors where all are true
+%% Basic demonstration
+fig_num = 1;
+figure(fig_num);
+clf;
+
 % Note that, if a field is missing, it still counts as 'merged'
 goodTime = (0:0.1:1.2)';
 testTime1 = goodTime([1:4,6:end],:);
@@ -40,21 +44,40 @@ testTime3 = goodTime([2:5,7:end],:);
 
 
 % Create some test data
-GPSdataStructure.GPS_Time = testTime1;
-GPSdataStructure.Latitude = 40.86368573*ones(length(testTime1),1);
-GPSdataStructure.Longitude = -77.83592832*ones(length(testTime1),1);
-GPSdataStructure.Altitude = 344.189*ones(length(testTime1),1);
-GPSdataStructure.centiSeconds = 10;
-GPSdataStructure.Npoints = length(testTime1);
-
 testStructure = struct;
+
+badDataSource = testTime1;
+GPSdataStructure.GPS_Time = badDataSource;
+GPSdataStructure.Latitude = 40.86368573*ones(length(badDataSource),1);
+GPSdataStructure.Longitude = -77.83592832*ones(length(badDataSource),1);
+GPSdataStructure.Altitude = 344.189*ones(length(badDataSource),1);
+GPSdataStructure.centiSeconds = 10;
+GPSdataStructure.Npoints = length(badDataSource);
 testStructure.GPS_SparkFun_RightRear = GPSdataStructure;
+
+badDataSource = testTime2;
+GPSdataStructure.GPS_Time = badDataSource;
+GPSdataStructure.Latitude = 40.86368573*ones(length(badDataSource),1);
+GPSdataStructure.Longitude = -77.83592832*ones(length(badDataSource),1);
+GPSdataStructure.Altitude = 344.189*ones(length(badDataSource),1);
+GPSdataStructure.centiSeconds = 10;
+GPSdataStructure.Npoints = length(badDataSource);
+testStructure.GPS_SparkFun_LeftRear = GPSdataStructure;
+
+badDataSource = testTime3;
+GPSdataStructure.GPS_Time = badDataSource;
+GPSdataStructure.Latitude = 40.86368573*ones(length(badDataSource),1);
+GPSdataStructure.Longitude = -77.83592832*ones(length(badDataSource),1);
+GPSdataStructure.Altitude = 344.189*ones(length(badDataSource),1);
+GPSdataStructure.centiSeconds = 10;
+GPSdataStructure.Npoints = length(badDataSource);
+testStructure.GPS_SparkFun_CenterFront = GPSdataStructure;
 
 % Check structure
 fid = 1;
 fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(testStructure, (fid), (fig_num));
 
-% Check flags
+% Check fixed structure
 
 
 %% CASE 900: Real world data

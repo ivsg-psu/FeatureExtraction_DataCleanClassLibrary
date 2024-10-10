@@ -3,7 +3,8 @@
 *.asv
 
 # Data folder (has HUGE files)
-Data/
+Data/RawData/
+Data/RawDataMerged/
 
 # Class libraries that support this one
 PathClassLibrary/

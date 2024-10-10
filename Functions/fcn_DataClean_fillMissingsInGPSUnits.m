@@ -216,6 +216,9 @@ fixed_GPSTime = fixed_GPSTime_centiSeconds/100;
 
 %% Interate over GPS units and interpolate data
 fixed_dataStructure = dataStructure;
+beforeData = cell(N_GPS_Units,1);
+afterData  = cell(N_GPS_Units,1);
+
 for idx_gps_unit = 1:N_GPS_Units
     GPSUnitName = sensor_names_GPS_Time{idx_gps_unit};
     GPSdataStructure = fixed_dataStructure.(GPSUnitName);
@@ -231,14 +234,39 @@ for idx_gps_unit = 1:N_GPS_Units
     originalGPS_timeData = GPSdataStructure.GPS_Time;
     GPSdataStructure.GPS_Time = fixed_GPSTime;    
     NpointsCorrectedTime = length(fixed_GPSTime(:,1));
+    indiciesInRange = ((originalGPS_timeData>=start_GPSTime).*(originalGPS_timeData<=end_GPSTime))==1;
+    originalGPS_timeDataInRange = originalGPS_timeData(find(indiciesInRange)); %#ok<FNDSB>
+    NpointsOriginalTimeInRange = length(originalGPS_timeDataInRange);
+    indexOriginalTimeInRange = (1:NpointsOriginalTimeInRange)';
+
+    % Save the before/after
+    beforeData{idx_gps_unit} = originalGPS_timeData;
+    afterData{idx_gps_unit}  = fixed_GPSTime;
 
     % Check which indicies changed
     changedIndicies = interp1(originalGPS_timeData, indexOriginalTime, fixed_GPSTime,'linear',"extrap");
     timeThreshold = 1E-6; % Times must agree to within a microsecond to be same
-    indiciesUnchangedFlags = abs(round(changedIndicies)-changedIndicies)<=timeThreshold;
-    newIndiciesToChange = indiciesUnchangedFlags;
+    indiciesUnchangedFlagsInterpCheck = abs(round(changedIndicies)-changedIndicies)<=timeThreshold;
+    changedIndicies(indiciesUnchangedFlagsInterpCheck==0) = 0;
+    changedIndiciesRounded = round(changedIndicies(changedIndicies~=0));
 
-    ADD ERROR CHECKING
+    % Make sure that the number of indicies to change is not larger than
+    % expected. This should never happen as the interp1 function should
+    % always push out a data length equal to fixed_GPSTime
+    assert(length(changedIndicies)<=length(fixed_GPSTime),...
+        sprintf('The number of points to be saved: %.0d, is greater than the number of GPS time points: %.0d.',length(changedIndicies), length(fixed_GPSTime)));    
+
+    % Make sure we are not querying data outside of the data range
+    assert(max(changedIndicies)<=NpointsOriginalTime,...
+        sprintf('The highest index to query: %.0d, is greater than the number of points in a data set: %.0d.',max(changedIndicies), NpointsOriginalTime));
+
+    % Make sure the indicies, when applied to time, produce exactly the
+    % same results
+    originalTimes = original_GPS_Time(changedIndiciesRounded);
+    fixedTimes = fixed_GPSTime(indiciesUnchangedFlagsInterpCheck);
+    assert(isequal(round(originalTimes,6),round(fixedTimes,6)),...
+        sprintf('The rounded times, using change indicies, does not match the intended GPS times. Unable to continue.'));
+
 
     % Loop through all the fields. If they contain any time fields,
     % interpolate them. If they don't, fill with NaN by default, and then fix them.     
@@ -266,8 +294,11 @@ for idx_gps_unit = 1:N_GPS_Units
                 current_fieldDataNanInserted = nan(NpointsCorrectedTime,sizeOfData(2));
 
                 % Fill in the points where there are data
-                current_fieldDataNanInserted(newIndiciesToChange,:) = current_fieldData;
+                current_fieldDataNanInserted(indiciesUnchangedFlagsInterpCheck,:) = current_fieldData(changedIndiciesRounded);
                 GPSdataStructure.(sub_field) = current_fieldDataNanInserted;
+            elseif isscalar(current_fieldData(:,1))
+                % Save it
+                GPSdataStructure.(sub_field) = current_fieldData;
             else
                 warning('on','backtrace');
                 warning('Found a field of name: %s with mismatched number of rows: %.0d. Expecting %.0d data points.',sub_field, NpointsOriginalTime, length(current_fieldData(:,1)));
@@ -296,8 +327,51 @@ end % Ends for loop
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
 
-    % Nothing to plot
+    % check whether the figure already has data
+    temp_h = figure(fig_num);
+    flag_rescale_axis = 0;
+    if isempty(get(temp_h,'Children'))
+        flag_rescale_axis = 1;
+    end
 
+    for idx_gps_unit = 1:N_GPS_Units
+
+        % Get the before/after
+        originalGPS_timeData = beforeData{idx_gps_unit};
+        originalGPS_timeData = originalGPS_timeData - originalGPS_timeData(1,1);
+        fixed_GPSTime = afterData{idx_gps_unit};
+        fixed_GPSTime = fixed_GPSTime - fixed_GPSTime(1);
+
+        nexttile
+
+        % Plot the data
+        % Prep this as a stair-step plot
+        [xdata,ydata] = fcn_INTERNAL_stairStep(originalGPS_timeData);
+        plot(xdata, ydata);
+        hold on;
+        [xdata,ydata] = fcn_INTERNAL_stairStep(fixed_GPSTime);
+        plot(xdata, ydata);
+
+        legend('Before','After');
+        xlabel('Index [unitless]');
+        ylabel('Change in Time [sec]')
+        title(sprintf('%s',sensor_names_GPS_Time{idx_gps_unit}),'interpreter','none','FontSize',12)
+
+        % Make axis slightly larger?
+        if flag_rescale_axis
+            temp = axis;
+            %     temp = [min(points(:,1)) max(points(:,1)) min(points(:,2)) max(points(:,2))];
+            axis_range_x = temp(2)-temp(1);
+            axis_range_y = temp(4)-temp(3);
+            percent_larger = 0.3;
+            axis([temp(1)-percent_larger*axis_range_x, temp(2)+percent_larger*axis_range_x,  temp(3)-percent_larger*axis_range_y, temp(4)+percent_larger*axis_range_y]);
+        end
+
+
+    end
+
+
+    
 end
 
 if flag_do_debug
@@ -321,4 +395,17 @@ end % Ends main function
 %
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
+function [xdata,ydata] = fcn_INTERNAL_stairStep(dataToStairStep)
 
+xdataUnrepeated = (1:length(dataToStairStep));
+xdataRepeated = repmat(xdataUnrepeated,2,1);
+xdataRearranged = reshape(xdataRepeated,[],1);
+
+ydataUnrepeated = dataToStairStep';
+ydataRepeated = repmat(ydataUnrepeated,2,1);
+ydataRearranged = reshape(ydataRepeated,[],1);
+
+xdata = xdataRearranged(2:end,1);
+ydata = ydataRearranged(1:end-1,1);
+
+end % Ends fcn_INTERNAL_stairStep
