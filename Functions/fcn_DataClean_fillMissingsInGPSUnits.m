@@ -1,5 +1,4 @@
-function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_basestation,varargin)
-
+function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,varargin)
 % fcn_DataClean_fillMissingsInGPSUnits
 % Interpolate the GPS_Time field for all GPS sensors. This is done by
 % using the centiSeconds field and the effective start and end GPS_Times,
@@ -8,20 +7,21 @@ function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructur
 %
 % FORMAT:
 %
-%      fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure,ref_basestation,(fid))
+%      fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure, (fid), (fig_num))
 %
 % INPUTS:
 %
 %      dataStructure: a data structure to be analyzed that includes the following
 %      fields:
 %
-%      ref_basestation: base station that used for the dataset
-%
 %      (OPTIONAL INPUTS)
 %
+%      fid: a file ID to print results of analysis. If not entered, no
+%      output is given (FID = 0). Set fid to 1 for printing to console.
 %
-%      fid: a file ID to print results of analysis. If not entered, the
-%      console (FID = 1) is used.
+%      fig_num: a figure number to plot results. If set to -1, skips any
+%      input checking or debugging, no figures will be generated, and sets
+%      up code to maximize speed.
 %
 % OUTPUTS:
 %
@@ -47,6 +47,7 @@ function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructur
 % -- fixed fid printing error
 % -- added fig_num input, fixed the plot flag
 % -- fixed warning and errors
+% -- removed interpolation of GPS data itself (gives errors)
 
 %% Debugging and Input checks
 
@@ -97,19 +98,41 @@ end
 if (0 == flag_max_speed)
     if flag_check_inputs
         % Are there the right number of inputs?
-        if nargin < 1 || nargin > 3
+        if nargin < 1 || nargin > 3            
             error('Incorrect number of input arguments')
         end
     end
 end
 
 % Does the user want to specify the fid?
-% Check for user input
-fid = 0; %#ok<NASGU> % Default case is to NOT print to the console
-if 2 <= nargin
-    temp = varargin{1};
+fid = 0;
+if (0==flag_max_speed)
+    % Check for user input
+    if 2 <= nargin
+        temp = varargin{1};
+        if ~isempty(temp)
+            % Check that the FID works
+            try
+                temp_msg = ferror(temp); %#ok<NASGU>
+                % Set the fid value, if the above ferror didn't fail
+                fid = temp;
+            catch ME
+                warning('on','backtrace');
+                warning('User-specified FID does not correspond to a file. Unable to continue.');
+                throwAsCaller(ME);
+            end
+        end
+    end
+end
+
+
+% Does user want to specify fig_num?
+flag_do_plots = 0;
+if (0==flag_max_speed) &&  (3<=nargin)
+    temp = varargin{end};
     if ~isempty(temp)
-        fid = temp; %#ok<NASGU>
+        fig_num = temp;
+        flag_do_plots = 1;
     end
 end
 
@@ -135,24 +158,60 @@ end
 
 
 [cell_array_GPS_Time, sensor_names_GPS_Time] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
-[cell_array_ROS_Time,sensor_names_ROS_Time]  = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS');
+[~, sensor_names_ROS_Time]  = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS');
 
 if ~isequal(sensor_names_GPS_Time,sensor_names_ROS_Time)
+    warning('on','backtrace');
+    warning('Inconsistent GPS and ROS time fields.');
     error('Sensors were found that were missing either GPS_Time or ROS_Time. Unable to interpolate.');
 end
 
+% Grab the centiSeconds, and make sure all are the same.
 [cell_array_centiSeconds, ~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds','GPS');
+all_centiSeconds = cell2mat(cell_array_centiSeconds);
+centiSeconds = all_centiSeconds(1);
+
+if ~all(all_centiSeconds==all_centiSeconds(1))
+    warning('on','backtrace');
+    warning('Inconsistent GPS time sample intervals detected. Code is not yet written to support GPS units with inconsistent sampling rates. Forced to exit.');
+    error('Sensors were found with inconsistent sampling rates. Unable to interpolate.');
+end
+
+
 N_GPS_Units = length(cell_array_GPS_Time);
 
-%% Define fields need to be interpolated
+%% Define fields that need to be interpolated
 
-fields_need_to_be_interpolated=[
+timeFieldsToInterpolate=[
     "ROS_Time",...
-    "GPS_Time2",...
-    "ROS_Time2",...
-    "ROS_Time3"];
+    "GPS_Time"];
 
-GST_Fields = ["GPS_Time2","ROS_Time2","StdLat","StdLon","StdAlt"];
+
+%% Find min/max of GPS_Time in the subfields
+% Goal: to force all to have the same start/end GPS_Time. To do this, we
+% need to know the start and end time. The start time is the maximum
+% GPS_Time among all the first GPS_Times. The end time is the minimum
+% GPS_Time among all the last GPS_Times.
+
+start_GPSTime = -inf;
+end_GPSTime = inf;
+
+for index_GPSUnit = 1:N_GPS_Units
+    thisGPSTimeData = cell_array_GPS_Time{index_GPSUnit};
+    start_GPSTime = max([start_GPSTime,min(thisGPSTimeData)]);
+    end_GPSTime   = min([end_GPSTime,  max(thisGPSTimeData)]);
+end
+
+
+% Make sure we choose a time that all the sensors CAN start at. We round
+% start seconds up, and end seconds down.
+start_GPSTime_centiSeconds = round(100*start_GPSTime/centiSeconds)*centiSeconds;
+end_GPSTime_centiSeconds = round(100*end_GPSTime/centiSeconds)*centiSeconds;
+fixed_GPSTime_centiSeconds = (start_GPSTime_centiSeconds:centiSeconds:end_GPSTime_centiSeconds).';
+fixed_GPSTime = fixed_GPSTime_centiSeconds/100;
+
+%%
+% GST_Fields = ["GPS_Time2","ROS_Time2","StdLat","StdLon","StdAlt"];
 
 
 %% Interate over GPS units and interpolate data
@@ -160,76 +219,65 @@ fixed_dataStructure = dataStructure;
 for idx_gps_unit = 1:N_GPS_Units
     GPSUnitName = sensor_names_GPS_Time{idx_gps_unit};
     GPSdataStructure = fixed_dataStructure.(GPSUnitName);
-    centiSeconds = cell_array_centiSeconds{idx_gps_unit};
     sub_fields = fieldnames(GPSdataStructure);
     N_fields = length(sub_fields);
 
+    % Grab the original_GPS_Time, and create an index
     original_GPS_Time = cell_array_GPS_Time{idx_gps_unit};
-    %original_ROS_Time_GGA = cell_array_ROS_Time{idx_gps_unit};
+    NpointsOriginalTime = length(original_GPS_Time);
+    indexOriginalTime = (1:NpointsOriginalTime)';
 
-    % Find number of GPS_Time in the subfields to force all to have the same
-    % GPS_Time. To do this, we need to know the start and end time. The
-    % start time is the maximum GPS_Time among all the first GPS_Times. The
-    % end time is the minimum GPS_Time among all the last GPS_Times.
+    % Fix GPS time
+    originalGPS_timeData = GPSdataStructure.GPS_Time;
+    GPSdataStructure.GPS_Time = fixed_GPSTime;    
+    NpointsCorrectedTime = length(fixed_GPSTime(:,1));
 
-    % URHERE - this code below does not work if more than 2 GPS times
-    N_GPSTimeFields = length(find(contains(sub_fields,"GPS_Time")));
-    if N_GPSTimeFields ~= 1 % all GPS_Time fields should have the same GPS_Time
-        original_GPS_Time_GST = GPSdataStructure.GPS_Time2;
-        start_GPSTime = max([original_GPS_Time(1),original_GPS_Time_GST(1)]);
-        end_GPSTime = min([original_GPS_Time(end),original_GPS_Time_GST(end)]);
-    else
-        start_GPSTime = original_GPS_Time(1);
-        end_GPSTime = original_GPS_Time(end);
-    end
+    % Check which indicies changed
+    changedIndicies = interp1(originalGPS_timeData, indexOriginalTime, fixed_GPSTime,'linear',"extrap");
+    timeThreshold = 1E-6; % Times must agree to within a microsecond to be same
+    indiciesUnchangedFlags = abs(round(changedIndicies)-changedIndicies)<=timeThreshold;
+    newIndiciesToChange = indiciesUnchangedFlags;
 
-    %URHERE
-    Loop through all the fields. If they contain any time fields, interpolate them
+    ADD ERROR CHECKING
 
-
-
-    % offset_between_GPSTime_and_ROSTime = original_ROS_Time_GGA - original_GPS_Time_GGA;
-    % Make sure we choose a time that all the sensors CAN start at. We round
-    % start seconds up, and end seconds down.
-    start_GPSTime_centiSeconds = round(100*start_GPSTime/centiSeconds)*centiSeconds;
-    end_GPSTime_centiSeconds = round(100*end_GPSTime/centiSeconds)*centiSeconds;
-    fixed_GPSTime_centiSeconds = (start_GPSTime_centiSeconds:centiSeconds:end_GPSTime_centiSeconds).';
-    fixed_GPSTime = fixed_GPSTime_centiSeconds/100;
-    % Calculate and interpolate X, Y and Z of current GPS unit
-    GPS_LLA = [GPSdataStructure.Latitude, GPSdataStructure.Longitude, GPSdataStructure.Altitude];
-    GPS_ENU = lla2enu(GPS_LLA,ref_basestation,'ellipsoid');
-    GPS_ENU_interp = interp1(original_GPS_Time,GPS_ENU,fixed_GPSTime,'linear','extrap');
-    GPS_LLA_interp = enu2lla(GPS_ENU_interp,ref_basestation,'ellipsoid');
-
-    
-    %% Find number of GPS_Time in the subfields,
-    % Interpolate each field except LLA fields and scalar field
+    % Loop through all the fields. If they contain any time fields,
+    % interpolate them. If they don't, fill with NaN by default, and then fix them.     
     for idx_field = 1:N_fields
         sub_field = sub_fields{idx_field};
-        current_field = GPSdataStructure.(sub_field);
-        if (length(current_field)>1)&(any(ismember(fields_need_to_be_interpolated,sub_field)))
-            interp_method = fcn_DataClean_determineInterpolateMethod(sub_field);
-            original_GPS_Time = original_GPS_Time;
-            if (N_GPSTimeFields ~= 1)&(any(ismember(GST_Fields,sub_field)))
-                original_GPS_Time = original_GPS_Time_GST;
+        current_fieldData = GPSdataStructure.(sub_field);
+        
+        % Is the field NOT GPS_Time (which was already fixed)
+        if ~strcmp(sub_field,'GPS_Time')
+
+            % If the data contain more than 1 value, and if the name contains
+            % "GPS_Time, ROS_Time", etc, then need to interpolate it.
+            if (length(current_fieldData)>1) && (any(contains(timeFieldsToInterpolate,sub_field)))
+
+                % % Which type of interpolation to use?
+                % interp_method = fcn_DataClean_determineInterpolateMethod(sub_field);
+
+                % Perform interpolation
+                current_field_interp = interp1(original_GPS_Time,current_fieldData,fixed_GPSTime,'linear',"extrap");
+                GPSdataStructure.(sub_field) = current_field_interp;
+            elseif length(current_fieldData(:,1))==NpointsOriginalTime
+                % Fill with Nan by default. Note: data may have many columns so
+                % use size to find how many
+                sizeOfData = size(current_fieldData);
+                current_fieldDataNanInserted = nan(NpointsCorrectedTime,sizeOfData(2));
+
+                % Fill in the points where there are data
+                current_fieldDataNanInserted(newIndiciesToChange,:) = current_fieldData;
+                GPSdataStructure.(sub_field) = current_fieldDataNanInserted;
+            else
+                warning('on','backtrace');
+                warning('Found a field of name: %s with mismatched number of rows: %.0d. Expecting %.0d data points.',sub_field, NpointsOriginalTime, length(current_fieldData(:,1)));
             end
-            current_field_interp = interp1(original_GPS_Time,current_field,fixed_GPSTime,interp_method,"extrap");
-            % else
-            % current_field_interp = current_field_unique;
-            % end
-            GPSdataStructure.(sub_field) = current_field_interp;
         end
     end
-    % Fill the position fields
-    GPSdataStructure.GPS_Time = fixed_GPSTime;
-    GPSdataStructure.Latitude = GPS_LLA_interp(:,1);
-    GPSdataStructure.Longitude = GPS_LLA_interp(:,2);
-    GPSdataStructure.Altitude = GPS_LLA_interp(:,3);
-    GPSdataStructure.xEast = GPS_ENU_interp(:,1);
-    GPSdataStructure.yNorth = GPS_ENU_interp(:,2);
-    GPSdataStructure.zUp = GPS_ENU_interp(:,3);
+
+    % Fill the time-associated fields
     GPSdataStructure.centiSeconds = centiSeconds;
-    GPSdataStructure.Npoints = length(fixed_GPSTime);
+    GPSdataStructure.Npoints = NpointsCorrectedTime;
 
     fixed_dataStructure.(GPSUnitName) = GPSdataStructure;
 end % Ends for loop

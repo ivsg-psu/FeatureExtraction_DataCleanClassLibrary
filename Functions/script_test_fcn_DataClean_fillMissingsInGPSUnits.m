@@ -33,25 +33,43 @@ close all
 
 %% Check merging of sensors where all are true
 % Note that, if a field is missing, it still counts as 'merged'
-goodTime = (0:0.1:10)';
-testTime = goodTime(1:4,6:end,:);
+goodTime = (0:0.1:1.2)';
+testTime1 = goodTime([1:4,6:end],:);
+testTime2 = goodTime([1,3,6:end],:);
+testTime3 = goodTime([2:5,7:end],:);
+
 
 % Create some test data
-GPSdataStructure.GPS_Time = ;
-GPSdataStructure.Latitude = 40.86368573*ones(length(testTime),1);
-GPSdataStructure.Longitude = -77.83592832*ones(length(testTime),1);
-GPSdataStructure.Altitude = 344.189*ones(length(testTime),1);
+GPSdataStructure.GPS_Time = testTime1;
+GPSdataStructure.Latitude = 40.86368573*ones(length(testTime1),1);
+GPSdataStructure.Longitude = -77.83592832*ones(length(testTime1),1);
+GPSdataStructure.Altitude = 344.189*ones(length(testTime1),1);
 GPSdataStructure.centiSeconds = 10;
-GPSdataStructure.Npoints = length(testTime);
+GPSdataStructure.Npoints = length(testTime1);
 
 testStructure = struct;
 testStructure.GPS_SparkFun_RightRear = GPSdataStructure;
 
 % Check structure
 fid = 1;
-[flags, ~] = fcn_DataClean_checkDataNameConsistency(testStructure,fid);
+fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(testStructure, (fid), (fig_num));
 
 % Check flags
+
+
+%% CASE 900: Real world data
+fig_num = 900;
+figure(fig_num);
+clf;
+
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_fillMissingsInGPSUnits.mat');
+load(fullExampleFilePath,'dataStructure');
+
+fid = 1;
+fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructure, (fid), (fig_num));
+
+
+
 
 
 

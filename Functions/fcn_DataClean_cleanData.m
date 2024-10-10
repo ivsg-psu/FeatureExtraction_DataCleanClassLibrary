@@ -549,7 +549,15 @@ while 1==flag_stay_in_main_loop
     %    looking at the standard deviations of the differences relative to the
     %    mean differences
     %    ### FIXES:
-    %    * Interpolate time field if only a small segment is missing        
+    %    * Interpolate time field if only a small segment is missing     
+
+    % Used to create test data
+    if 1==0
+        fullExampleFilePath = fullfile(cd,'Data','ExampleData_fillMissingsInGPSUnits.mat');
+        dataStructure = nextDataStructure;
+        save(fullExampleFilePath,'dataStructure');
+    end
+
     if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
         nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure,ref_baseStationLLA,fid);
         flag_keep_checking = 0;
