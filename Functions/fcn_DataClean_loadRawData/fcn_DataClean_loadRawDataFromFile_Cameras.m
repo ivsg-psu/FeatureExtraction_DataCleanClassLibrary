@@ -1,4 +1,4 @@
-function Camera_structure = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,camera_folder,datatype,fid)
+function Camera_structure = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,datatype,fid)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the image data collected from cameras, whose data type is image
@@ -13,9 +13,15 @@ function Camera_structure = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,
 % This function is modified to load the raw data (from file) collected with
 % the Penn State Mapping Van.
 
+%% Revision history:
+% 2024_02_09 by X. Cao
+% -- start writing function
+% 2024-10-10 by X. Cao
+% -- update loading directories based on the new parsing functions
+% -- add commetns
+
+%% To Do: Function is not fully tested
 %%
-
-
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
@@ -55,11 +61,17 @@ if strcmp(datatype,'camera')
     % Velodyne_Lidar_structure.row_step        = velodyne_lidar_table.row_step;  % This is the length of a row in bytes
     % Velodyne_Lidar_structure.is_dense         = velodyne_lidar_table.is_dense;  %  True if there are no invalid points
     Camera_structure.Image_Hash        = image_hash_array;
-
+    [bagFolderPath,~,~] = fileparts(file_path);
+    [mainFolderPath,~,~] = fileparts(bagFolderPath);
+    cameras_folder = "hashCameras*";
     for idx_image = 1:N_images
         image_filename = image_hash_array(idx_image);
         image_filename_char = char(image_filename);
-        image_filepath = camera_folder+image_filename_char(1:2)+"/"+image_filename_char(3:4)+"/"+image_filename+".jpg";
+        images_file_fullPath = fullfile(mainFolderPath,cameras_folder,image_filename_char(1:2),image_filename_char(3:4),image_filename+'.jpg');
+        
+        images_file_struct = dir(images_file_fullPath);
+        image_filepath = fullfile(images_file_struct.folder,images_file_struct.name);
+
         image = imread(image_filepath);
         image_cell{idx_image,1} = image;
 

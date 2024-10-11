@@ -48,7 +48,9 @@ function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, I
 %           Flags.flag_do_load_velodyne = 0; % Loads the Velodyne LIDAR
 %           Flags.flag_do_load_cameras = 0; % Loads camera images
 %           Flags.flag_select_scan_duration = 0; % Lets user specify scans from Velodyne
-%
+%           Flags.flag_do_load_GST = 0; % Load GPS GST sentence
+%           Flags.flag_do_load_VTG = 0; % Load GPS VTG sentence
+% 
 %      fig_num: a figure number to plot results. If set to -1, skips any
 %      input checking or debugging, no figures will be generated, and sets
 %      up code to maximize speed.
@@ -110,6 +112,11 @@ function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, I
 % -- added subPathStrings output
 % 2024_09_27 - S. Brennan
 % -- fixed bad sensor names during loading
+% 2024_10_10 - X. Cao
+% -- add flag_do_load_GST and flag_do_load_VTG to let user decide whether they want to
+%    load GPS GST and VTG sentences
+% -- comment out load cameras functions, still need to be tested
+
 
 
 %% Debugging and Input checks
@@ -198,13 +205,13 @@ if 4 <= nargin
     end
 end
 
-
 % Does user specify Flags?
 % Set defaults
 Flags.flag_do_load_SICK = 0;
 Flags.flag_do_load_Velodyne = 0;
 Flags.flag_do_load_cameras = 0;
-Flags.flag_select_scan_duration = 0;
+Flags.flag_do_load_GST = 0;
+Flags.flag_do_load_VTG = 0;
 
 if 5 <= nargin
     temp = varargin{3};
@@ -321,7 +328,8 @@ flag_do_load_SICK = Flags.flag_do_load_SICK;
 flag_do_load_Velodyne = Flags.flag_do_load_Velodyne;
 flag_do_load_cameras = Flags.flag_do_load_cameras;
 flag_select_scan_duration = Flags.flag_select_scan_duration;
-
+flag_do_load_GST = Flags.flag_do_load_GST;
+flag_do_load_VTG = Flags.flag_do_load_VTG;
 
 % Grab the list of files in this directory
 file_list = dir(dataFolderString);
@@ -451,12 +459,12 @@ for file_idx = 1:num_files
             SparkFun_GPS_RearLeft_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_GGA = SparkFun_GPS_RearLeft_GGA;
 
-        elseif contains(topic_name, 'GPS_SparkFun_RearLeft_VTG')
+        elseif contains(topic_name, 'GPS_SparkFun_RearLeft_VTG') && flag_do_load_VTG
 
             SparkFun_GPS_RearLeft_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.Velocity_Estimate_SparkFun_LeftRear = SparkFun_GPS_RearLeft_VTG;
 
-        elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GST')
+        elseif contains(topic_name, 'GPS_SparkFun_RearLeft_GST') && flag_do_load_GST
 
             SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_GST = SparkFun_GPS_RearLeft_GST;
@@ -465,11 +473,11 @@ for file_idx = 1:num_files
             sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_GGA = sparkfun_gps_rear_right_GGA;
 
-        elseif contains(topic_name, 'GPS_SparkFun_RearRight_VTG')
+        elseif contains(topic_name, 'GPS_SparkFun_RearRight_VTG') && flag_do_load_VTG
             sparkfun_gps_rear_right_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.Velocity_Estimate_SparkFun_RightRear  = sparkfun_gps_rear_right_VTG;
 
-        elseif contains(topic_name, 'GPS_SparkFun_RearRight_GST')
+        elseif contains(topic_name, 'GPS_SparkFun_RearRight_GST') && flag_do_load_GST
             sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_GST = sparkfun_gps_rear_right_GST;
 
@@ -485,12 +493,12 @@ for file_idx = 1:num_files
             SparkFun_GPS_Front_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Front_GGA = SparkFun_GPS_Front_GGA;
 
-        elseif contains(topic_name, 'GPS_SparkFun_Front_VTG')
+        elseif contains(topic_name, 'GPS_SparkFun_Front_VTG') && flag_do_load_VTG
             SparkFun_GPS_Front_VTG = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.Velocity_Estimate_SparkFun_Front = SparkFun_GPS_Front_VTG;
 
 
-        elseif contains(topic_name, 'GPS_SparkFun_Front_GST')
+        elseif contains(topic_name, 'GPS_SparkFun_Front_GST') && flag_do_load_GST
             SparkFun_GPS_Front_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Front_GST = SparkFun_GPS_Front_GST;
 
@@ -531,37 +539,37 @@ for file_idx = 1:num_files
 
             rawData.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
 
-
-
-        elseif contains(topic_name,'/rear_left_camera/image_rect_color/compressed') && (flag_do_load_cameras)
-            rear_left_camera_folder = 'images/rear_left_camera/';
-            Camera_Rear_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_left_camera_folder,datatype,fid);
-            rawData.Camera_Rear_Left = Camera_Rear_Left_struct;
-
-        elseif contains(topic_name,'/rear_center_camera/image_rect_color/compressed') && (flag_do_load_cameras)
-            rear_center_camera_folder = 'images/rear_center_camera/';
-            Camera_Rear_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_center_camera_folder,datatype,fid);
-            rawData.Camera_Rear_Center = Camera_Rear_Center_struct;
-
-        elseif contains(topic_name,'/rear_right_camera/image_rect_color/compressed') && (flag_do_load_cameras)
-            rear_right_camera_folder = 'images/rear_right_camera/';
-            Camera_Rear_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,rear_right_camera_folder,datatype,fid);
-            rawData.Camera_Rear_Right = Camera_Rear_Right_struct;
-
-        elseif contains(topic_name,'/front_left_camera/image_rect_color/compressed') && (flag_do_load_cameras)
-            front_left_camera_folder = 'images/front_left_camera/';
-            Camera_Front_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_left_camera_folder,datatype,fid);
-            rawData.Camera_Front_Left = Camera_Front_Left_struct;
-
-        elseif contains(topic_name,'/front_center_camera/image_rect_color/compressed') && (flag_do_load_cameras)
-            front_center_camera_folder = 'images/front_center_camera/';
-            Camera_Front_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_center_camera_folder,datatype,fid);
-            rawData.Camera_Front_Center = Camera_Front_Center_struct;
-
-        elseif contains(topic_name,'/front_right_camera/image_rect_color/compressed') && (flag_do_load_cameras)
-            front_right_camera_folder = 'images/front_right_camera/';
-            Camera_Front_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,front_right_camera_folder,datatype,fid);
-            rawData.Camera_Front_Right = Camera_Front_Right_struct;
+        % 
+        % 
+        % elseif contains(topic_name,'/rear_left_camera/image_rect_color/compressed') && (flag_do_load_cameras)
+        %     rear_left_camera_folder = 'images/rear_left_camera/';
+        %     Camera_Rear_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,datatype,fid);
+        %     rawData.Camera_Rear_Left = Camera_Rear_Left_struct;
+        % 
+        % elseif contains(topic_name,'/rear_center_camera/image_rect_color/compressed') && (flag_do_load_cameras)
+        %     rear_center_camera_folder = 'images/rear_center_camera/';
+        %     Camera_Rear_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,datatype,fid);
+        %     rawData.Camera_Rear_Center = Camera_Rear_Center_struct;
+        % 
+        % elseif contains(topic_name,'/rear_right_camera/image_rect_color/compressed') && (flag_do_load_cameras)
+        %     rear_right_camera_folder = 'images/rear_right_camera/';
+        %     Camera_Rear_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,datatype,fid);
+        %     rawData.Camera_Rear_Right = Camera_Rear_Right_struct;
+        % 
+        % elseif contains(topic_name,'/front_left_camera/image_rect_color/compressed') && (flag_do_load_cameras)
+        %     front_left_camera_folder = 'images/front_left_camera/';
+        %     Camera_Front_Left_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,datatype,fid);
+        %     rawData.Camera_Front_Left = Camera_Front_Left_struct;
+        % 
+        % elseif contains(topic_name,'/front_center_camera/image_rect_color/compressed') && (flag_do_load_cameras)
+        %     front_center_camera_folder = 'images/front_center_camera/';
+        %     Camera_Front_Center_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,datatype,fid);
+        %     rawData.Camera_Front_Center = Camera_Front_Center_struct;
+        % 
+        % elseif contains(topic_name,'/front_right_camera/image_rect_color/compressed') && (flag_do_load_cameras)
+        %     front_right_camera_folder = 'images/front_right_camera/';
+        %     Camera_Front_Right_struct = fcn_DataClean_loadRawDataFromFile_Cameras(file_path,datatype,fid);
+        %     rawData.Camera_Front_Right = Camera_Front_Right_struct;
 
 
         else

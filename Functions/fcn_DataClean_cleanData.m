@@ -211,6 +211,26 @@ main_data_clean_loop_iteration_number = 0; % The first iteration corresponds to 
 currentDataStructure = rawDataStruct;
 % Grab the Indentifiers field from the rawDataStructure
 Identifiers_Hold = rawDataStruct.Identifiers;
+% if isfield(currentDataStructure, 'Trigger_Raw')
+%     currentDataStructure = rmfield(currentDataStructure,'Trigger_Raw');
+% else
+%     nextDataStructure = currentDataStructure;
+% end
+% if isfield(currentDataStructure, 'Encoder_Raw')
+%     currentDataStructure = rmfield(currentDataStructure,'Encoder_Raw');
+% else
+%     nextDataStructure = currentDataStructure;
+% end
+% if isfield(currentDataStructure, 'Diag_Encoder')
+%     currentDataStructure = rmfield(currentDataStructure,'Diag_Encoder');
+% else
+%     nextDataStructure = currentDataStructure;
+% end
+% if isfield(currentDataStructure, 'Diag_Trigger')
+%     currentDataStructure = rmfield(currentDataStructure,'Diag_Trigger');
+% else
+%     nextDataStructure = currentDataStructure;
+% end
 
 %%
 while 1==flag_stay_in_main_loop   
@@ -225,7 +245,7 @@ while 1==flag_stay_in_main_loop
         nextDataStructure = currentDataStructure;
     end
     
-
+    
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
@@ -761,18 +781,18 @@ while 1==flag_stay_in_main_loop
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
         warning('on','backtrace');
         warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
-        figure(123)
-        plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
-        hold on
-        plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
-        plot(nextDataStructure.GPS_SparkFun_Front.ROS_Time,'b','LineWidth',2)
+        % figure(123)
+        % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
+        % hold on
+        % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
+        % plot(nextDataStructure.GPS_SparkFun_Front.ROS_Time,'b','LineWidth',2)
         nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
         flag_keep_checking = 0;
-        clf
-        plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
-        hold on
-        plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
-        plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time,'k','LineWidth',2)
+        % clf
+        % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
+        % hold on
+        % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
+        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time,'k','LineWidth',2)
     end
     
     %%
@@ -808,7 +828,7 @@ while 1==flag_stay_in_main_loop
         % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
         % hold on
         % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
-        % plot(nextDataStructure.TRIGGER_TrigBox_RearTop.Trigger_Time)
+        % 
     end
 
     %% TO-DO - Create a time analysis function - and add it here

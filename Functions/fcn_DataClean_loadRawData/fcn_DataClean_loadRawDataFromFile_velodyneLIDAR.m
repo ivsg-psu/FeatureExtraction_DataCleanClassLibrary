@@ -24,6 +24,9 @@ function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLI
 % -- fix a small bug, remove one useless input
 % 2024-07-02 by X. Cao
 % -- added varagin to select the duration of scan that will be loaded
+% 2024-10-10 by X. Cao
+% -- update loading directories based on the new parsing functions
+% -- add commetns
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -78,8 +81,12 @@ if strcmp(datatype,'lidar3d')
     % Velodyne_Lidar_structure.is_dense         = velodyne_lidar_table.is_dense;  %  True if there are no invalid points
     Velodyne_Lidar_structure.scan_filename        = scan_filenames_array;
     points_cell = {};
-    pointcloud_folder = "velodyne_pointcloud/";
- 
+    [bagFolderPath,~,~] = fileparts(file_path);
+    [mainFolderPath,~,~] = fileparts(bagFolderPath);
+    % Hash tree may have different names, but 'hashVelodyne' always exists, 
+    % the function will look for the folder start with 'hashVelodyne' 
+    pointcloud_folder = "hashVelodyne*";
+    % Let user choose the scan range
     if flag_select_scan_duration == 1
         user_input_txt = sprintf('There are %d scans, please enter the scan duration you want to load. [idx_start:idx_end]', Nscans);
         user_input = input(user_input_txt);
@@ -87,23 +94,17 @@ if strcmp(datatype,'lidar3d')
     else
         scan_duration = 1:Nscans;
     end
-    LiDAR_Time = [];       
+
+    % Use hash tags to load pointCloud data for each scan
     for idx_scan = scan_duration
         scan_filename = scan_filenames_array(idx_scan);
         scan_filename_char = char(scan_filename);
-        points_file = pointcloud_folder+scan_filename_char(1:2)+"/"+scan_filename_char(3:4)+"/"+scan_filename+".txt";
-
+        points_file_fullPath = fullfile(mainFolderPath,pointcloud_folder,scan_filename_char(1:2),scan_filename_char(3:4),scan_filename+'.txt');
+        
+        points_file_struct = dir(points_file_fullPath);
+        points_file = fullfile(points_file_struct.folder,points_file_struct.name);
         opts_scan = detectImportOptions(points_file);
         pointcloud = readmatrix(points_file,opts_scan);
-        % if size(pointcloud,2) == 8
-        %     time_offsets = pointcloud(:,5);
-        % elseif size(pointcloud,2) == 6
-        %     time_offsets = pointcloud(:,6);
-        % end
-        % LiDAR_Time_all_points = host_time(idx_scan,:) + time_offsets;
-        % LiDAR_Time(idx_scan) = min(LiDAR_Time_all_points);
-
-
 
         points_cell{idx_scan,1} = pointcloud;
         clear pointcloud

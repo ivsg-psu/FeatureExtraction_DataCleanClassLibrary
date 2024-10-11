@@ -118,8 +118,8 @@ for idx_field = 1:length(sensorfields)
         current_field_struct_Time = [];
     end
  
-    start_idx = find(current_field_struct_Time>min(time_range),1,'first');
-    end_idx = find((current_field_struct_Time<max(time_range)),1,'last');
+    start_idx = find(current_field_struct_Time>=min(time_range),1,'first');
+    end_idx = find((current_field_struct_Time<=max(time_range)),1,'last');
     valid_idxs = (start_idx:end_idx).';
     topicfields = fieldnames(current_field_struct);
     N_topics = length(topicfields);
@@ -135,7 +135,12 @@ for idx_field = 1:length(sensorfields)
         if length(current_topic_content) > 1
            trimmed_field_struct.(topicfields{idx_topic}) = current_topic_content(valid_idxs,:);
         end
-        trimmed_field_struct.Npoints = length(trimmed_field_struct.ROS_Time);
+        try
+            trimmed_field_struct.Npoints = length(trimmed_field_struct.ROS_Time);
+        catch
+ 
+            warning('%s does not have ROS_Time', topicfields{idx_topic})
+        end
 
     end
     locked_dataStructure.(sensorfields{idx_field}) = trimmed_field_struct;

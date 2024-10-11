@@ -79,7 +79,6 @@ if flag_check_inputs
         
 end
 
-% Does the user want to specify the sensor_type?
 
         
 
@@ -136,22 +135,25 @@ array_Trigger_Time_start = max(cell2mat(cell_array_Trigger_Time_start));
 array_Trigger_Time_end = min(cell2mat(cell_array_Trigger_Time_end));
 
 % Since GPS data have been trimmed, grab the entire range of the ROS_Time
-array_ROS_Time_start = min(cell2mat(cell_array_ROS_Time_start));
-array_ROS_Time_end = max(cell2mat(cell_array_ROS_Time_end));
-
-Trigger_Time_GPS_common = (array_Trigger_Time_start:max_sample_centiSeconds/100:array_Trigger_Time_end).';
-ROS_Time_GPS_common = (array_ROS_Time_start:max_sample_centiSeconds/100:array_ROS_Time_end).';
-
-%% Calculate offset between Trigger_Time (GPS_Time) and ROS_Time for GPS units
-array_timeOffset_ROS_Trigger = [];
+array_ROS_Time_start = max(cell2mat(cell_array_ROS_Time_start));
+array_ROS_Time_end = min(cell2mat(cell_array_ROS_Time_end));
+GPS_start_indices = [];
+GPS_end_indices = [];
 for idx_GPS_unit = 1:length(sensor_names_Trigger_Time)
-   original_Trigger_Time = cell_array_original_Trigger_Time{idx_GPS_unit};
    original_ROS_Time = cell_array_original_ROS_Time{idx_GPS_unit};
-   timeOffset_ROS_Trigger = original_ROS_Time - original_Trigger_Time;
-   array_timeOffset_ROS_Trigger = [array_timeOffset_ROS_Trigger, timeOffset_ROS_Trigger];
+   GPS_start_indices = [GPS_start_indices; find(original_ROS_Time>=array_ROS_Time_start,1,'first')];
+   GPS_end_indices = [GPS_end_indices; find(original_ROS_Time<=array_ROS_Time_end,1,'last')];
    
 end
-array_timeOffset_ROS_Trigger_ave = mean(array_timeOffset_ROS_Trigger,2);
+GPS_start_index = max(GPS_start_indices);
+GPS_end_index = min(GPS_end_indices);
+Trigger_Time_GPS_calculated = (array_Trigger_Time_start:max_sample_centiSeconds/100:array_Trigger_Time_end).';
+Trigger_Time_GPS_common = Trigger_Time_GPS_calculated(GPS_start_index:GPS_end_index,:);
+
+ROS_Time_GPS_ave = mean(cell2mat(cell_array_original_ROS_Time),2);
+% ROS_Time_GPS_common = (array_ROS_Time_start:max_sample_centiSeconds/100:array_ROS_Time_end).';
+ROS_Time_GPS_common = ROS_Time_GPS_ave(GPS_start_index:GPS_end_index,:);
+
 %% Step 2: Calculate Trigger_Time for other sensors
 N_sensors = size(sensors_without_Trigger_Time,1);
 fixed_dataStructure = dataStructure;
@@ -185,7 +187,7 @@ for idx_sensor = 1:N_sensors
             modeCount = sensorFields.modeCount;
             Triggered_modeCount = modeCount(Triggered_indices);
             smallest_modeCount = min(Triggered_modeCount);
-            Trigger_start_idx = find(modeCount == smallest_modeCount);
+            Trigger_start_idx = find(modeCount == smallest_modeCount,1,'last');
             Valid_modeID = modeID_string_clean(Trigger_start_idx:N_points,:);
             Valid_modeCount = modeCount(Trigger_start_idx:N_points,:);
             validTriggered_indices = find(strcmp(Valid_modeID,'L'));
@@ -250,9 +252,11 @@ for idx_sensor = 1:N_sensors
         [~, closestIndex] = min(ROS_Time_diff, [], 2);
         GPS_start_idx = closestIndex(1);
         GPS_end_idx = closestIndex(end);
-        LiDAR_start_idx = find(closestIndex==GPS_start_idx,1,'last');
-
         LiDAR_Trigger_time_start = Trigger_Time_GPS_common(GPS_start_idx);
+        LiDAR_Trigger_time_end = Trigger_Time_GPS_common(GPS_end_idx);
+        LiDAR_start_idx = find(closestIndex==GPS_start_idx,1,'last');
+        LiDAR_Triggered_indices = closestIndex(LiDAR_start_idx:end,:);
+        
         LiDAR_centiSeconds_second = LiDAR_centiSeconds/100;
         LiDAR_Trigger_time_end = LiDAR_centiSeconds_second*(N_scans-LiDAR_start_idx)+LiDAR_Trigger_time_start;
         LiDAR_Trigger_time_calculated = (LiDAR_Trigger_time_start:LiDAR_centiSeconds_second:LiDAR_Trigger_time_end).';

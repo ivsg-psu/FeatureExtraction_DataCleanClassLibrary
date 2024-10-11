@@ -297,7 +297,6 @@ for ith_folder = 1:NdataSets
     end
 
     rawDataCellArray{ith_folder,1} = fcn_DataClean_loadMappingVanDataFromFile(bagPath, Identifiers, (bagName), (fid), (Flags), (-1));
-
 end
 
 %% Plot the results (for debugging)?

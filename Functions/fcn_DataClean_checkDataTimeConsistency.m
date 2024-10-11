@@ -400,7 +400,7 @@ end
 
 %% Check if ROS_Time_rounds_correctly_to_Trigger_Time
 
-error('NOT FINISHED')
+% error('NOT FINISHED')
 % Check that the ROS Time, when rounded to the nearest sampling interval,
 % matches the Trigger time.
 %    ### ISSUES with this:

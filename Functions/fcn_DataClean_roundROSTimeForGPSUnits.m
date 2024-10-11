@@ -41,6 +41,9 @@ function fixed_dataStructure = fcn_DataClean_roundROSTimeForGPSUnits(dataStructu
 %     
 % 2024_08_09: xfc5113@psu.edu
 % -- wrote the code originally 
+% 2024_10_07: xfc5113@psu.edu
+% -- fix bugs in Trigger_Time calculation
+
 
 
 flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging

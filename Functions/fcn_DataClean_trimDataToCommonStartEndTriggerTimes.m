@@ -169,9 +169,10 @@ for i_data = 1:length(sensor_names)
     end
     
     times_centiSeconds = round(100*sensor_data.Trigger_Time/sensor_data.centiSeconds)*sensor_data.centiSeconds;
+    times_centiSeconds_nonnan = times_centiSeconds(~isnan(times_centiSeconds));
     sensor_centiSeconds = [sensor_centiSeconds; sensor_data.centiSeconds]; %#ok<AGROW>
-    start_times_centiSeconds = [start_times_centiSeconds; times_centiSeconds(1)]; %#ok<AGROW>
-    end_times_centiSeconds = [end_times_centiSeconds; times_centiSeconds(end)]; %#ok<AGROW>
+    start_times_centiSeconds = [start_times_centiSeconds; times_centiSeconds_nonnan(1)]; %#ok<AGROW>
+    end_times_centiSeconds = [end_times_centiSeconds; times_centiSeconds_nonnan(end)]; %#ok<AGROW>
     sensors_names_cell{end+1} = sensor_name; %#ok<AGROW>
 end
 
@@ -263,9 +264,9 @@ for i_data = 1:length(sensor_names)
     if 0~=fid
         fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end Trigger_Time values: %s\n',i_data,length(sensor_names),sensor_name);
     end
-    
-    start_index = find(sensor_data.Trigger_Time >= master_start_time_Seconds,1);
-    end_index   = find(sensor_data.Trigger_Time <= master_end_time_Seconds, 1, 'last');
+    time_tolerance = 10^(-6);
+    start_index = find(sensor_data.Trigger_Time >= master_start_time_Seconds-time_tolerance,1,'first');
+    end_index   = find(sensor_data.Trigger_Time <= master_end_time_Seconds+time_tolerance, 1, 'last');
     lengthReference = length(sensor_data.Trigger_Time);
 
     % Loop through subfields
