@@ -786,15 +786,16 @@ assert(iscell(uncommonFieldsCellArray));
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Load%20All%20Raw%20Data
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Below were run on 10/12/2024
 testingConditions = {
-    '2024-07-10','I376ParkwayPitt';
-    '2024-07-11','I376ParkwayPitt';  % NOT done
-    '2024-08-05','BaseMap';
-    '2024-08-12','BaseMap';
-    '2024-08-13','BaseMap';
-    '2024-08-14','4.1a';
-    '2024-08-15','4.1a';
-    '2024-08-15','4.3'; % NOT done
+   % '2024-07-10','I376ParkwayPitt';  % NOT done
+   % '2024-07-11','I376ParkwayPitt';  % NOT done
+   % '2024-08-05','BaseMap';
+   % '2024-08-12','BaseMap';
+   % '2024-08-13','BaseMap';
+   % '2024-08-14','4.1a';
+   % '2024-08-15','4.1a';
+   % '2024-08-15','4.3'; % NOT done
     '2024-08-22','PA653Normalville';
     '2024-09-04','5.1a';
     '2024-09-13','5.2';
@@ -834,9 +835,9 @@ for ith_scenarioTest = 1:sizeConditions(1)
 
     % List what will be saved
     saveFlags.flag_saveMatFile = 1;
-    saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,cat(2,'Scenario ',Identifiers.WorkZoneScenario));
+    saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,fullScenarioString);
     saveFlags.flag_saveImages = 1;
-    saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,cat(2,'Scenario ',Identifiers.WorkZoneScenario));
+    saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,fullScenarioString);
     saveFlags.flag_forceDirectoryCreation = 1;
     saveFlags.flag_forceImageOverwrite = 1;
     saveFlags.flag_forceMATfileOverwrite = 1;
@@ -847,6 +848,8 @@ for ith_scenarioTest = 1:sizeConditions(1)
 
     % Call the data loading function
     allData{ith_scenarioTest}.rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
+    pause(10);
+    close all;
 end
 
 %% Parse bag files
@@ -1102,7 +1105,7 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
+        validDateStrings = {'2024-08-22'};
     case 'PA51Aliquippa'
         Identifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzone'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
