@@ -202,6 +202,18 @@ end
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____ _                 _        __  __                       ______                           _
+%  / ____(_)               | |      |  \/  |                     |  ____|                         | |
+% | (___  _ _ __ ___  _ __ | | ___  | \  / | ___ _ __ __ _  ___  | |__  __  ____ _ _ __ ___  _ __ | | ___  ___
+%  \___ \| | '_ ` _ \| '_ \| |/ _ \ | |\/| |/ _ \ '__/ _` |/ _ \ |  __| \ \/ / _` | '_ ` _ \| '_ \| |/ _ \/ __|
+%  ____) | | | | | | | |_) | |  __/ | |  | |  __/ | | (_| |  __/ | |____ >  < (_| | | | | | | |_) | |  __/\__ \
+% |_____/|_|_| |_| |_| .__/|_|\___| |_|  |_|\___|_|  \__, |\___| |______/_/\_\__,_|_| |_| |_| .__/|_|\___||___/
+%                    | |                              __/ |                                 | |
+%                    |_|                             |___/                                  |_|
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Simple%20Merge%20Examples
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    
 %% Test 1: Simple merge using data from Site 1 - Pittsburgh 
 % Location for Pittsburgh, site 1
 setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.44181017');
@@ -760,10 +772,27 @@ assert(iscell(uncommonFieldsCellArray));
 
 
 
-%% Load all raw data from bag files into MAT files
+%% Load all raw data and convert to MAT files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  _                     _            _ _   _____                  _____        _
+% | |                   | |     /\   | | | |  __ \                |  __ \      | |
+% | |     ___   __ _  __| |    /  \  | | | | |__) |__ ___      __ | |  | | __ _| |_ __ _
+% | |    / _ \ / _` |/ _` |   / /\ \ | | | |  _  // _` \ \ /\ / / | |  | |/ _` | __/ _` |
+% | |___| (_) | (_| | (_| |  / ____ \| | | | | \ \ (_| |\ V  V /  | |__| | (_| | || (_| |
+% |______\___/ \__,_|\__,_| /_/    \_\_|_| |_|  \_\__,_| \_/\_/   |_____/ \__,_|\__\__,_|
+%
+%
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Load%20All%20Raw%20Data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 testingConditions = {
     '2024-07-10','I376ParkwayPitt';
-    '2024-07-11','I376ParkwayPitt';
+    '2024-07-11','I376ParkwayPitt';  % NOT done
+    '2024-08-05','BaseMap';
+    '2024-08-12','BaseMap';
+    '2024-08-13','BaseMap';
+    '2024-08-14','4.1a';
     '2024-08-15','4.1a';
     '2024-08-15','4.3'; % NOT done
     '2024-08-22','PA653Normalville';
@@ -819,6 +848,9 @@ for ith_scenarioTest = 1:sizeConditions(1)
     % Call the data loading function
     allData{ith_scenarioTest}.rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
 end
+
+%% Parse bag files
+% pyrunfile("greeting.py 'hello world'")
 
 %% Test 999: Simple merge, not verbose
 % fig_num = 1;
@@ -924,7 +956,7 @@ function Identifiers = fcn_INTERNAL_identifyDataByScenarioDate(scenarioString, d
 Identifiers.DataSource = 'MappingVan'; % Can be 'MappingVan', 'AV', 'CV2X', etc. see key
 Identifiers.SourceBagFileName =''; % This is filled in automatically for each file
 
-if ~isnan(str2double(scenarioString(1)))
+if ~isnan(str2double(scenarioString(1))) || strcmp(scenarioString,'BaseMap')
     % Location for Test Track base station
     setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.86368573');
     setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-77.83592832');
@@ -961,6 +993,11 @@ Identifiers.Project = 'PennDOT ADS Workzones'; % This is the project sponsoring 
 Identifiers.WorkZoneScenario = scenarioString; % Can be one of the ~20 scenarios, see key
 
 switch scenarioString
+    case 'BaseMap'
+        Identifiers.WorkZoneDescriptor = 'BaseMap'; % Can be one of the 20 descriptors, see key
+        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
+        Identifiers.AggregationType = 'PreCalibration'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
+        validDateStrings = {'2024-08-05','2024-08-12','2024-08-13'};    
     case '1.1'
         Identifiers.WorkZoneDescriptor = 'ShoulderWorkWithMinorEncroachment'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
@@ -1020,7 +1057,7 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'WorkInRightLane'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
+        validDateStrings = {'2024-08-14','2024-08-15'};
     case '4.1b'
         Identifiers.WorkZoneDescriptor = 'WorkInRightLanePennTurnpike'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
@@ -1040,7 +1077,7 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzone'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
+        validDateStrings = {'2024-09-04'};
     case '5.1b'
         Identifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzonePennTurnpike'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
@@ -1050,7 +1087,7 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
+        validDateStrings = {'2024-09-13'};
     case '6.1'
         Identifiers.WorkZoneDescriptor = 'LongTermShoulderUse'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key

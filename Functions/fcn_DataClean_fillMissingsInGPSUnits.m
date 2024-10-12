@@ -234,7 +234,7 @@ for idx_gps_unit = 1:N_GPS_Units
     indiciesInRange = ((originalGPS_timeData>=start_GPSTime).*(originalGPS_timeData<=end_GPSTime))==1;
     originalGPS_timeDataInRange = originalGPS_timeData(find(indiciesInRange)); %#ok<FNDSB>
     NpointsOriginalTimeInRange = length(originalGPS_timeDataInRange);
-    indexOriginalTimeInRange = (1:NpointsOriginalTimeInRange)';
+    % indexOriginalTimeInRange = (1:NpointsOriginalTimeInRange)';
 
     % Save the before/after
     beforeData{idx_gps_unit} = originalGPS_timeData;

@@ -210,6 +210,7 @@ end
 Flags.flag_do_load_SICK = 0;
 Flags.flag_do_load_Velodyne = 0;
 Flags.flag_do_load_cameras = 0;
+Flags.flag_select_scan_duration = 0;
 Flags.flag_do_load_GST = 0;
 Flags.flag_do_load_VTG = 0;
 

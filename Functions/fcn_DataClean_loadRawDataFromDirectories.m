@@ -49,6 +49,8 @@ function rawDataCellArray  = fcn_DataClean_loadRawDataFromDirectories(rootdirs, 
 %           Flags.flag_do_load_velodyne = 0; % Loads the Velodyne LIDAR
 %           Flags.flag_do_load_cameras = 0; % Loads camera images
 %           Flags.flag_select_scan_duration = 0; % Lets user specify scans from Velodyne
+%           Flags.flag_do_load_GST = 0; % Loads the GST field from Sparkfun GPS Units          
+%           Flags.flag_do_load_VTG = 0; % Loads the VTG field from Sparkfun GPS Units
 %
 %      saveFlags: a structure of flags to determine how/where/if the
 %      results are saved. The defaults are below
@@ -204,6 +206,8 @@ Flags.flag_do_load_SICK = 0;
 Flags.flag_do_load_Velodyne = 0;
 Flags.flag_do_load_cameras = 0;
 Flags.flag_select_scan_duration = 0;
+Flags.flag_do_load_GST = 0;
+Flags.flag_do_load_VTG = 0;
 
 if 5 <= nargin
     temp = varargin{3};

@@ -28,6 +28,8 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 %           Flags.flag_do_load_velodyne = 0; % Loads the Velodyne LIDAR
 %           Flags.flag_do_load_cameras = 0; % Loads camera images
 %           Flags.flag_select_scan_duration = 0; % Lets user specify scans from Velodyne
+%           Flags.flag_do_load_GST = 0; % Loads the GST field from Sparkfun GPS Units          
+%           Flags.flag_do_load_VTG = 0; % Loads the VTG field from Sparkfun GPS Units
 %
 %      fig_num: a figure number to plot results. If set to -1, skips any
 %      input checking or debugging, no figures will be generated, and sets
@@ -149,6 +151,8 @@ Flags.flag_do_load_SICK = 0;
 Flags.flag_do_load_Velodyne = 0;
 Flags.flag_do_load_cameras = 0;
 Flags.flag_select_scan_duration = 0;
+Flags.flag_do_load_GST = 0;
+Flags.flag_do_load_VTG = 0;
 
 if 4 <= nargin
     temp = varargin{3};
