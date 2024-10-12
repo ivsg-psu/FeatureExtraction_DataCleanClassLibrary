@@ -775,27 +775,32 @@ assert(iscell(uncommonFieldsCellArray));
 %% Load all raw data and convert to MAT files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  _                     _            _ _   _____                  _____        _
-% | |                   | |     /\   | | | |  __ \                |  __ \      | |
-% | |     ___   __ _  __| |    /  \  | | | | |__) |__ ___      __ | |  | | __ _| |_ __ _
-% | |    / _ \ / _` |/ _` |   / /\ \ | | | |  _  // _` \ \ /\ / / | |  | |/ _` | __/ _` |
-% | |___| (_) | (_| | (_| |  / ____ \| | | | | \ \ (_| |\ V  V /  | |__| | (_| | || (_| |
-% |______\___/ \__,_|\__,_| /_/    \_\_|_| |_|  \_\__,_| \_/\_/   |_____/ \__,_|\__\__,_|
+%  _                     _            _ _   _____                  _____        _          _       _          __  __       _______    __ _ _
+% | |                   | |     /\   | | | |  __ \                |  __ \      | |        (_)     | |        |  \/  |   /\|__   __|  / _(_) |
+% | |     ___   __ _  __| |    /  \  | | | | |__) |__ ___      __ | |  | | __ _| |_ __ _   _ _ __ | |_ ___   | \  / |  /  \  | |    | |_ _| | ___  ___
+% | |    / _ \ / _` |/ _` |   / /\ \ | | | |  _  // _` \ \ /\ / / | |  | |/ _` | __/ _` | | | '_ \| __/ _ \  | |\/| | / /\ \ | |    |  _| | |/ _ \/ __|
+% | |___| (_) | (_| | (_| |  / ____ \| | | | | \ \ (_| |\ V  V /  | |__| | (_| | || (_| | | | | | | || (_) | | |  | |/ ____ \| |    | | | | |  __/\__ \
+% |______\___/ \__,_|\__,_| /_/    \_\_|_| |_|  \_\__,_| \_/\_/   |_____/ \__,_|\__\__,_| |_|_| |_|\__\___/  |_|  |_/_/    \_\_|    |_| |_|_|\___||___/
 %
 %
-% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Load%20All%20Raw%20Data
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Load%20All%20Raw%20Data%20into%20MAT%20files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Below were run on 10/12/2024
 testingConditions = {
-   % '2024-07-10','I376ParkwayPitt';  % NOT done
-   % '2024-07-11','I376ParkwayPitt';  % NOT done
-   % '2024-08-05','BaseMap';
-   % '2024-08-12','BaseMap';
-   % '2024-08-13','BaseMap';
-   % '2024-08-14','4.1a';
-   % '2024-08-15','4.1a';
-   % '2024-08-15','4.3'; % NOT done
+    '2024-02-01','4.2'; % NOT done
+    '2024-02-06','4.3'; % NOT done
+    '2024-04-19','2.3'; % NOT done
+    '2024-06-24','I376ParkwayPitt'; % NOT done
+    '2024-06-28','4.1b'; % NOT done
+    '2024-07-10','I376ParkwayPitt'; % NOT done  
+    '2024-07-11','I376ParkwayPitt'; % NOT done
+    '2024-08-05','BaseMap';
+    '2024-08-12','BaseMap';
+    '2024-08-13','BaseMap';
+    '2024-08-14','4.1a';
+    '2024-08-15','4.1a';
+    '2024-08-15','4.3'; % NOT done
     '2024-08-22','PA653Normalville';
     '2024-09-04','5.1a';
     '2024-09-13','5.2';
@@ -803,6 +808,18 @@ testingConditions = {
     '2024-09-19','PA51Aliquippa';
     '2024-09-20','PA51Aliquippa';
     };
+
+% List what will be saved
+saveFlags.flag_saveMatFile = 0;
+saveFlags.flag_saveImages = 0;
+saveFlags.flag_forceDirectoryCreation = 1;
+saveFlags.flag_forceImageOverwrite = 1;
+saveFlags.flag_forceMATfileOverwrite = 1;
+
+% List what will be plotted, and the figure numbers
+plotFlags.fig_num_plotAllRawTogether = 10016;
+plotFlags.fig_num_plotAllRawIndividually = []; % 11016;
+
 
 sizeConditions = size(testingConditions);
 allData = cell(sizeConditions(1),1);
@@ -834,23 +851,80 @@ for ith_scenarioTest = 1:sizeConditions(1)
     rootdirs{1} = fullfile(cd,'LargeData','ParsedBags_PoseOnly',Identifiers.ProjectStage,fullScenarioString,mappingDate);
 
     % List what will be saved
-    saveFlags.flag_saveMatFile = 1;
     saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,fullScenarioString);
-    saveFlags.flag_saveImages = 1;
     saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,fullScenarioString);
-    saveFlags.flag_forceDirectoryCreation = 1;
-    saveFlags.flag_forceImageOverwrite = 1;
-    saveFlags.flag_forceMATfileOverwrite = 1;
-
-    % List what will be plotted, and the figure numbers
-    plotFlags.fig_num_plotAllRawTogether = 10016;
-    plotFlags.fig_num_plotAllRawIndividually = 11016;
 
     % Call the data loading function
     allData{ith_scenarioTest}.rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
     pause(10);
     close all;
 end
+
+%% Merge all MAT files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  __  __                                _ _   __  __       _______   ______ _ _
+% |  \/  |                         /\   | | | |  \/  |   /\|__   __| |  ____(_) |
+% | \  / | ___ _ __ __ _  ___     /  \  | | | | \  / |  /  \  | |    | |__   _| | ___  ___
+% | |\/| |/ _ \ '__/ _` |/ _ \   / /\ \ | | | | |\/| | / /\ \ | |    |  __| | | |/ _ \/ __|
+% | |  | |  __/ | | (_| |  __/  / ____ \| | | | |  | |/ ____ \| |    | |    | | |  __/\__ \
+% |_|  |_|\___|_|  \__, |\___| /_/    \_\_|_| |_|  |_/_/    \_\_|    |_|    |_|_|\___||___/
+%                   __/ |
+%                  |___/
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Merge%20All%20MAT%20Files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Prepare for merging
+% Specify the nearby time
+thresholdTimeNearby = 10;
+
+% Spedify the fid
+fid = 1; % 1 --> print to console
+% consoleFname = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,Identifiers.WorkZoneScenario,'MergeProcessingMessages.txt');
+% fid = fopen(consoleFname,'w');
+
+% List what will be saved
+saveFlags.flag_saveMatFile = 1;
+saveFlags.flag_saveImages = 1;
+saveFlags.flag_forceDirectoryCreation = 1;
+saveFlags.flag_forceImageOverwrite = 1;
+saveFlags.flag_forceMATfileOverwrite = 1;
+
+% List what will be plotted, and the figure numbers
+plotFlags.fig_num_plotAllMergedTogether = 1111;
+plotFlags.fig_num_plotAllMergedIndividually = 2222;
+    
+plotFlags.mergedplotFormat.LineStyle = '-';
+plotFlags.mergedplotFormat.LineWidth = 2;
+plotFlags.mergedplotFormat.Marker = 'none';
+plotFlags.mergedplotFormat.MarkerSize = 5;
+plotFlags.mergedplotFormat.Color = [1 1 0];
+
+
+for ith_scenarioTest = 1:length(allData)
+    mappingDate = testingConditions{ith_scenarioTest,1};
+    scenarioString = testingConditions{ith_scenarioTest,2};
+
+    
+    % Grab the identifiers. NOTE: this also sets the reference location for
+    % plotting.
+    Identifiers = fcn_INTERNAL_identifyDataByScenarioDate(scenarioString, mappingDate);
+
+    if ~isnan(str2double(scenarioString(1)))
+        fullScenarioString = cat(2,'Scenario ',Identifiers.WorkZoneScenario);
+    else
+        fullScenarioString = scenarioString;
+    end
+
+    saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveImages_name = cat(2,fullScenarioString,'_merged');
+
+
+    % Call the function
+    fcn_DataClean_mergeRawDataStructures(allData{ith_scenarioTest}.rawDataCellArray, (thresholdTimeNearby), (fid), (saveFlags), (plotFlags));
+end
+
 
 %% Parse bag files
 % pyrunfile("greeting.py 'hello world'")
@@ -1045,7 +1119,7 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'LaneShiftToTemporaryRoadway'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
+        validDateStrings = {'2024-04-19'};
     case '2.4'
         Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
@@ -1070,12 +1144,12 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'WorkInRightLaneNearExitRamp'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};        
+        validDateStrings = {'2024-02-01'};        
     case '4.3'
         Identifiers.WorkZoneDescriptor = 'WorkInEntranceRampWithStopControl'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-08-15'};
+        validDateStrings = {'2024-02-06','2024-08-15'};
     case '5.1a'
         Identifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzone'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
@@ -1100,7 +1174,7 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'WorkInRightLaneOfUndividedHighway'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
+        validDateStrings = {'2024-06-24','2024-07-10','2024-07-11'};
     case 'PA653Normalville'
         Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
