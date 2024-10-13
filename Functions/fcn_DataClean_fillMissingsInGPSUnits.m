@@ -48,6 +48,10 @@ function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructur
 % -- added fig_num input, fixed the plot flag
 % -- fixed warning and errors
 % -- removed interpolation of GPS data itself (gives errors)
+% 2024_10_13 - X. Cao
+% -- add another condition to the if statement in line 278, currently
+%    eventFunctions field is an empty cell, no interpolation process is
+%    needed
 
 %% Debugging and Input checks
 
@@ -272,7 +276,8 @@ for idx_gps_unit = 1:N_GPS_Units
         current_fieldData = GPSdataStructure.(sub_field);
         
         % Is the field NOT GPS_Time (which was already fixed)
-        if ~strcmp(sub_field,'GPS_Time')
+        % Is the field NOT empty (EventFunction field)
+        if ~strcmp(sub_field,'GPS_Time') && ~isempty(current_fieldData)
 
             % If the data contain more than 1 value, and if the name contains
             % "GPS_Time, ROS_Time", etc, then need to interpolate it.

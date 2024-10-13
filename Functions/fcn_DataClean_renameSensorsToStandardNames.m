@@ -45,6 +45,8 @@ function updated_dataStructure = fcn_DataClean_renameSensorsToStandardNames(data
 % -- fixed fid printing error
 % -- fixed names to match example
 % -- added Identifiers
+% 2024_10_13: xfc5113@psu.edu
+% -- added GPS_SparkFun_LeftRear_GGA and GPS_SparkFun_RightRear_GGA
 
 %% Debugging and Input checks
 
@@ -180,6 +182,8 @@ name_pairs = {...
 'SparkFun_RearRight_Velocity_Estimate','Velocity_Estimate_SparkFun_RightRear';
 'SparkFun_Front_Velocity_Estimate','Velocity_Estimate_SparkFun_Front';
 'GPS_SparkFun_Front_GGA','GPS_SparkFun_Front';
+'GPS_SparkFun_LeftRear_GGA','GPS_SparkFun_LeftRear';
+'GPS_SparkFun_RightRear_GGA','GPS_SparkFun_RightRear';
 'GPS_SparkFun_RearRight','GPS_SparkFun_RightRear';
 'GPS_SparkFun_RearLeft','GPS_SparkFun_LeftRear';
 'IMU_Adis_CenterTop','IMU_Adis_TopCenter';
