@@ -23,8 +23,7 @@ close all
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Prepare%20Bag%20File%20Listings
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Find all bag files in a given directory, sort them by time, print
-% listings into README, and move files into "date" folder
+% Find all bag files in a given directory, and sort them, then print
 
 
 % List which directory/directories need to be loaded
@@ -35,13 +34,43 @@ sourceUnsortedBagDirectory{1} = 'C:\Users\snb10\ReadyToParse\Base_2024-08-13';
 destinationSortedBagDirectory = cat(2,sourceUnsortedBagDirectory{1},filesep,dateToProcess);
 flag_printMarkdownReady = 1;
 
-% Make sure folder exists!
-if 7~=exist(destinationSortedBagDirectory,'dir')
-    warning('on','backtrace');
-    warning('Unable to find folder: \n\t%s',destinationSortedBagDirectory);
-    error('Desired directory: %s does not exist!',destinationSortedBagDirectory);
-end
+% Set up the README file?
+if 1==flag_printMarkdownReady
 
+    % Make sure folder exists!
+    if 7~=exist(destinationSortedBagDirectory,'dir')
+        warning('on','backtrace');
+        warning('Unable to find folder: \n\t%s',destinationSortedBagDirectory);
+        error('Desired directory: %s does not exist!',destinationSortedBagDirectory);
+    end
+
+
+    readmeFilename = fullfile(destinationSortedBagDirectory,cat(2,'README_runDetails_',dateToProcess,'.md'));
+    templateReadmeFile = fullfile(cd,'Data','README_bagHeader.txt');
+
+    % Make sure templateReadmeFile exists!
+    if 2~=exist(templateReadmeFile,'file')
+        warning('on','backtrace');
+        warning('Unable to find template file: \n\t%s',templateReadmeFile);
+        error('Desired template: %s does not exist!',templateReadmeFile);
+    end
+
+    % Attempt copy of template into current README
+    [status,message] = copyfile(templateReadmeFile,readmeFilename,'f');
+    if 1~=status
+        warning('on','backtrace');
+        warning('Unable to copy templateReadmeFile: \n\t%s \nto file: \n\t%s',templateReadmeFile,readmeFilename);
+        warning('Message given was: \n\t%s',message);
+        error('Unable to complete copy of file?');
+    else
+        fprintf(1,'Copying template file to start new README for the directory: ');
+        fcn_DebugTools_cprintf('*green','(success)\n');
+    end
+
+    fid = fopen(readmeFilename,'a'); % Open file for writing, append mode
+else
+    fid = 1;
+end
 
 % Specify the bagQueryString
 fileQueryString = '*.bag'; % The more specific, the better to avoid accidental loading of wrong information
@@ -72,45 +101,6 @@ sorted_directory_filelist = directory_filelist(sortedIndex);
 
 %%%%
 % Print the results
-
-% Print the README file?
-if 1==flag_printMarkdownReady
-
-
-    readmeFilename = fullfile(destinationSortedBagDirectory,cat(2,'README_runDetails_',dateToProcess,'.md'));
-    templateReadmeFile = fullfile(cd,'Data','README_bagHeader.txt');
-
-    % Make sure templateReadmeFile exists!
-    if 2~=exist(templateReadmeFile,'file')
-        warning('on','backtrace');
-        warning('Unable to find template file: \n\t%s',templateReadmeFile);
-        error('Desired template: %s does not exist!',templateReadmeFile);
-    end
-
-    % Attempt copy of template into current README
-    [status,message] = copyfile(templateReadmeFile,readmeFilename,'f');
-    if 1~=status
-        warning('on','backtrace');
-        warning('Unable to copy templateReadmeFile: \n\t%s \nto file: \n\t%s',templateReadmeFile,readmeFilename);
-        warning('Message given was: \n\t%s',message);
-        error('Unable to complete copy of file?');
-    else
-        fprintf(1,'Copying template file to start new README for the directory: ');
-        fcn_DebugTools_cprintf('*green','(success)\n');
-    end
-
-    fid = fopen(readmeFilename,'a'); % Open file for writing, append mode
-
-    % Specify the title
-    titleString = sprintf('Folder: %s',identifierString);
-else
-    fid = 1;
-    titleString = '';
-end
-
-
-%%%%%%%%%%%%%%%%%%%%%
-% REPLACE BLOW WITH FUNCTION CALL
 if 1==flag_printMarkdownReady
     fprintf(fid,'Folder: %s\n',identifierString);
 else
@@ -211,10 +201,6 @@ end
 
 
 
-%% Parse bag files
-% pyrunfile("greeting.py 'hello world'")
-
-%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   _____ _                 _        __  __                       ______                           _
@@ -940,6 +926,8 @@ for ith_scenarioTest = 1:length(allData)
 end
 
 
+%% Parse bag files
+% pyrunfile("greeting.py 'hello world'")
 
 %% Test 999: Simple merge, not verbose
 % fig_num = 1;
