@@ -206,9 +206,9 @@ close all
 clear library_name library_folders library_url
 
 ith_library = 1;
-library_name{ith_library}    = 'DebugTools_v2023_04_22';
+library_name{ith_library}    = 'DebugTools_v2024_10_17';
 library_folders{ith_library} = {'Functions','Data'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2023_04_22.zip';
+library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2024_10_17.zip';
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'PathClass_v2024_03_14';
@@ -248,8 +248,8 @@ library_url{ith_library}     = 'https://github.com/ivsg-psu/PathPlanning_GeomToo
 
 
 %% Clear paths and folders, if needed
-if 1==0
-
+if 1==1
+    clear flag_DataClean_Folders_Initialized
     fcn_INTERNAL_clearUtilitiesFromPathAndFolders;
 
 end
