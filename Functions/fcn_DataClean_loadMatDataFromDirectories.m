@@ -218,7 +218,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Find all the files that will be queried
-only_directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (matQueryString), (0), (fid));
+only_directory_filelist = fcn_DebugTools_listDirectoryContents(rootdirs, (matQueryString), (0), (fid));
 
 
 %% Loop through all the directories

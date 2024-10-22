@@ -263,7 +263,7 @@ end
 % Create the image save directory if needed
 if 1==saveFlags.flag_saveImages && saveFlags.flag_forceDirectoryCreation 
     directoryName = saveFlags.flag_saveImages_directory;
-    fcn_INTERNAL_makeDirectory(directoryName);
+    fcn_DebugTools_makeDirectory(directoryName);
 end
 
 %% Make sure the MAT save directory is there if MAT file save is requested.
@@ -276,12 +276,12 @@ end
 % Create the image save directory if needed
 if  1==saveFlags.flag_saveMatFile && saveFlags.flag_forceDirectoryCreation 
     directoryName = saveFlags.flag_saveMatFile_directory;
-    fcn_INTERNAL_makeDirectory(directoryName);
+    fcn_DebugTools_makeDirectory(directoryName);    
 end
 
 
 %% Find all the directories that will be queried
-only_directory_filelist = fcn_DataClean_listDirectoryContents(rootdirs, (bagQueryString), (1), (fid));
+only_directory_filelist  = fcn_DebugTools_listDirectoryContents(rootdirs, (bagQueryString), (1), (fid));
 
 %% Loop through all the directories
 % Initialize key storage variables
@@ -435,47 +435,6 @@ end % Ends main function
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
-%% fcn_INTERNAL_makeDirectory
-function fcn_INTERNAL_makeDirectory(targetDirectoryName)
-if 7~=exist(targetDirectoryName,'dir')
-    % Need to make the directory
-
-    % Find full path
-    full_path_directory_to_create = fullfile(targetDirectoryName);
-
-    % Find part below current directory
-    relativePath = extractAfter(full_path_directory_to_create,cat(2,cd(),filesep));
-
-    [successFlag,message] = mkdir(cd,relativePath);
-    if 1~=successFlag 
-        warning('on','backtrace');
-        warning('Unable to create directory: %s. Message given:',fullPathDirectoryToCheck,message);
-        error('Image save specified that directory be created, but cannot create directory. Unable to continue.');
-    end
-    
-    % % Split the relativePath into parts
-    % pathParts = split(relativePath,filesep);
-    % previousParentPath = cd();
-    % for ith_directory = 1:length(pathParts)
-    %     directoryToCheck = pathParts{ith_directory};
-    %     fullPathDirectoryToCheck = fullfile(previousParentPath,directoryToCheck);
-    % 
-    %     % Does the directory exist, or do we need to make it?
-    %     if 7~=exist(fullPathDirectoryToCheck,'dir')
-    %         % Need to make the directory
-    %         successFlag = mkdir(previousParentPath,directoryToCheck);
-    %         if 1~=successFlag
-    %             warning('on','backtrace');
-    %             warning('Unable to create directory: %s',fullPathDirectoryToCheck)
-    %             error('Image save specified that directory be created, but cannot create directory. Unable to continue.');
-    %         end
-    %     end
-    % 
-    %     previousParentPath = fullfile(previousParentPath,directoryToCheck);
-    % 
-    % end
-end
-end % Ends fcn_INTERNAL_makeDirectory
 
 %% fcn_INTERNAL_saveImages
 function fcn_INTERNAL_saveImages(imageName, saveFlags)

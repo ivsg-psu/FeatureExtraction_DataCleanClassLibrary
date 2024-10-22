@@ -595,13 +595,16 @@ assert(iscell(uncommonFieldsCellArray));
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Load%20All%20Raw%20Data%20into%20MAT%20files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+poseOnlyParsedBagRoot_PoseOnly    = 'F:\MappingVanData\ParsedBags_PoseOnly';
+poseOnlyParsedMATLABRoot_PoseOnly = 'F:\MappingVanData\ParsedMATLAB_PoseOnly\RawData';
+
 % Below were run on 10/12/2024
 testingConditions = {
-    '2024-02-01','4.2'; % NOT done
+    % '2024-02-01','4.2'; % NOT parsed
     '2024-02-06','4.3'; % NOT done
-    '2024-04-19','2.3'; % NOT done
+    % '2024-04-19','2.3'; % NOT parsed
     '2024-06-24','I376ParkwayPitt'; % NOT done
-    '2024-06-28','4.1b'; % NOT done
+    % '2024-06-28','4.1b'; % NOT parsed
     '2024-07-10','I376ParkwayPitt'; % NOT done  
     '2024-07-11','I376ParkwayPitt'; % NOT done
     '2024-08-05','BaseMap';
@@ -616,18 +619,19 @@ testingConditions = {
     '2024-09-17','1.6';
     '2024-09-19','PA51Aliquippa';
     '2024-09-20','PA51Aliquippa';
+    '2024-10-16','I376ParkwayPitt'; % NOT done  
     };
 
 % List what will be saved
-saveFlags.flag_saveMatFile = 0;
-saveFlags.flag_saveImages = 0;
+saveFlags.flag_saveMatFile = 1;
+saveFlags.flag_saveImages = 1;
 saveFlags.flag_forceDirectoryCreation = 1;
 saveFlags.flag_forceImageOverwrite = 1;
 saveFlags.flag_forceMATfileOverwrite = 1;
 
 % List what will be plotted, and the figure numbers
 plotFlags.fig_num_plotAllRawTogether = 10016;
-plotFlags.fig_num_plotAllRawIndividually = []; % 11016;
+plotFlags.fig_num_plotAllRawIndividually = 11016;
 
 
 sizeConditions = size(testingConditions);
@@ -657,16 +661,16 @@ for ith_scenarioTest = 1:sizeConditions(1)
     else
         fullScenarioString = scenarioString;
     end
-    rootdirs{1} = fullfile(cd,'LargeData','ParsedBags_PoseOnly',Identifiers.ProjectStage,fullScenarioString,mappingDate);
+    rootdirs{1} = fullfile(poseOnlyParsedBagRoot_PoseOnly,Identifiers.ProjectStage,fullScenarioString,mappingDate);
 
     % List what will be saved
-    saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,fullScenarioString);
-    saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveMatFile_directory = fullfile(poseOnlyParsedMATLABRoot_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveImages_directory  = fullfile(poseOnlyParsedMATLABRoot_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
 
     % Call the data loading function
-    allData{ith_scenarioTest}.rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
-    pause(10);
     close all;
+    allData{ith_scenarioTest}.rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
+
 end
 
 %% Merge all MAT files
@@ -682,6 +686,9 @@ end
 %                  |___/
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Merge%20All%20MAT%20Files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+poseOnlyParsedMATLABRootMerged_PoseOnly   = 'F:\MappingVanData\ParsedMATLAB_PoseOnly\RawDataMerged';
 
 % Prepare for merging
 % Specify the nearby time
@@ -710,7 +717,7 @@ plotFlags.mergedplotFormat.MarkerSize = 5;
 plotFlags.mergedplotFormat.Color = [1 1 0];
 
 
-for ith_scenarioTest = 1:length(allData)
+for ith_scenarioTest = 3:length(allData)
     mappingDate = testingConditions{ith_scenarioTest,1};
     scenarioString = testingConditions{ith_scenarioTest,2};
 
@@ -725,8 +732,8 @@ for ith_scenarioTest = 1:length(allData)
         fullScenarioString = scenarioString;
     end
 
-    saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,fullScenarioString);
-    saveFlags.flag_saveImages_directory  = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveMatFile_directory = fullfile(poseOnlyParsedMATLABRootMerged_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveImages_directory  = fullfile(poseOnlyParsedMATLABRootMerged_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
     saveFlags.flag_saveImages_name = cat(2,fullScenarioString,'_merged');
 
 
@@ -981,7 +988,7 @@ switch scenarioString
         Identifiers.WorkZoneDescriptor = 'WorkInRightLaneOfUndividedHighway'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
         Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-06-24','2024-07-10','2024-07-11'};
+        validDateStrings = {'2024-06-24','2024-07-10','2024-07-11','2024-10-16'};
     case 'PA653Normalville'
         Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
         Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
