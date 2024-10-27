@@ -521,6 +521,12 @@ setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.44181017');
 setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.76090840');
 setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','327.428');
 
+% List which directory/directories need to be loaded
+clear rootdirs
+rootdirs{1} = fullfile(cd,'Data'); % ,'2024-07-10');
+% rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');
+
+
 
 clear searchIdentifiers
 searchIdentifiers.Project = 'PennDOT ADS Workzones'; % This is the project sponsoring the data collection
@@ -537,10 +543,7 @@ matQueryString = 'mapping_van_2024-07-1*_merged'; % The more specific, the bette
 % Spedify the fid
 fid = 1; % 1 --> print to console
 
-% List which directory/directories need to be loaded
-clear rootdirs
-rootdirs{1} = fullfile(cd,'Data'); % ,'2024-07-10');
-% rootdirs{2} = fullfile(cd,'LargeData','2024-07-11');
+
 
 % List what will be plotted, and the figure numbers
 plotFlags.fig_num_plotAllMatTogether = 1111;
@@ -551,6 +554,258 @@ rawDataCellArray = fcn_DataClean_loadMatDataFromDirectories(rootdirs, searchIden
 
 % Check the results
 assert(iscell(rawDataCellArray));
+
+%% Querying from storage directories
+
+% List which directory/directories need to be loaded
+rawBagRoot                  = 'F:\MappingVanData\RawBags';
+poseOnlyParsedBagRoot       = 'F:\MappingVanData\ParsedBags_PoseOnly';
+fullParsedBagRoot           = 'F:\MappingVanData\ParsedBags';
+parsedMATLAB_PoseOnly       = 'F:\MappingVanData\ParsedMATLAB_PoseOnly\RawData';
+parsedMATLAB_PoseOnlyMerged = 'F:\MappingVanData\ParsedMATLAB_PoseOnly\RawDataMerged';
+
+extensionFolder            = '\TestTrack\'; 
+
+rawBagSearchDirectory                = cat(2,rawBagRoot,extensionFolder);
+poseOnlyParsedBagDirectory           = cat(2,poseOnlyParsedBagRoot,extensionFolder);
+fullParsedBagRootDirectory           = cat(2,fullParsedBagRoot,extensionFolder);
+parsedMATLAB_PoseOnlyDirectory       = cat(2,parsedMATLAB_PoseOnly,extensionFolder);
+parsedMATLAB_PoseOnlyMergedDirectory = cat(2,parsedMATLAB_PoseOnlyMerged,extensionFolder);
+
+% Make sure folders exist!
+fcn_INTERNAL_confirmDirectoryExists(rawBagSearchDirectory);
+fcn_INTERNAL_confirmDirectoryExists(poseOnlyParsedBagDirectory);
+fcn_INTERNAL_confirmDirectoryExists(fullParsedBagRootDirectory);
+fcn_INTERNAL_confirmDirectoryExists(parsedMATLAB_PoseOnlyDirectory);
+fcn_INTERNAL_confirmDirectoryExists(parsedMATLAB_PoseOnlyMergedDirectory);
+
+
+
+%%%
+% Query the raw bags available for parsing within rawBagSearchDirectory
+fileQueryString = '*.bag'; % The more specific, the better to avoid accidental loading of wrong information
+flag_fileOrDirectory = 0; % A file
+directory_allRawBagFiles = fcn_DebugTools_listDirectoryContents({rawBagSearchDirectory}, (fileQueryString), (flag_fileOrDirectory), (-1));
+
+% % % if 1==0
+% % %     % Print the results?
+% % %     fprintf(1,'ALL RAW BAG FILES FOUND IN FOLDER AND SUBFOLDERS OF: %s',rawBagSearchDirectory);
+% % %     fcn_DebugTools_printDirectoryListing(directory_allRawBagFiles, ([]), ([]), (1));
+% % % end
+% % % 
+% % % %%%
+% % % % Summarize the file sizes
+% % % totalBytes = fcn_DebugTools_countBytesInDirectoryListing(directory_allRawBagFiles, (1:length(directory_allRawBagFiles)));
+% % % estimatedPoseOnlyParseTime = totalBytes/bytesPerSecondPoseOnly;
+% % % estimatedFullParseTime = totalBytes/bytesPerSecondFull;
+% % % 
+% % % timeInSeconds = estimatedPoseOnlyParseTime;
+% % % fprintf(1,'\nTotal estimated time to process these %.0f bags, pose only: %.2f seconds (e.g. %.2f minutes, or %.2f hours, or %.2f days) \n',length(directory_allRawBagFiles),timeInSeconds, timeInSeconds/60, timeInSeconds/3600, timeInSeconds/(3600*24));
+% % % timeInSeconds = estimatedFullParseTime;
+% % % fprintf(1,'Total estimated time to process these %.0f bags, full (no cameras): %.2f seconds (e.g. %.2f minutes, or %.2f hours, or %.2f days) \n',length(directory_allRawBagFiles),timeInSeconds, timeInSeconds/60, timeInSeconds/3600, timeInSeconds/(3600*24));
+% % % 
+
+
+%%%
+% Extract all the file names
+bagFileNames = {directory_allRawBagFiles.name}';
+
+% Pick only the ones we want
+filesToKeep = ~contains(bagFileNames,'Ouster') .* ~contains(bagFileNames,'velodyne') .* ~contains(bagFileNames,'cameras');
+goodFileindicies = find(filesToKeep);
+bagFileNamesSelected = bagFileNames(goodFileindicies);
+directory_selectedRawBagFiles = directory_allRawBagFiles(goodFileindicies);
+
+%%%
+% Summarize the file sizes
+fprintf(1,'\n\nSELECTED FILES: \n');
+fcn_DebugTools_printDirectoryListing(directory_selectedRawBagFiles, ([]), ([]), (1));
+
+totalBytes = fcn_DebugTools_countBytesInDirectoryListing(directory_selectedRawBagFiles, (1:length(directory_selectedRawBagFiles)));
+estimatedPoseOnlyParseTime = totalBytes/bytesPerSecondPoseOnly;
+estimatedFullParseTime = totalBytes/bytesPerSecondFull;
+
+timeInSeconds = estimatedPoseOnlyParseTime;
+fprintf(1,'Total estimated time to process these %.0f bags, pose only: %.2f seconds (e.g. %.2f minutes, or %.2f hours, or %.2f days) \n',length(directory_allRawBagFiles),timeInSeconds, timeInSeconds/60, timeInSeconds/3600, timeInSeconds/(3600*24));
+timeInSeconds = estimatedFullParseTime;
+fprintf(1,'Total estimated time to process these %.0f bags, full (no cameras): %.2f seconds (e.g. %.2f minutes, or %.2f hours, or %.2f days) \n',length(directory_allRawBagFiles),timeInSeconds, timeInSeconds/60, timeInSeconds/3600, timeInSeconds/(3600*24));
+
+
+%%%%
+% Find which files were either Pose parsed, Full parsed, 
+flag_matchingType = 2; % file to folder
+typeExtension = '.bag';
+flags_fileWasPoseParsed = fcn_DebugTools_compareDirectoryListings(directory_selectedRawBagFiles, rawBagRoot, poseOnlyParsedBagRoot, (flag_matchingType), (typeExtension), (1));
+flags_fileWasFullParsed = fcn_DebugTools_compareDirectoryListings(directory_selectedRawBagFiles, rawBagRoot, fullParsedBagRoot,     (flag_matchingType), (typeExtension), (1));
+flag_matchingType = 1; % file to file
+typeExtension = '.m';
+flags_fileWasMATLABloaded = fcn_DebugTools_compareDirectoryListings(directory_selectedRawBagFiles, rawBagRoot, parsedMATLAB_PoseOnlyDirectory,     (flag_matchingType), (typeExtension), (1));
+typeExtension = 'merged.m';
+flags_fileWasMATLABmerged = fcn_DebugTools_compareDirectoryListings(directory_selectedRawBagFiles, rawBagRoot, parsedMATLAB_PoseOnlyMergedDirectory,     (flag_matchingType), (typeExtension), (1));
+
+
+%%%%
+% Print the results
+NcolumnsToPrint = 3;
+cellArrayHeaders = cell(NcolumnsToPrint,1);
+cellArrayHeaders{1} = 'BAG NAME                                   ';
+cellArrayHeaders{2} = 'POSE-ONLY PARSED';
+cellArrayHeaders{3} = 'FULLY PARSED    ';
+cellArrayHeaders{4} = 'POSE-ONLY MATLAB Raw';
+cellArrayHeaders{5} = 'POSE-ONLY MATLAB Merged';
+cellArrayValues = [...
+    bagFileNamesSelected, ...
+    fcn_DebugTools_convertBinaryToYesNoStrings(flags_fileWasPoseParsed), ...
+    fcn_DebugTools_convertBinaryToYesNoStrings(flags_fileWasFullParsed)
+    fcn_DebugTools_convertBinaryToYesNoStrings(flags_fileWasMATLABloaded)
+    fcn_DebugTools_convertBinaryToYesNoStrings(flags_fileWasMATLABmerged)
+    ];
+
+fid = 1;
+fcn_DebugTools_printNumeredDirectoryList(directory_selectedRawBagFiles, cellArrayHeaders, cellArrayValues, (rawBagRoot), (fid))
+
+
+
+% % % %%%%
+% % % % Determine type of parsing
+% % % 
+% % % % What type of parsing to do?
+% % % flag_keepGoing = 1;
+% % % if 1==flag_keepGoing
+% % %     flag_keepGoing = 0;
+% % %     flag_goodReply = 0;
+% % %     while 0==flag_goodReply
+% % %         fprintf(1,'\nWhat type of parsing should be done?\n')
+% % %         fprintf(1,'\t1. Pose-only (fast, but LIDAR/camera data excluded)\n');
+% % %         fprintf(1,'\t2. Full parsing (very slow).\n')
+% % %         fprintf(1,'\tQ: Quit.\n')
+% % %         parseType = input('Selection? [default = 1]:','s');
+% % %         if isempty(parseType)
+% % %             parseType = '1';
+% % %             flag_goodReply = 1;
+% % %         else
+% % %             parseType = lower(parseType);
+% % %             if isscalar(parseType) && (strcmp(parseType,'1')||strcmp(parseType,'2')||strcmp(parseType,'q'))
+% % %                 flag_goodReply = 1;
+% % %             end
+% % %         end
+% % %     end
+% % %     fprintf(1,'Selection chosen: %s --> ',parseType);
+% % %     if strcmp(parseType,'1')
+% % %         fprintf(1,'Pose-only\n');
+% % %         flags_toCheck = flags_fileWasPoseParsed;
+% % %         flag_keepGoing = 1;
+% % %     elseif strcmp(parseType,'2')
+% % %         fprintf(1,'Full\n');
+% % %         flags_toCheck = flags_fileWasFullParsed;
+% % %         flag_keepGoing = 1;
+% % %     else
+% % %         fprintf(1,'Quitting\n');
+% % %     end
+% % % end
+% % % 
+% % % 
+% % % %%% What numbers of files to parse?
+% % % if 1==flag_keepGoing
+% % %     [flag_keepGoing, startingIndex, endingIndex] = fcn_DebugTools_queryNumberRange(flags_toCheck, (' of the file(s) to parse'), (1), (directory_selectedRawBagFiles), (1));
+% % % end
+% % % 
+% % % %%% Estimate the time it takes to parse
+% % % if 1==flag_keepGoing
+% % % 
+% % %     if strcmp(parseType,'1')
+% % %         bytesPerSecond = bytesPerSecondPoseOnly;
+% % %     elseif strcmp(parseType,'2')
+% % %         bytesPerSecond = bytesPerSecondFull;
+% % %     end
+% % %     indexRange = (startingIndex:endingIndex);
+% % % 
+% % %     [flag_keepGoing, timeEstimateInSeconds] = fcn_DebugTools_confirmTimeToProcessDirectory(directory_selectedRawBagFiles, bytesPerSecond, (indexRange),(1));
+% % % end
+% % % 
+% % % %%%%
+% % % % Parse the files
+% % % 
+% % % if 1==flag_keepGoing
+% % % 
+% % %     % Change directory
+% % %     currentPath = cd;
+% % %     cd('bag_to_csv_code\')
+% % % 
+% % %     if strcmp(parseType,'1')
+% % %         parse_command_starter = 'py main_bag_to_csv_py3_poseOnly.py';
+% % %         parsedFileLocationFolder = poseOnlyParsedBagRoot;
+% % %     elseif strcmp(parseType,'2')
+% % %         parse_command_starter = 'py main_bag_to_csv_py3.py';
+% % %         parsedFileLocationFolder = fullParsedBagRoot;
+% % %     else
+% % %         error('Unknown error - should not enter here!');
+% % %     end
+% % % 
+% % %     alltstart = tic;
+% % %     Ndone = 0;
+% % %     NtoProcess = length(startingIndex:endingIndex);
+% % %     for ith_bagFile = startingIndex:endingIndex
+% % %         Ndone = Ndone + 1;
+% % %         sourceBagFolderName  = directory_selectedRawBagFiles(ith_bagFile).folder;
+% % %         thisFolder           = extractAfter(sourceBagFolderName,rawBagRoot);
+% % %         thisBytes            = directory_selectedRawBagFiles(ith_bagFile).bytes;
+% % % 
+% % %         destinationBagFolder = cat(2,parsedFileLocationFolder,thisFolder);
+% % % 
+% % %         thisFileFullName = directory_selectedRawBagFiles(ith_bagFile).name;
+% % %         thisFile = extractBefore(thisFileFullName,'.bag');
+% % % 
+% % %         fprintf(1,'\n\nProcessing file: %d (file %d of %d)\n', ith_bagFile, Ndone,NtoProcess);
+% % %         fprintf(1,'Initiating parsing for file: %s\n',thisFile);
+% % %         fprintf(1,'Pulling from folder: %s\n',sourceBagFolderName);
+% % %         fprintf(1,'Pushing to folder: %s\n',destinationBagFolder);
+% % % 
+% % % 
+% % %         % Build the end string, and fix back-slashes to forward slashes
+% % %         parse_command_end = sprintf(' -s "%s" -d "%s" -b "%s"',sourceBagFolderName, destinationBagFolder, thisFileFullName);
+% % %         parse_command_end_fixed = parse_command_end;
+% % %         parse_command_end_fixed(parse_command_end=='\') = '/';
+% % % 
+% % %         % if 7==exist(poseOnlySearchFolder,'dir')
+% % %         %     flags_fileWasPoseParsed(ith_bagFile,1) = 1;
+% % %         % end
+% % % 
+% % %         % Build the command
+% % %         parse_command = cat(2,parse_command_starter,parse_command_end_fixed);
+% % %         fprintf(1,'Running system parse command: \n\t%s\n',parse_command);
+% % % 
+% % % 
+% % %         % replace the file separators
+% % % 
+% % %         tstart = tic;
+% % %         [status,cmdout] = system(parse_command,'-echo');
+% % %         telapsed = toc(tstart);
+% % % 
+% % %         totalBytes = directory_selectedRawBagFiles(ith_bagFile).bytes;
+% % %         predictedFileTime =  totalBytes/bytesPerSecond;
+% % %         fprintf(1,'Processing speed, predicted: %.0f seconds versus actual: %.0f seconds\n',predictedFileTime, telapsed);
+% % %         fprintf(1,'Actual bytes per second: %.0f \n',thisBytes/telapsed);
+% % %     end
+% % %     alltelapsed = toc(alltstart);
+% % % 
+% % %     % Check prediction
+% % %     fprintf(1,'\nTotal time to process bags: \n');
+% % %     if timeInSeconds<100
+% % %         fprintf(1,'\tEstimated: %.2f seconds \n', timeInSeconds)
+% % %         fprintf(1,'\tActual:    %.2f seconds \n', alltelapsed);
+% % %     elseif timeInSeconds>=100 && timeInSeconds<3600
+% % %         fprintf(1,'\tEstimated: %.2f seconds (e.g. %.2f minutes)\n',timeInSeconds, timeInSeconds/60);
+% % %         fprintf(1,'\tActual:    %.2f seconds (e.g. %.2f minutes)\n',alltelapsed, alltelapsed/60);
+% % %     else
+% % %         fprintf(1,'\tEstimated: %.2f seconds (e.g. %.2f minutes, or %.2f hours)\n',timeInSeconds, timeInSeconds/60, timeInSeconds/3600);
+% % %         fprintf(1,'\tActual:    %.2f seconds (e.g. %.2f minutes, or %.2f hours)\n',alltelapsed, alltelapsed/60, alltelapsed/3600);
+% % %     end
+% % % 
+% % % 
+% % %     cd(currentPath);
+% % % end
+
 
 %% Conditional loading from the database
 % ======================= Load the raw data =========================
@@ -1245,3 +1500,12 @@ if length(fileName)>4
 end
 timeNumber = datetime(timeString,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 end % Ends fcn_INTERNAL_findTimeFromName
+
+
+function fcn_INTERNAL_confirmDirectoryExists(directoryName)
+if 7~=exist(directoryName,'dir')
+    warning('on','backtrace');
+    warning('Unable to find folder: \n\t%s',directoryName);
+    error('Desired directory: %s does not exist!',directoryName);
+end
+end
