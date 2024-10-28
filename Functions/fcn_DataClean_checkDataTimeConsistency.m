@@ -357,7 +357,8 @@ end
 %    * Manually fix, or
 %    * Remove this sensor
 
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time',flags, 'GPS',fid);
+fig_num = 98765432;
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time',flags, 'GPS',fid, fig_num);
 if 0==flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
     return
 end

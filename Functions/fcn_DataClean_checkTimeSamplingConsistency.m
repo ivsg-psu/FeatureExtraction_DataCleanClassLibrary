@@ -298,7 +298,7 @@ if flag_do_plots
 
     plotFormat.Color = [0 0.7 0];
     plotFormat.Marker = '.';
-    plotFormat.MarkerSize = 5;
+    plotFormat.MarkerSize = 10;
     plotFormat.LineStyle = 'none';
     plotFormat.LineWidth = 3;
 
@@ -327,10 +327,47 @@ if flag_do_plots
         sensor_data = dataStructure.(GPS_sensor_name);
 
         LLdata = [sensor_data.Latitude sensor_data.Longitude];
-        NdataThisSensor = length(allTimeDifferences{ith_sensor,1}(:,1));
-        Idata = 0.1*ones(NdataThisSensor,1);
-        Idata(round(allTimeDifferences{ith_sensor,1}*100)>centiSeconds) = 0.9;
+
+        % Convert LLA to ENU
+        % URHERE
+        reference_latitude = 40.86368573;
+        reference_longitude = -77.83592832;
+        reference_altitude = 344.189;
+        MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE = getenv("MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE");
+        MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE = getenv("MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE");
+        MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE = getenv("MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE");
+        if ~isempty(MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE) && ~isempty(MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE) && ~isempty(MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE)
+            reference_latitude  = str2double(MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE);
+            reference_longitude = str2double(MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE);
+            reference_altitude  = str2double(MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE);
+        end
+        gps_object = GPS(reference_latitude,reference_longitude,reference_altitude); % Load the GPS class
+        ENU_coordinates = gps_object.WGSLLA2ENU(LLdata(:,1),LLdata(:,2),reference_altitude*ones(length(LLdata(:,1)),1),reference_latitude,reference_longitude,reference_altitude);
+
         
+        if 1==0
+            % Plot all the points with time errors
+            NdataThisSensor = length(allTimeDifferences{ith_sensor,1}(:,1));
+            Idata = 0.1*ones(NdataThisSensor,1);
+            Idata(round(allTimeDifferences{ith_sensor,1}*100)>centiSeconds) = 0.9;
+        else
+            searchRadiusAndAngles = 20;
+
+            [~, Nnearby]  = fcn_DataClean_findNearPoints(ENU_coordinates, searchRadiusAndAngles, (-1));
+
+            bad_Indicies = find(round(allTimeDifferences{ith_sensor,1}*100)>centiSeconds);
+            ENU_badData = ENU_coordinates(bad_Indicies,1:2); %#ok<FNDSB>
+            Npoints = length(ENU_coordinates(:,1));
+            NbadNearby = nan(Npoints,1);
+            for ith_point = 1:Npoints
+                this_point = ENU_coordinates(ith_point,1:2);
+                distances = sum((this_point - ENU_badData).^2,2).^0.5;
+                NbadNearby(ith_point,1) = sum(distances<=searchRadiusAndAngles)-1;
+            end
+            
+            Idata = NbadNearby./Nnearby;
+
+        end
 
 
         fcn_plotRoad_plotLLI([LLdata Idata], (plotFormat), colorMapToUse, (fig_num));
@@ -341,6 +378,8 @@ if flag_do_plots
         % Force the plot to fit
         geolimits('auto');
         title(sprintf('GPS errors for %s',GPS_sensor_name),'interpreter','none','FontSize',12)
+        cb = colorbar();
+        ylabel(cb,'% drop in last 1 second')
     end
 
     

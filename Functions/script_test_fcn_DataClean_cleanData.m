@@ -67,7 +67,7 @@ Flags = [];
 cleanDataStruct = fcn_DataClean_cleanData(dataStructure, (ref_baseStationLLA), (fid), (Flags), (fig_num));
 
 % Check the data
-assert(strcmp(subPathStrings,''))
+assert(isstruct(cleanDataStruct))
 
 %%
 
