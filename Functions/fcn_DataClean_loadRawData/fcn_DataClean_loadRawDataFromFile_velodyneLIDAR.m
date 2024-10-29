@@ -27,6 +27,8 @@ function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLI
 % 2024-10-10 by X. Cao
 % -- update loading directories based on the new parsing functions
 % -- add commetns
+% 2024-10-28 by X. Cao
+% -- replace Host_Time with ROS_Time
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -54,21 +56,23 @@ end
 if strcmp(datatype,'lidar3d')
     opts = detectImportOptions(file_path);
     velodyne_lidar_table = readtable(file_path, opts);
-    velodyne_lidar_table.Properties.VariableNames = {'seq','host_time','device_time','scan_filename'};
+    velodyne_lidar_table.Properties.VariableNames = {'seq','ros_time','header_time','host_time','device_time','scan_filename'};
     % The number of rows in the file, also the number of scans
     Nscans = height(velodyne_lidar_table);
     scan_filenames_array = string(velodyne_lidar_table.scan_filename);
     Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
-  
+    ROS_Time = velodyne_lidar_table.ros_time;
     host_time = velodyne_lidar_table.host_time;
     device_time = velodyne_lidar_table.device_time;
     % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
     Velodyne_Lidar_structure.Seq                = velodyne_lidar_table.seq;
-    Velodyne_Lidar_structure.ROS_Time           = host_time;  % This is the ROS time that the data arrived into the bag
+    Velodyne_Lidar_structure.ROS_Time           = ROS_Time;  % This is the ROS time that the data arrived into the bag
     Velodyne_Lidar_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     Velodyne_Lidar_structure.Npoints            = Nscans;  % This is the number of data points in the array
+    Velodyne_Lidar_structure.Host_Time        = host_time;
     Velodyne_Lidar_structure.Device_Time        = device_time;
+    
     % Save the data structure and layout information first, these data will
     % be used to process the actual point cloud data later
     % 2D structure of the point cloud. If the cloud is unordered, 

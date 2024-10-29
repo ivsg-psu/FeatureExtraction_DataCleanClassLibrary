@@ -47,7 +47,8 @@ function updated_dataStructure = fcn_DataClean_renameSensorsToStandardNames(data
 % -- added Identifiers
 % 2024_10_13: xfc5113@psu.edu
 % -- added GPS_SparkFun_LeftRear_GGA and GPS_SparkFun_RightRear_GGA
-
+% 2024_10_28: xfc5113@psu.edu
+% -- added IMU_Ouster_Front
 %% Debugging and Input checks
 
 % Check if flag_max_speed set. This occurs if the fig_num variable input
@@ -153,7 +154,8 @@ correct_names = {...
 'Velocity_Estimate_SparkFun_LeftRear';
 'Velocity_Estimate_SparkFun_RightRear';
 'Velocity_Estimate_SparkFun_Front';
-'Identifiers'};
+'Identifiers';
+'IMU_Ouster_Front'};
 Ngood = length(correct_names);
 
 name_pairs = {...
@@ -188,7 +190,7 @@ name_pairs = {...
 'GPS_SparkFun_RearLeft','GPS_SparkFun_LeftRear';
 'IMU_Adis_CenterTop','IMU_Adis_TopCenter';
 'Identifiers','Identifiers';
-};
+'IMU_Ouster_Front', 'IMU_Ouster_Front'};
 
 %% Make sure all the sensor names are in the dictionary
 for ith_sensor = 1:length(sensor_names)

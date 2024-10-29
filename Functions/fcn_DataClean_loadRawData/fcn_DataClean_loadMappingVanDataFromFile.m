@@ -116,7 +116,8 @@ function rawData  = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, I
 % -- add flag_do_load_GST and flag_do_load_VTG to let user decide whether they want to
 %    load GPS GST and VTG sentences
 % -- comment out load cameras functions, still need to be tested
-
+% 2024_10_28 - X. Cao
+% -- add load IMU_Ouster_Front to the function
 
 
 %% Debugging and Input checks
@@ -537,8 +538,13 @@ for file_idx = 1:num_files
             else
                 Velodyne_lidar_struct = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(full_file_path,datatype,fid);
             end
+            
 
             rawData.Lidar_Velodyne_Rear = Velodyne_lidar_struct;
+
+        elseif (contains(topic_name,'ousterO1/imu'))
+            ousterOS1_imu_struct = fcn_DataClean_loadRawDataFromFile_IMU_Ouster(full_file_path,datatype,fid);
+            rawData.IMU_Ouster_Front = ousterOS1_imu_struct;
 
         % 
         % 

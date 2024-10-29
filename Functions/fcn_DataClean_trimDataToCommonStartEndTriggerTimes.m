@@ -244,11 +244,11 @@ if master_start_time_Seconds>=master_end_time_Seconds
     
     error('Unable to synchronize GPS signals because one GPS sensor has a starting Trigger_Time field that seems to "start" after another GPS sensor recording ended! This is not physically possible if the sensors are running at the same time.');
 end
-
-fprintf(fid,'\t The Trigger_Time that overlaps all sensors has the following range: \n');
-fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',master_start_time_Seconds);
-fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',master_end_time_Seconds);
-
+if fid == 1
+    fprintf(fid,'\t The Trigger_Time that overlaps all sensors has the following range: \n');
+    fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',master_start_time_Seconds);
+    fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',master_end_time_Seconds);
+end
 
 %% Step 3: Trim all data to common start/end times
 

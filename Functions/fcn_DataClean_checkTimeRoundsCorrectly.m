@@ -248,7 +248,7 @@ for i_data = 1:length(sensor_names)
     %     flags_data_rounds_correctly = 0;
     % end
     % Temp version
-    if ~all(mod(Rounded_Field_Time_samples_centiSeconds, 1)==0)
+    if ~all(mod(Rounded_Field_Time_samples_centiSeconds, 10)==0)
         flags_data_rounds_correctly = 0;
     end
         
