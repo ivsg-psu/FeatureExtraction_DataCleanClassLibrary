@@ -275,7 +275,7 @@ end
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Trigger%20_%20Time%20%20Tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Check if Trigger_Time_exists_in_all_GPS_sensors
+%% Check if Trigger_Time_exists_in_all_GPS_sensors            
 %    ### ISSUES with this:
 %    * This field is used to assign data collection timings for all
 %    non-GPS-triggered sensors, and to fill in GPS_Time data if there's a

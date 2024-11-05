@@ -268,7 +268,7 @@ end
 %                            __/ |
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if flag_do_plots
+if flag_do_plots && isempty(findobj('Number',fig_num))
 
     % check whether the figure already has data
     temp_h = figure(fig_num); 

@@ -23,7 +23,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 %          dataStructure, field_name, ...
 %          (flags),...
 %          (threshold_for_agreement),...
-%          (custom_lower_threshold),...
+%          (expectedJump),...
 %          (string_any_or_all),(sensors_to_check),(fid))
 %
 % INPUTS:
@@ -42,18 +42,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 %      the centiSeconds, is larger than this threshold. Default is 1e-5
 %      seconds (e.g. 10 microseconds).
 %
-%      custom_lower_threshold: a custom lower threshold to use instead of
-%      standard deviation calculations. If set to a number, differences
-%      must be larger than this number for the field to pass the checking
-%      of jumps. For example, changes in time will never be less than 0, so
-%      if the mean time change is 0.1 seconds and the standard deviation is
-%      0.05 seconds, the typical calculations would check that a time
-%      change is within 5 standard deviations, meaning checking time
-%      differences between +0.35 seconds and -.15 seconds. But the lower
-%      value will never occur. With flag = 0.0001, it will check time
-%      differences between +0.35 seconds and 0.0001 seconds. Default is
-%      empty ([]) which is to use the calculated threshold calculated from
-%      standard deviations and threshold_in_standard_deviations.
+%      expectedJump: the expected difference in the data. Default is 0.
 %
 %      string_any_or_all: a string consisting of 'any' or 'all' indicating
 %      whether the data should be flagged if any sensor has jumps
@@ -171,12 +160,12 @@ if 4 <= nargin
     end
 end
 
-% Does the user want to specify the custom_lower_threshold?
-custom_lower_threshold = []; % Default
+% Does the user want to specify the expectedJump?
+expectedJump = 0; % Default
 if 5 <= nargin
     temp = varargin{3};
     if ~isempty(temp)
-        custom_lower_threshold = temp;
+        expectedJump = temp;
     end
 end
 
@@ -277,7 +266,7 @@ end
 
 % Tell the user what is happening?
 if 0~=fid
-    fprintf(fid,'Checking existence of %s data ',field_name);
+    fprintf(fid,'Checking jumps in field: %s ',field_name);
     if flag_check_all_sensors
         fprintf(fid,':\n');
     else
@@ -294,7 +283,6 @@ for ith_sensor = 1:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{ith_sensor};
     sensor_data = dataStructure.(sensor_name);
-    centiSeconds = sensor_data.centiSeconds;
     
     % Tell the user what is happening?
     if 0~=fid
@@ -313,7 +301,7 @@ for ith_sensor = 1:length(sensor_names)
     else
         differences_in_field_data = diff(sensor_data.(field_name));
 
-        if any(abs(differences_in_field_data-centiSeconds/100)>threshold_for_agreement)
+        if any(abs(differences_in_field_data-expectedJump)>threshold_for_agreement)
             flag_this_sensor_passes_test = 0;
         end
     end

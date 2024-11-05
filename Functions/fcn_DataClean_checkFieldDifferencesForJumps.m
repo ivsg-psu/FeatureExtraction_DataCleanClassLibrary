@@ -320,6 +320,14 @@ for ith_sensor = 1:length(sensor_names)
         
         if any(differences_in_field_data>max_difference_threshold) || any(differences_in_field_data<min_differences_threshold)
             flag_this_sensor_passes_test = 0;
+            if 0~=fid
+                fprintf(fid,'The following sensor: %s failed the jump threshold in field: %s\n',sensor_name, field_name);
+                fprintf(fid,'\tMax jump allowed: %.4f \n',max_difference_threshold);
+                fprintf(fid,'\tMax jump found:   %.4f \n',max(differences_in_field_data));
+                fprintf(fid,'\tMin jump allowed: %.4f \n',min_differences_threshold);
+                fprintf(fid,'\tMin jump found:   %.4f \n',min(differences_in_field_data));
+
+            end
         end
     end
     sensors_pass_test_flags(ith_sensor,1) = flag_this_sensor_passes_test;

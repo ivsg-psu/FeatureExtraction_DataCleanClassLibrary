@@ -213,7 +213,7 @@ while 1==flag_stay_in_main_loop
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure;
 
-    fprintf(1,'\n\nTime Cleaning Iteration #%.0d\n',main_data_clean_loop_iteration_number);
+    fprintf(1,'\n\nName Cleaning Iteration #%.0d\n',main_data_clean_loop_iteration_number);
 
     %% Remove Identifiers, temporarily
     if isfield(currentDataStructure, 'Identifiers')

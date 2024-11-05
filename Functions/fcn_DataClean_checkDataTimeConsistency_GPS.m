@@ -298,7 +298,7 @@ end
 %    ### ISSUES with this:
 %    * This field is used to confirm GPS sampling rates for all
 %    GPS-triggered sensors
-%    * These sensors are used to correct ROS timings, so if misisng, the
+%    * These sensors are used to correct ROS timings, so if any are misisng, the
 %    timing and thus positioning of vehicle data may be wrong
 %    * The GPS unit may be configured wrong
 %    * The GPS unit may be faililng or operating incorrectly
@@ -382,7 +382,7 @@ custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
 
 if 0==flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
     warning('on','backtrace');
-    warning('There are jumps in differences of GPS time, GPS time need to be interpolated')
+    warning('There are jumps in differences of GPS time, GPS time needs to be interpolated')
     return
 end
 
@@ -401,13 +401,20 @@ end
 warning('on','backtrace');
 warning('This code looks wrong - need to check.')
 
-threshold_in_standard_deviations = 3;
-custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
-[flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure,'GPS_Time',flags,threshold_in_standard_deviations, custom_lower_threshold,'any','GPS', fid);
+threshold_for_agreement = 0.0001; % Data must agree within this interval
+expectedJump = 0.01; 
+string_any_or_all = 'any'; 
+sensors_to_check = 'GPS'; 
+fid = 0; 
+
+% Show an error is detected
+[flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure, 'GPS_Time', (flags), (threshold_for_agreement), (expectedJump), (string_any_or_all), (sensors_to_check), (fid));
+
+% [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure, 'GPS_Time',  flags,   threshold_in_standard_deviations, custom_lower_threshold,'any','GPS', fid);
 
 if 0==flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
     warning('on','backtrace');
-    warning('There are missings in differences of GPS time, GPS time need to be interpolated')
+    warning('There are missing data in differences of GPS time, GPS time need to be interpolated')
     return
 end
 
