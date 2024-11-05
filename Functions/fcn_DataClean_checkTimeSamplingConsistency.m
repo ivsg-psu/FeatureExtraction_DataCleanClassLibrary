@@ -329,7 +329,6 @@ if flag_do_plots
         LLdata = [sensor_data.Latitude sensor_data.Longitude];
 
         % Convert LLA to ENU
-        % URHERE
         reference_latitude = 40.86368573;
         reference_longitude = -77.83592832;
         reference_altitude = 344.189;
@@ -351,7 +350,7 @@ if flag_do_plots
             Idata = 0.1*ones(NdataThisSensor,1);
             Idata(round(allTimeDifferences{ith_sensor,1}*100)>centiSeconds) = 0.9;
         else
-            searchRadiusAndAngles = 20;
+            searchRadiusAndAngles = 10;
 
             [~, Nnearby]  = fcn_DataClean_findNearPoints(ENU_coordinates, searchRadiusAndAngles, (-1));
 
@@ -362,10 +361,10 @@ if flag_do_plots
             for ith_point = 1:Npoints
                 this_point = ENU_coordinates(ith_point,1:2);
                 distances = sum((this_point - ENU_badData).^2,2).^0.5;
-                NbadNearby(ith_point,1) = sum(distances<=searchRadiusAndAngles)-1;
+                NbadNearby(ith_point,1) = sum(distances<=searchRadiusAndAngles);
             end
             
-            Idata = NbadNearby./Nnearby;
+            Idata = max(NbadNearby,0)./max(Nnearby,1);
 
         end
 

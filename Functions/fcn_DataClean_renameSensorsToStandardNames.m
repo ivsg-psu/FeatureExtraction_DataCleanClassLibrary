@@ -55,7 +55,7 @@ function updated_dataStructure = fcn_DataClean_renameSensorsToStandardNames(data
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
 flag_max_speed = 0;
-if (nargin==3 && isequal(varargin{end},-1))
+if (nargin==2 && isequal(varargin{end},-1))
     flag_do_debug = 0; % % % % Flag to plot the results for debugging
     flag_check_inputs = 0; % Flag to perform input checking
     flag_max_speed = 1;
@@ -116,6 +116,8 @@ if (0 == flag_max_speed) && (2 <= nargin)
             throwAsCaller(ME);
         end
     end
+else
+    fid = 0;
 end
 
 flag_do_plots = 0;

@@ -53,10 +53,14 @@ close all
 
 %% Test 1: Load and clean a single bag file
 fig_num = 1;
-figure(fig_num);
-clf;
+if ~isempty(findobj('Number',fig_num))
+    figure(fig_num);
+    clf;
+end
 
-fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData.mat');
+
+% fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData.mat');
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData2.mat');
 load(fullExampleFilePath,'dataStructure')
 
 %%%%%

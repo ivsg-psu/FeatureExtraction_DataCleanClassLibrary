@@ -127,11 +127,11 @@ if 0 == flag_max_speed
 end
 
 % Does user want to specify bagName?
-ref_baseStationLLA = [40.86368573 -77.83592832 344.189];
+ref_baseStationLLA = [40.86368573 -77.83592832 344.189]; %#ok<NASGU>
 if 2 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
-        ref_baseStationLLA = temp;
+        ref_baseStationLLA = temp; %#ok<NASGU>
     end
 end
 
@@ -157,7 +157,7 @@ Flags.flag_do_load_VTG = 0;
 if 4 <= nargin
     temp = varargin{3};
     if ~isempty(temp)
-        Flags = temp;
+        Flags = temp; %#ok<NASGU>
         
     end
 end
@@ -215,6 +215,7 @@ main_data_clean_loop_iteration_number = 0; % The first iteration corresponds to 
 currentDataStructure = rawDataStruct;
 % Grab the Indentifiers field from the rawDataStructure
 Identifiers_Hold = rawDataStruct.Identifiers;
+
 % if isfield(currentDataStructure, 'Trigger_Raw')
 %     currentDataStructure = rmfield(currentDataStructure,'Trigger_Raw');
 % else
@@ -241,6 +242,8 @@ while 1==flag_stay_in_main_loop
     %% Keep data thus far
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure;
+
+    fprintf(1,'\n\nTime Cleaning Iteration #%.0d\n',main_data_clean_loop_iteration_number);
 
     %% Remove Identifiers, temporarily
     if isfield(currentDataStructure, 'Identifiers')
@@ -305,7 +308,7 @@ while 1==flag_stay_in_main_loop
     
     [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(nextDataStructure,fid);
     
-
+    fcn_INTERNAL_reportFlagStatus(name_flags,'NAMING FLAGS:');
     
     %% If NOT merged, fix these errors
 
@@ -315,7 +318,7 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'GPS_SparkFun_RightRear';
         method_name = 'keep_unique';
         fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
         flag_keep_checking = 1;
         name_flags.GPS_SparkFun_RightRear_sensors_are_merged = 1;
     end
@@ -325,7 +328,7 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'GPS_SparkFun_LeftRear';
         method_name = 'keep_unique';
         fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
         flag_keep_checking = 1;
         name_flags.GPS_SparkFun_LeftRear_sensors_are_merged = 1;
     end
@@ -336,7 +339,7 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'GPS_SparkFun_Front';
         method_name = 'keep_unique';
         fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
         flag_keep_checking = 1;
         name_flags.GPS_SparkFun_Front_sensors_are_merged = 1;
     end
@@ -347,18 +350,19 @@ while 1==flag_stay_in_main_loop
         merged_sensor_name = 'IMU_Adis_TopCenter';
         method_name = 'keep_unique';
         fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,fid);
+        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
         flag_keep_checking = 1;
         name_flags.ADIS_sensors_are_merged = 1;
     end
     
     % check if sensor_naming_standards_are_used. If not, fix this.
     if (1==flag_keep_checking) && (0==name_flags.sensor_naming_standards_are_used)
-        nextDataStructure = fcn_DataClean_renameSensorsToStandardNames(nextDataStructure,fid);
+        nextDataStructure = fcn_DataClean_renameSensorsToStandardNames(nextDataStructure,-1);
         flag_keep_checking = 1;
         name_flags.sensor_naming_standards_are_used = 1;
     end
 
+    fcn_INTERNAL_reportFlagStatus(name_flags,'NAMING FLAGS AFTER FIXING:');
     
 
     %% GPS_Time tests - all of these steps can be found in fcn_DataClean_checkDataTimeConsistency, the following sections need to be deleted later
@@ -398,7 +402,8 @@ while 1==flag_stay_in_main_loop
     if (1==flag_keep_checking)
         [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
     end
-
+    
+    fcn_INTERNAL_reportFlagStatus(time_flags,'TIMING FLAGS');
 
     %% Check if GPS_Time_exists_in_at_least_one_GPS_sensor
     %    ### ISSUES with this:
@@ -883,7 +888,7 @@ while 1==flag_stay_in_main_loop
     %% Done!
     % Only way to get here is if everything above worked - can exit!
     if (1==flag_keep_checking)
-        flag_stay_in_main_loop = 0;
+        flag_stay_in_main_loop = 0; %#ok<NASGU>
     end
     
     %% Exiting conditions
@@ -913,9 +918,11 @@ while 1==flag_stay_in_main_loop
 end
 
 main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
-debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure;
+debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure; %#ok<NASGU>
 cleanDataStruct = currentDataStructure;
 subPathStrings = '';
+
+
 %% Save cleanData
 
 
@@ -1433,3 +1440,24 @@ if all(flag_array==1)
     flag_stay_in_main_loop = 0;
 end
 end % Ends fcn_INTERNAL_checkFlagsForExit
+
+
+%% fcn_INTERNAL_reportFlagStatus
+function fcn_INTERNAL_reportFlagStatus(flagStructure,printTitle)
+fprintf(1,'\n%s\n',printTitle);
+fieldsToprint = fieldnames(flagStructure);
+NcharactersField = 50;
+for ith_field = 1:length(fieldsToprint)
+    thisField = fieldsToprint{ith_field};
+    formattedHeaderString  = fcn_DebugTools_debugPrintStringToNCharacters(thisField,NcharactersField);
+    fprintf(1,'%s\t',formattedHeaderString);
+    fieldValue = flagStructure.(thisField);
+    if 1==fieldValue
+        fieldString = 'yes';
+    else
+        fieldString = 'no';
+    end
+    fprintf(1,'%s\n',fieldString);    
+end
+fprintf(1,'\n');
+end % Ends fcn_INTERNAL_reportFlagStatus

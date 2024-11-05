@@ -1,12 +1,11 @@
 function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure, field_name, varargin)
-% fcn_DataClean_checkFieldDifferencesForJumps
-% Checks if the differences in data in a sub-field are larger than some
-% threshold. The purpose of this is to detect outliers and data drops.
+% fcn_DataClean_checkFieldDifferencesForMissings
+% Checks if the time step in all data matches expected centiSeconds, within
+% a threshold. The purpose is to find if any data is missing.
 %
-% To detect jumps, the method is to calculate the difference in the field,
-% take the mean and standard deviation of the differences, then use a
-% threshold on standard deviations (default is 5). If any of the data fall
-% outside of this threshold, a jump error flag is set.
+% To detect missing data, the method is to calculate the actual time step
+% in the field, and check if the difference between the actual and desired
+% time step (e.g. the centiSeconds) is within a threshold.
 %
 % The input is a dataStructure with sensors as fields, and for
 % each sensor there are subfields. For a given sub-field, for example
@@ -14,16 +13,16 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 % diff) and checks whether the differences are unexpected, which could
 % occur if there was a data drop. 
 %
-% If no jumps exist, it sets a flag = 1 whose name is customized
+% If no missing data exist, it sets a flag = 1 whose name is customized
 % by the input settings. If not, it sets the flag = 0 and immediately
 % exits.
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(...
+%      [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(...
 %          dataStructure, field_name, ...
 %          (flags),...
-%          (threshold_in_standard_deviations),...
+%          (threshold_for_agreement),...
 %          (custom_lower_threshold),...
 %          (string_any_or_all),(sensors_to_check),(fid))
 %
@@ -38,11 +37,10 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 %      flags: If a structure is entered, it will append the flag result
 %      into the structure to allow a pass-through of flags structure
 % 
-%      threshold_in_standard_deviations: the threshold for jump detection
-%      in standard deviations. Data would be flagged as having jumps if any
-%      data falls outside a range of +/- threshold_in_standard_deviations *
-%      standard deviations of the mean difference in data. Default is 5, to
-%      check for 5 standard deviations.
+%      threshold_for_agreement: the threshold for data to be missing. Data
+%      would be flagged as missing if any difference in data, relative to
+%      the centiSeconds, is larger than this threshold. Default is 1e-5
+%      seconds (e.g. 10 microseconds).
 %
 %      custom_lower_threshold: a custom lower threshold to use instead of
 %      standard deviation calculations. If set to a number, differences
@@ -84,7 +82,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_checkFieldDifferencesForJumps
+%     See the script: script_test_fcn_DataClean_checkFieldDifferencesForMissings
 %     for a full test suite.
 %
 % This function was written on 2023_07_02 by S. Brennan
@@ -98,6 +96,9 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 % -- updated comments
 % -- added debug flag area
 % -- fixed fid printing error
+% 2024_11_04 - sbrennan@psu.edu
+% -- fixed header errors referring to old code
+% -- added test script
 
 
 %% Debugging and Input checks
@@ -161,12 +162,12 @@ if 3 <= nargin
     end
 end
 
-% Does the user want to specify the threshold_in_standard_deviations?
-threshold_in_standard_deviations = 5;
+% Does the user want to specify the threshold_for_agreement?
+threshold_for_agreement = 1e-5;
 if 4 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
-        threshold_in_standard_deviations = temp;
+        threshold_for_agreement = temp;
     end
 end
 
@@ -294,6 +295,7 @@ for ith_sensor = 1:length(sensor_names)
     sensor_name = sensor_names{ith_sensor};
     sensor_data = dataStructure.(sensor_name);
     centiSeconds = sensor_data.centiSeconds;
+    
     % Tell the user what is happening?
     if 0~=fid
         fprintf(fid,'\t Checking sensor %d of %d: %s\n',ith_sensor,length(sensor_names),sensor_name);
@@ -310,17 +312,8 @@ for ith_sensor = 1:length(sensor_names)
         flag_this_sensor_passes_test = 0;
     else
         differences_in_field_data = diff(sensor_data.(field_name));
-        mean_differences = mean(differences_in_field_data);
-        std_differences = std(differences_in_field_data);
-        max_difference_threshold = mean_differences + threshold_in_standard_deviations*std_differences;
-        
-        if ~isempty(custom_lower_threshold)
-            min_differences_threshold = custom_lower_threshold;
-        else
-            min_differences_threshold = mean_differences - threshold_in_standard_deviations*std_differences;
-        end
-        
-        if any(abs(differences_in_field_data-centiSeconds/100)>1e-5)
+
+        if any(abs(differences_in_field_data-centiSeconds/100)>threshold_for_agreement)
             flag_this_sensor_passes_test = 0;
         end
     end

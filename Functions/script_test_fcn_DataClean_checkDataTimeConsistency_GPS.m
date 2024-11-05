@@ -28,9 +28,10 @@ assert(strcmp(offending_sensor,''));
 % Fill in the initial data
 dataStructure = fcn_DataClean_fillTestDataStructure;
 fid = 1;
+flags = [];
 
 fprintf(1,'\nCASE 2: basic consistency check, no errors, verbose\n');
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure,fid);
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid);
 fprintf(1,'\nCASE 2: Done!\n\n');
 
 assert(isequal(flags.GPS_Time_exists_in_at_least_one_GPS_sensor,1));
@@ -74,8 +75,8 @@ clear sensor_name sensor_data sensor_data_removed_field i_data sensor_names
     
 error_type_string = 'All GPS_Time fields are missing on all sensors';
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_exists_in_at_least_one_GPS_sensor,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
@@ -86,8 +87,8 @@ fid = 1;
 time_time_corruption_type = 2^1; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
@@ -98,8 +99,8 @@ fid = 1;
 time_time_corruption_type = 2^2; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearLeft'));
 
@@ -110,8 +111,8 @@ fid = 1;
 time_time_corruption_type = 2^3; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
@@ -122,8 +123,8 @@ fid = 1;
 time_time_corruption_type = 2^4; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.centiSeconds_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
@@ -134,8 +135,8 @@ fid = 1;
 time_time_corruption_type = 2^5; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.centiSeconds_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
@@ -146,8 +147,8 @@ fid = 1;
 time_time_corruption_type = 2^6; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.centiSeconds_exists_in_all_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
@@ -158,8 +159,8 @@ fid = 1;
 time_time_corruption_type = 2^20; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_has_no_repeats_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
@@ -173,8 +174,8 @@ fid = 1;
 time_time_corruption_type = 2^7; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
@@ -189,8 +190,8 @@ hours_off = 1;
 BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - hours_off*60*60; 
 clear hours_off
 fprintf(1,'\nData created with following errors injected: shifted start point');
-
-[flags, ~] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, ~] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,0));
 
 
@@ -201,8 +202,8 @@ dataStructure = fcn_DataClean_fillTestDataStructure;
 BadDataStructure = dataStructure;
 BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - 1; 
 fprintf(1,'\nData created with following errors injected: shifted start point');
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.consistent_start_and_end_times_across_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
 
@@ -214,8 +215,8 @@ fid = 1;
 time_time_corruption_type = 2^12; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_strictly_ascends,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
@@ -226,8 +227,8 @@ fid = 1;
 time_time_corruption_type = 2^22; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
 fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure,fid);
+flags = [];
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 

@@ -30,7 +30,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, (fid), (fig_num))
+%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, (flags), (fid), (fig_num))
 %
 % INPUTS:
 %
@@ -38,6 +38,9 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %      fields:
 %
 %      (OPTIONAL INPUTS)
+%
+%      flags: If a structure is entered, it will append the flag result
+%      into the structure to allow a pass-through of flags structure
 %
 %      fid: a file ID to print results of analysis. If not entered, no
 %      output is given (FID = 0). Set fid to 1 for printing to console.
@@ -98,7 +101,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
 flag_max_speed = 0;
-if (nargin==3 && isequal(varargin{end},-1))
+if (nargin==4 && isequal(varargin{end},-1))
     flag_do_debug = 0; % % % % Flag to plot the results for debugging
     flag_check_inputs = 0; % Flag to perform input checking
     flag_max_speed = 1;
@@ -140,15 +143,24 @@ end
 if (0 == flag_max_speed)
     if flag_check_inputs
         % Are there the right number of inputs?
-        narginchk(1,3);
+        narginchk(1,4);
+    end
+end
+
+% Does the user want to specify the flags?
+flags = struct;
+if 2 <= nargin
+    temp = varargin{1};
+    if ~isempty(temp)
+        flags = temp;
     end
 end
 
 % Does the user want to specify the fid?
 fid = 0;
 % Check for user input
-if 2 <= nargin
-    temp = varargin{1};
+if 3 <= nargin
+    temp = varargin{2};
     if ~isempty(temp)
         % Check that the FID works
         try
@@ -165,7 +177,7 @@ end
 
 % Does user want to specify fig_num?
 flag_do_plots = 0;
-if (0==flag_max_speed) &&  (3<=nargin)
+if (0==flag_max_speed) &&  (4<=nargin)
     temp = varargin{end};
     if ~isempty(temp)
         fig_num = temp; %#ok<NASGU>
@@ -297,8 +309,8 @@ end
 %    * Manually fix, or
 %    * Remove this sensor
 
-
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', flags, 'GPS',fid);
+fig_num = 12345678;
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', flags, 'GPS',fid, fig_num);
 
 if 0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
     return
@@ -376,8 +388,8 @@ end
 
 %% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
 %    ### ISSUES with this:
-%    * The GPS_Time may have small missing portions which could occur if the sensor
-%    pauses for a moment, then restarts
+%    * The GPS_Time may have small missing portions which could occur if
+%    the sensor pauses for a moment, then restarts
 %    * If these missings are large, the data from the sensor may be corrupted
 %    ### DETECTION:
 %    * Examine if the differences in GPS_Time are out of ordinary by

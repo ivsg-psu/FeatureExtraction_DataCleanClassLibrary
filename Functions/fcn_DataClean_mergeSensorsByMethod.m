@@ -117,7 +117,7 @@ end
 
 
 % Does the user want to specify the fid?
-if 5 <= nargin
+if (0==flag_max_speed) && (5 <= nargin)
     temp = varargin{end};
     if ~isempty(temp)
         % Check that the FID works
@@ -131,6 +131,8 @@ if 5 <= nargin
             throwAsCaller(ME);
         end
     end
+else
+    fid = 0;
 end
 
 flag_do_plots = 0; % Shut off plotting

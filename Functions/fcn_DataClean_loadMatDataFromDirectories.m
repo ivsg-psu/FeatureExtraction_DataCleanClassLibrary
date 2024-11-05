@@ -17,7 +17,7 @@ function matDataCellArray  = fcn_DataClean_loadMatDataFromDirectories(rootdirs, 
 %
 %      (OPTIONAL INPUTS)
 %
-%      searchIdentifiers: a required structure indicating the labels to attach to
+%      searchIdentifiers: an optional structure indicating the labels to attach to
 %      the files that are being loaded. The structure has the following
 %      format:
 % 
