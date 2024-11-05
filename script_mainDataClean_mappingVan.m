@@ -7,7 +7,6 @@
 %
 % Author: Sean Brennan and Liming Gao
 % Original Date: 2019_09_24
-% modify Date: 2023_06_19
 %
 % Updates:
 % 2019_10_03 - Functionalization of data loading, error analysis, plotting
@@ -102,6 +101,8 @@
 % -- updated fcn_DataClean_renameSensorsToStandardNames
 % 2024_10_27 - S. Brennan, sbrennan@psu.edu
 % -- updated DebugTools to 2024_10_27
+% 2024_11_05 - S. Brennan, sbrennan@psu.edu
+% -- functionalized out cleanNaming
 
 
 %
@@ -962,6 +963,69 @@ end
 %                                                           |___/
 % https://patorjk.com/software/taag/#p=display&f=Big&t=Main%20Cleaning%20Function
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% fcn_DataClean_cleanNaming
+% given a raw data structure, cleans field names to match expected
+% standards for data cleaning methods
+%
+% FORMAT:
+%
+%      cleanDataStruct = fcn_DataClean_cleanNaming(rawDataStruct, (fid), (Flags), (fig_num))
+%
+% INPUTS:
+%
+%      rawDataStruct: a  data structure containing data fields filled for
+%      each ROS topic. If multiple bag files are specified, a cell array of
+%      data structures is returned.
+%
+%      (OPTIONAL INPUTS)
+%
+%      fid: the fileID where to print. Default is 1, to print results to
+%      the console.
+%
+%      Flags: a structure containing key flags to set the process. The
+%      defaults, and explanation of each, are below:
+%
+%           Flags.flag_do_load_sick = 0; % Loads the SICK LIDAR data
+%           Flags.flag_do_load_velodyne = 0; % Loads the Velodyne LIDAR
+%           Flags.flag_do_load_cameras = 0; % Loads camera images
+%           Flags.flag_select_scan_duration = 0; % Lets user specify scans from Velodyne
+%           Flags.flag_do_load_GST = 0; % Loads the GST field from Sparkfun GPS Units          
+%           Flags.flag_do_load_VTG = 0; % Loads the VTG field from Sparkfun GPS Units
+%
+%      fig_num: a figure number to plot results. If set to -1, skips any
+%      input checking or debugging, no figures will be generated, and sets
+%      up code to maximize speed.
+%
+% OUTPUTS:
+%
+%      cleanDataStruct: a  data structure containing data fields filled for
+%      each ROS topic, in name-cleaned form - e.g. all the field names are
+%      compliant
+%
+%     subPathStrings: a string for each rawData load indicating the subpath
+%     where the data was obtained
+
+fig_num = 1;
+if ~isempty(findobj('Number',fig_num))
+    figure(fig_num);
+    clf;
+end
+
+
+% fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData.mat');
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData2.mat');
+load(fullExampleFilePath,'dataStructure')
+
+%%%%%
+% Run the command
+fid = 1;
+Flags = [];
+dataStructure_cleanedNames = fcn_DataClean_cleanNaming(dataStructure, (fid), (Flags), (fig_num));
+
+% Check the data
+assert(isstruct(dataStructure_cleanedNames))
+
 
 
 

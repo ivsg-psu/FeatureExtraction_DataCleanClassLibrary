@@ -69,6 +69,8 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 % -- move fcn_DataClean_checkAllSensorsHaveTriggerTime into fcn_DataClean_checkDataTimeConsistency
 % -- add a step to temporary remove Identifiers from rawDataStruct before
 % the while loop and fill it back later
+% 2024_11_05 - S. Brennan
+% -- removed name cleaning code and moved to a different function
 
 
 
@@ -126,7 +128,7 @@ if 0 == flag_max_speed
     end
 end
 
-% Does user want to specify bagName?
+% Does user want to specify ref_baseStationLLA?
 ref_baseStationLLA = [40.86368573 -77.83592832 344.189]; %#ok<NASGU>
 if 2 <= nargin
     temp = varargin{1};
@@ -256,115 +258,7 @@ while 1==flag_stay_in_main_loop
     %% Data cleaning processes to fix the latest error start here
     flag_keep_checking = 1; % Flag to keep checking (1), or to indicate a data correction is done and checking should stop (0)
     
-    %% Name consistency checks start here
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %
-    %   _   _                         _____                _     _                           _____ _               _
-    %  | \ | |                       / ____|              (_)   | |                         / ____| |             | |
-    %  |  \| | __ _ _ __ ___   ___  | |     ___  _ __  ___ _ ___| |_ ___ _ __   ___ _   _  | |    | |__   ___  ___| | _____
-    %  | . ` |/ _` | '_ ` _ \ / _ \ | |    / _ \| '_ \/ __| / __| __/ _ \ '_ \ / __| | | | | |    | '_ \ / _ \/ __| |/ / __|
-    %  | |\  | (_| | | | | | |  __/ | |___| (_) | | | \__ \ \__ \ ||  __/ | | | (__| |_| | | |____| | | |  __/ (__|   <\__ \
-    %  |_| \_|\__,_|_| |_| |_|\___|  \_____\___/|_| |_|___/_|___/\__\___|_| |_|\___|\__, |  \_____|_| |_|\___|\___|_|\_\___/
-    %                                                                                __/ |
-    %                                                                               |___/
-    % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Name%20Consistency%20Checks
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Check if sensors are merged where a sensor may produce multiple topics
-    %    These sensors include:
-    %    GPS_SparkFun_RightRear
-    %    GPS_SparkFun_LeftRear
-    %    GPS_SparkFun_Front
-    %    ADIS
-    %
-    %    ### ISSUES with this:
-    %    * Many sensors require several different datagrams to fully
-    %    capture their outputs
-    %    * The data grams are spread across different sensor datasets
-    %    corresponding to each topic, but are actually one
-    %    * If they are kept separate, the data are not processed correctly with
-    %    the same time alignment on each sensor, resulting in data that was
-    %    from the same time being spread across different times
-    %    ### DETECTION:
-    %    * Examine if the sensors have more than one field within the current
-    %    datastructure, and if multiple fields have the same name (for example
-    %    "GPS_SparkFun_Front") then they are NOT correctly merged
-    %    ### FIXES:
-    %    * Merge the data from the fields together
-    %
-    % Check if sensor_naming_standards_are_used
-    %    ### ISSUES with this:
-    %    * The sensors used on the mapping van follow a standard naming
-    %    convention, such as:
-    %    {'GPS','ENCODER','IMU','TRIGGER','NTRIP','LIDAR','TRANSFORM','DIAGNOSTIC','IDENTIFIERS'}
-    %    and location in the form:
-    %        TYPE_Manufacturer_Location
-    %    ### DETECTION:
-    %    * Examine if the sensor core names appear outside of the standard
-    %    convention
-    %    ### FIXES:
-    %    * User must manually rename the fields.
-    
-    %% Check if sensors merged and name convention is followed -- Done
-    
-    [name_flags, ~] = fcn_DataClean_checkDataNameConsistency(nextDataStructure,fid);
-    
-    fcn_INTERNAL_reportFlagStatus(name_flags,'NAMING FLAGS:');
-    
-    %% If NOT merged, fix these errors
-
-    % Check GPS_SparkFun_RightRear_sensors_are_merged
-    if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_RightRear_sensors_are_merged)
-        sensors_to_merge = 'GPS_SparkFun_RightRear';
-        merged_sensor_name = 'GPS_SparkFun_RightRear';
-        method_name = 'keep_unique';
-        fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
-        flag_keep_checking = 1;
-        name_flags.GPS_SparkFun_RightRear_sensors_are_merged = 1;
-    end
-    % Check GPS_SparkFun_LeftRear_sensors_are_merged
-    if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_LeftRear_sensors_are_merged)
-        sensors_to_merge = 'GPS_SparkFun_LeftRear';
-        merged_sensor_name = 'GPS_SparkFun_LeftRear';
-        method_name = 'keep_unique';
-        fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
-        flag_keep_checking = 1;
-        name_flags.GPS_SparkFun_LeftRear_sensors_are_merged = 1;
-    end
-
-    % Check GPS_SparkFun_Front_sensors_are_merged
-    if (1==flag_keep_checking) && (0==name_flags.GPS_SparkFun_Front_sensors_are_merged)
-        sensors_to_merge = 'GPS_SparkFun_Front';
-        merged_sensor_name = 'GPS_SparkFun_Front';
-        method_name = 'keep_unique';
-        fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
-        flag_keep_checking = 1;
-        name_flags.GPS_SparkFun_Front_sensors_are_merged = 1;
-    end
-    
-    % Check ADIS_sensors_are_merged 
-    if (1==flag_keep_checking) && (0==name_flags.ADIS_sensors_are_merged)
-        sensors_to_merge = 'ADIS';
-        merged_sensor_name = 'IMU_Adis_TopCenter';
-        method_name = 'keep_unique';
-        fid = 1;
-        nextDataStructure = fcn_DataClean_mergeSensorsByMethod(nextDataStructure,sensors_to_merge,merged_sensor_name,method_name,-1);
-        flag_keep_checking = 1;
-        name_flags.ADIS_sensors_are_merged = 1;
-    end
-    
-    % check if sensor_naming_standards_are_used. If not, fix this.
-    if (1==flag_keep_checking) && (0==name_flags.sensor_naming_standards_are_used)
-        nextDataStructure = fcn_DataClean_renameSensorsToStandardNames(nextDataStructure,-1);
-        flag_keep_checking = 1;
-        name_flags.sensor_naming_standards_are_used = 1;
-    end
-
-    fcn_INTERNAL_reportFlagStatus(name_flags,'NAMING FLAGS AFTER FIXING:');
-    
-
+  
     %% GPS_Time tests - all of these steps can be found in fcn_DataClean_checkDataTimeConsistency, the following sections need to be deleted later
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %    _____ _____   _____            _______ _                   _______        _
