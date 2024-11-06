@@ -164,8 +164,10 @@ BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun
 clear hours_off
 fprintf(1,'\nData created with following errors injected: shifted start point');
 
+error('Need to fix this. The function below changed and so this test case needs to be checked.')
+
 [flags, offending_sensor] = fcn_DataClean_checkDataPoseConsistency(BadDataStructure,fid);
-assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,0));
+assert(isequal(flags.GPS_Time_has_consistent_start_end_across_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
 
 
@@ -175,8 +177,18 @@ BadDataStructure = dataStructure;
 BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - 1; 
 fprintf(1,'\nData created with following errors injected: shifted start point');
 
-[flags, offending_sensor] = fcn_DataClean_checkDataPoseConsistency(BadDataStructure,fid);
-assert(isequal(flags.consistent_start_and_end_times_across_GPS_sensors,0));
+field_name = 'GPS_Time';
+flags = []; 
+sensors_to_check = 'GPS';
+flag_name_suffix = '_to_half_second';
+agreement_threshold = 0.5;
+fid = 1;
+fig_num = [];
+
+error('Need to fix this. The function below changed and so this test case needs to be checked.')
+[flags, offending_sensor, return_flag] = fcn_DataClean_checkConsistencyOfStartEnd(BadDataStructure, field_name, (flags), (sensors_to_check), (flag_name_suffix), (agreement_threshold), (fid), (fig_num));
+
+assert(isequal(flags.GPS_Time_has_consistent_start_end_across_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
 
 
@@ -233,7 +245,7 @@ time_time_corruption_type = 2^12; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataPoseConsistency(BadDataStructure,fid);
-assert(isequal(flags.GPS_Time_strictly_ascends,0));
+assert(isequal(flags.GPS_Time_strictly_ascends_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 

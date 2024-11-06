@@ -259,7 +259,7 @@ end
 
 % Tell the user what is happening?
 if 0~=fid
-    fprintf(fid,'\n\t Flag %s set to: %.0d\n\n',flag_name, flags_dataTimeIntervalMatchesIntendedSamplingRate);
+    fprintf(fid,'\n\t Flag %s set to: %.0f\n\n',flag_name, flags.(flag_name));
 end
 
 

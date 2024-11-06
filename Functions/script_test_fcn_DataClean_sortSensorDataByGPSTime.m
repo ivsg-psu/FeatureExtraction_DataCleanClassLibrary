@@ -15,7 +15,7 @@ time_time_corruption_type = 2^12; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure);
-assert(isequal(flags.GPS_Time_strictly_ascends,0));
+assert(isequal(flags.GPS_Time_strictly_ascends_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 % Fix the data using default call
@@ -23,7 +23,7 @@ fixed_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(BadDataStructure);
 
 % Make sure it worked
 [flags, ~] = fcn_DataClean_checkDataTimeConsistency(fixed_dataStructure);
-assert(isequal(flags.GPS_Time_strictly_ascends,1));
+assert(isequal(flags.GPS_Time_strictly_ascends_in_GPS_sensors,1));
 
 % Fix the data using verbose call
 field_to_sort = 'GPS_Time';
@@ -33,7 +33,7 @@ fixed_dataStructure = fcn_DataClean_sortSensorDataByGPSTime(BadDataStructure,fie
 
 % Make sure it worked
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(fixed_dataStructure);
-assert(isequal(flags.GPS_Time_strictly_ascends,1));
+assert(isequal(flags.GPS_Time_strictly_ascends_in_GPS_sensors,1));
 
 % Fix the data using specific call
 field_name = 'GPS_Time';

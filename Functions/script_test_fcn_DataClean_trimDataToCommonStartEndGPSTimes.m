@@ -26,8 +26,8 @@ fprintf(fid,'\nData created with shifted up/down GPS_Time fields');
 % GPS_Hemisphere has the largest time
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
 
-assert(isequal(flags.consistent_start_and_end_times_across_GPS_sensors,0));
-assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Hemisphere'));
+assert(isequal(flags.GPS_Time_has_consistent_start_end_across_GPS_sensors,0));
+assert(strcmp(offending_sensor,'Start values of: GPS_Sparkfun_RearRight GPS_Hemisphere'));
 
 % Fix the data
 trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(BadDataStructure,fid);

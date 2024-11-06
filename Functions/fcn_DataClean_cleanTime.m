@@ -270,9 +270,9 @@ while 1==flag_stay_in_main_loop
     %                       centiSeconds_exists_in_all_GPS_sensors: 1
     %                       GPS_Time_has_no_repeats_in_GPS_sensors: 1
     % GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors: 1
-    %            start_time_GPS_sensors_agrees_to_within_5_seconds: 1
-    %            consistent_start_and_end_times_across_GPS_sensors: 1
-    %                                    GPS_Time_strictly_ascends: 1
+    %           GPS_Time_has_consistent_start_end_within_5_seconds: 1
+    %         GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
+    %                     GPS_Time_strictly_ascends_in_GPS_sensors: 1
     %       no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors: 1
 
     % Used to create test data
@@ -384,7 +384,7 @@ while 1==flag_stay_in_main_loop
     end
     
     
-    %% Check if start_time_GPS_sensors_agrees_to_within_5_seconds
+    %% Check if GPS_Time_has_consistent_start_end_within_5_seconds
     %    ### ISSUES with this:
     %    * The start times of all sensors in general should be the same,
     %    within a few seconds, as this is the boot-up time for sensors
@@ -403,12 +403,12 @@ while 1==flag_stay_in_main_loop
     %    to less than 5 seconds, then the fix worked. Otherwise, throw an
     %    error.
     
-    if (1==flag_keep_checking) && (0==time_flags.start_time_GPS_sensors_agrees_to_within_5_seconds)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_consistent_start_end_within_5_seconds)
         nextDataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(nextDataStructure,fid);
         flag_keep_checking = 0;
     end
     
-    %% Check if consistent_start_and_end_times_across_GPS_sensors
+    %% Check if GPS_Time_has_consistent_start_end_across_GPS_sensors
     %    ### ISSUES with this:
     %    * The start times and end times of all data collection assumes all GPS
     %    systems are operating simultaneously
@@ -424,12 +424,12 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Crop all data to same starting centi-second value
 
-    if (1==flag_keep_checking) && (0==time_flags.consistent_start_and_end_times_across_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_consistent_start_end_across_GPS_sensors)
         nextDataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(nextDataStructure,fid);
         flag_keep_checking = 0;
     end
 
-    %% Check if GPS_Time_strictly_ascends
+    %% Check if GPS_Time_strictly_ascends_in_GPS_sensors
     %    ### ISSUES with this:
     %    * This field is used to calibrate ROS time via interpolation, and must
     %    be STRICTLY increasing
@@ -442,7 +442,7 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
     
-    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_strictly_ascends)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_strictly_ascends_in_GPS_sensors)
         field_name = 'GPS_Time';
         sensors_to_check = 'GPS';
         fid = 1;

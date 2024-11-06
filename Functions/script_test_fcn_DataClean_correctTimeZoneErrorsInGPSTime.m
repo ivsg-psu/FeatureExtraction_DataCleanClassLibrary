@@ -24,15 +24,15 @@ clear hours_off
 fprintf(1,'\nData created with following errors injected: shifted start point\n\n');
 
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
-assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,0));
-assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
+assert(isequal(flags.GPS_Time_has_consistent_start_end_within_5_seconds,0));
+assert(strcmp(offending_sensor,'Start values of: GPS_Sparkfun_RearRight GPS_Hemisphere'));
 
 % Fix the data
 fixed_dataStructure = fcn_DataClean_correctTimeZoneErrorsInGPSTime(BadDataStructure,fid);
 
 % Make sure it worked
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(fixed_dataStructure,fid);
-assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,1));
+assert(isequal(flags.GPS_Time_has_consistent_start_end_within_5_seconds,1));
 
 %% Fail conditions
 if 1==0

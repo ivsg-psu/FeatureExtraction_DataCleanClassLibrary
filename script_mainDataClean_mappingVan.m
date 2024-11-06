@@ -564,14 +564,15 @@ assert(iscell(rawDataCellArray));
 %% Querying from storage directories
 
 % List which directory/directories need to be loaded
-rawBagRoot                  = 'D:\MappingVanData\RawBags';
-poseOnlyParsedBagRoot       = 'D:\MappingVanData\ParsedBags_PoseOnly';
-fullParsedBagRoot           = 'D:\MappingVanData\ParsedBags';
-parsedMATLAB_PoseOnly       = 'D:\MappingVanData\ParsedMATLAB_PoseOnly\RawData';
-parsedMATLAB_PoseOnlyMerged = 'D:\MappingVanData\ParsedMATLAB_PoseOnly\RawDataMerged';
-mergedTimeCleaned           = 'D:\MappingVanData\ParsedMATLAB_PoseOnly\Merged_01_TimeCleaned';
-mergedDataCleaned           = 'D:\MappingVanData\ParsedMATLAB_PoseOnly\Merged_02_DataCleaned';
-mergedKalmanFiltered        = 'D:\MappingVanData\ParsedMATLAB_PoseOnly\Merged_03_KalmanFiltered';
+DriveRoot = 'F:\Adrive';
+rawBagRoot                  = cat(2,DriveRoot,'\MappingVanData\RawBags');
+poseOnlyParsedBagRoot       = cat(2,DriveRoot,'\MappingVanData\ParsedBags_PoseOnly');
+fullParsedBagRoot           = cat(2,DriveRoot,'\MappingVanData\ParsedBags');
+parsedMATLAB_PoseOnly       = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\RawData');
+parsedMATLAB_PoseOnlyMerged = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\RawDataMerged');
+mergedTimeCleaned           = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\Merged_01_TimeCleaned');
+mergedDataCleaned           = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\Merged_02_DataCleaned');
+mergedKalmanFiltered        = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\Merged_03_KalmanFiltered');
 
 % extensionFolder            = '\TestTrack\'; 
 extensionFolder            = '\'; 

@@ -180,7 +180,7 @@ assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensor
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
 
-%% Check start_time_GPS_sensors_agrees_to_within_5_seconds
+%% Check GPS_Time_has_consistent_start_end_within_5_seconds
 % Simulate a time zone error 
 fid = 1;
 
@@ -192,10 +192,10 @@ clear hours_off
 fprintf(1,'\nData created with following errors injected: shifted start point');
 flags = [];
 [flags, ~] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
-assert(isequal(flags.start_time_GPS_sensors_agrees_to_within_5_seconds,0));
+assert(isequal(flags.GPS_Time_has_consistent_start_end_within_5_seconds,0));
 
 
-%% Check consistent_start_and_end_times_across_GPS_sensors
+%% Check GPS_Time_has_consistent_start_end_across_GPS_sensors
 fid = 1;
 
 dataStructure = fcn_DataClean_fillTestDataStructure;
@@ -204,11 +204,11 @@ BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun
 fprintf(1,'\nData created with following errors injected: shifted start point');
 flags = [];
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
-assert(isequal(flags.consistent_start_and_end_times_across_GPS_sensors,0));
-assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
+assert(isequal(flags.GPS_Time_has_consistent_start_end_across_GPS_sensors,0));
+assert(strcmp(offending_sensor,'Start values of: GPS_Sparkfun_RearRight GPS_Hemisphere'));
 
 
-%% Check if GPS_Time_strictly_ascends
+%% Check if GPS_Time_strictly_ascends_in_GPS_sensors
 fid = 1;
 
 % Define a dataset with corrupted GPS_Time where the GPS_Time is not increasing 
@@ -217,7 +217,7 @@ time_time_corruption_type = 2^12; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 flags = [];
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
-assert(isequal(flags.GPS_Time_strictly_ascends,0));
+assert(isequal(flags.GPS_Time_strictly_ascends_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Check no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors

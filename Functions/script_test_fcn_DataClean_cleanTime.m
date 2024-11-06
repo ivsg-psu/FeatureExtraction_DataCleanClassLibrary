@@ -18,6 +18,8 @@ end
 
 % fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData.mat');
 fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData2.mat');
+% fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData3.mat');
+
 load(fullExampleFilePath,'dataStructure')
 
 %%%%%
