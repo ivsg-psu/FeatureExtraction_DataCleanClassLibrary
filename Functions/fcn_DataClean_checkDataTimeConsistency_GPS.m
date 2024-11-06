@@ -148,11 +148,11 @@ if (0 == flag_max_speed)
 end
 
 % Does the user want to specify the flags?
-flags = struct;
+flags = struct; %#ok<NASGU>
 if 2 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
-        flags = temp;
+        flags = temp; %#ok<NASGU>
     end
 end
 
@@ -334,13 +334,14 @@ end
 
 
 % Check start_time_GPS_sensors_agrees_to_within_5_seconds
-[flags,offending_sensor,~] = fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes(fid, dataStructure, flags);
+URHERE - need to add threshold to below
+[flags,offending_sensor,~] = fcn_INTERNAL_checkConsistencyOfStartEnd(fid, dataStructure, flags, 'GPS_Time', 'GPS', consistency_name)
 if 0==flags.start_time_GPS_sensors_agrees_to_within_5_seconds
     return
 end
 
 % Check consistent_start_and_end_times_across_GPS_sensors
-[flags,offending_sensor,~] = fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes(fid, dataStructure, flags);
+[flags,offending_sensor,~] = fcn_INTERNAL_checkConsistencyOfStartEnd(fid, dataStructure, flags, 'GPS_Time', 'GPS', consistency_name)
 if 0==flags.consistent_start_and_end_times_across_GPS_sensors
     return
 end
@@ -468,6 +469,12 @@ else
     flag_check_all_sensors = 0;
 end
 
+if flag_check_all_sensors
+    flag_name = cat(2,field_name,'_has_no_repeats_in_all_sensors');
+else
+    flag_name = cat(2,field_name,sprintf('_has_no_repeats_in_%s_sensors',sensors_to_check));
+end
+
 % Initialize offending_sensor
 offending_sensor = '';
 return_flag = 0;
@@ -485,9 +492,9 @@ end
 if 0~=fid
     fprintf(fid,'Checking for repeats in %s data ',field_name);
     if flag_check_all_sensors
-        fprintf(fid,':\n');
+        fprintf(fid,': --> %s\n', flag_name);
     else
-        fprintf(fid,'in all %s sensors:\n', sensors_to_check);
+        fprintf(fid,'in all %s sensors: --> %s\n', sensors_to_check, flag_name);
     end
 end
 
@@ -508,11 +515,7 @@ for i_data = 1:length(sensor_names)
         flag_no_repeats_detected = 1;
     end
     
-    if flag_check_all_sensors
-        flag_name = cat(2,field_name,'_has_no_repeats_in_all_sensors');
-    else
-        flag_name = cat(2,field_name,sprintf('_has_no_repeats_in_%s_sensors',sensors_to_check));
-    end
+
     flags.(flag_name) = flag_no_repeats_detected;
     
     if 0==flags.(flag_name)
@@ -522,12 +525,18 @@ for i_data = 1:length(sensor_names)
     end
 end % Ends for loop
 
+
+% Tell the user what is happening?
+if 0~=fid
+    fprintf(fid,'\n\t Flag %s set to: %.0d\n\n',flag_name, flag_no_repeats_detected);
+end
+
 end % Ends fcn_INTERNAL_checkIfFieldHasRepeatedValues
 
 
-%% fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes
-function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes(fid, dataStructure, flags)
-% Checks to see if all the GPS systems have same start or end time
+%% fcn_INTERNAL_checkConsistencyOfStartEnd
+function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkConsistencyOfStartEnd(fid, dataStructure, flags, field_to_check, sensor_type, consistency_name)
+% Checks to see if all data in a field have same start or end values
 
 % Initialize offending_sensor
 offending_low_sensor = '';
@@ -535,16 +544,19 @@ offending_high_sensor = '';
 lowest_start_time = inf;
 highest_end_time = -inf;
 
+URHERE
+flag_name = sprintf('%s_consistent_start_end_%s_to_%s',sensor_type, field_to_check,consistency_name);
+
 % Initialize starting centiSeconds
 start_times_centiSeconds = [];
 end_times_centiSeconds = [];
 all_centiSecond_values = [];
 
 % Produce a list of all the sensors (each is a field in the structure)
-[~,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
+[~,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, field_to_check, sensor_type);
 
 if 0~=fid
-    fprintf(fid,'Checking consistency of start and end times across GPS sensors:\n');
+    fprintf(fid,'Checking consistency of start and end of %s across %s sensors:  --> %s \n', field_to_check, sensor_type, flag_name);
 end
 
 for i_data = 1:length(sensor_names)
@@ -572,6 +584,10 @@ for i_data = 1:length(sensor_names)
     end
     
 end
+
+URHERE
+
+
 
 % Calculate the differences in the times
 start_time_differences = diff(start_times_centiSeconds);
@@ -652,7 +668,7 @@ end
 offending_sensor = '';
 
 
-end % Ends fcn_INTERNAL_checkConsistencyOfStartEndGPSTimes
+end % Ends fcn_INTERNAL_checkConsistencyOfStartEnd
 
 
 %% fcn_INTERNAL_checkTimeOrdering

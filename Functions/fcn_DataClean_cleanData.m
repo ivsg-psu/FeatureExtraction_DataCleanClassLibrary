@@ -283,8 +283,8 @@ while 1==flag_stay_in_main_loop
     % GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors: 1
     %            start_time_GPS_sensors_agrees_to_within_5_seconds: 1
     %            consistent_start_and_end_times_across_GPS_sensors: 1
-    %                                    GPS_Time_strictly_ascends: 1
-    %       no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors: 1
+    %                                    GPS_Time_strictly_ascends: 0
+    %       no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors: 0
 
     % Used to create test data
     if 1==0

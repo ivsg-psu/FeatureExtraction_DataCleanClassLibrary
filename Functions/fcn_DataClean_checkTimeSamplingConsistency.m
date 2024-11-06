@@ -183,6 +183,13 @@ else
     flag_check_all_sensors = 0;
 end
 
+% Set up the field name
+if flag_check_all_sensors
+    flag_name = cat(2,field_name,'_has_same_sample_rate_as_centiSeconds');
+else
+    flag_name = cat(2,field_name,sprintf('_has_same_sample_rate_as_centiSeconds_in_%s_sensors',sensors_to_check));
+end
+
 % Initialize offending_sensor
 offending_sensor = '';
 return_flag = 0;
@@ -200,9 +207,9 @@ end
 if 0~=fid
     fprintf(fid,'Checking consistency of expected and actual time sampling rates of ''%s''',field_name);
     if flag_check_all_sensors
-        fprintf(fid,':\n');
+        fprintf(fid,': --> %s\n', flag_name);
     else
-        fprintf(fid,' in all %s sensors:\n', sensors_to_check);
+        fprintf(fid,' in all %s sensors: --> %s\n', sensors_to_check, flag_name);
     end
 end
 
@@ -210,6 +217,7 @@ Ndata = length(sensor_names);
 
 allTimeDifferences = cell(Ndata,1);
 for i_data = 1:Ndata
+    
     % Grab the sensor subfield name
     GPS_sensor_name = sensor_names{i_data};
     sensor_data = dataStructure.(GPS_sensor_name);
@@ -233,29 +241,27 @@ for i_data = 1:Ndata
         flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
     end
     if centiSeconds ~= effective_centiSeconds
-        try
-            warning('on','backtrace');
-            warning('The sensor: %s is missing so much data that the field: %s effectively has an incorrect sample rate.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (centiSec): %.4f \n',...
-                GPS_sensor_name,field_name,centiSeconds,effective_centiSeconds,meanSamplingInterval*100);
-        catch
-            disp('Debug here');
-        end
+        warning('on','backtrace');
+        warning('The sensor: %s is missing so much data that the field: %s effectively has an incorrect sample rate.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (centiSec): %.4f \n',...
+            GPS_sensor_name,field_name,centiSeconds,effective_centiSeconds,meanSamplingInterval*100);
     end
+       
     
-    
-    if flag_check_all_sensors
-        flag_name = cat(2,field_name,'_has_same_sample_rate_as_centiSeconds');
-    else
-        flag_name = cat(2,field_name,sprintf('_has_same_sample_rate_as_centiSeconds_in_%s_sensors',sensors_to_check));
-    end
-    flags.(flag_name) = flags_dataTimeIntervalMatchesIntendedSamplingRate;
-    
+    % Set the flag and then exit immediately
+    flags.(flag_name) = flags_dataTimeIntervalMatchesIntendedSamplingRate;    
     if 0==flags.(flag_name)
         offending_sensor = GPS_sensor_name; % Save the name of the sensor
         return_flag = 1; % Indicate that the return was forced
         return; % Exit the function immediately to avoid more processing
     end
 end
+
+
+% Tell the user what is happening?
+if 0~=fid
+    fprintf(fid,'\n\t Flag %s set to: %.0d\n\n',flag_name, flags_dataTimeIntervalMatchesIntendedSamplingRate);
+end
+
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -270,12 +276,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots && isempty(findobj('Number',fig_num))
 
+    figure(fig_num);
+    
     % check whether the figure already has data
-    temp_h = figure(fig_num); 
-    flag_rescale_axis = 0;
-    if isempty(get(temp_h,'Children'))
-        flag_rescale_axis = 1;
-    end
+    % temp_h = figure(fig_num); 
+    % flag_rescale_axis = 0;
+    % if isempty(get(temp_h,'Children'))
+    %     flag_rescale_axis = 1;
+    % end
 
     tiledlayout('flow')
 

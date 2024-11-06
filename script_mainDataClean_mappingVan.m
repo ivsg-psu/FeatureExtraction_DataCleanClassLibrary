@@ -185,6 +185,9 @@
 % 2024_09_28 - S. Brennan
 % -- need to change field names in fcn_DataClean_loadMappingVanDataFromFile so that
 % they pass the "standard" names listed in fcn_DataClean_renameSensorsToStandardNames
+% 2024_11_06 - S. Brennan
+% -- need to move functions inside checkDataTimeConsistency_GPS to own functions 
+% for example: fcn_INTERNAL_checkIfFieldHasRepeatedValues
 
 
 %% Prep the workspace

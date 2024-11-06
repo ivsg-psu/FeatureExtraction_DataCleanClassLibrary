@@ -238,9 +238,9 @@ end
 if 0~=fid
     fprintf(fid,'Checking existence of %s data ',field_name);
     if flag_check_all_sensors
-        fprintf(fid,':\n');
+        fprintf(fid,': --> %s\n', flag_name);
     else
-        fprintf(fid,'in %s %s sensors:\n', string_any_or_all, sensors_to_check);
+        fprintf(fid,'in %s %s sensors: --> %s\n', string_any_or_all, sensors_to_check, flag_name);
     end
 end
 
@@ -331,6 +331,11 @@ if 0==flags.(flag_name)
     end
     
     return; % Exit the function immediately to avoid more processing
+end
+
+% Tell the user what is happening?
+if 0~=fid
+    fprintf(fid,'\n\t Flag %s set to: %.0d\n\n',flag_name, flag_field_exists);
 end
 
 %% Plot the results (for debugging)?
