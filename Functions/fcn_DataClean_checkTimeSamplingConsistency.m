@@ -274,6 +274,8 @@ end
 %                            __/ |
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Does this need to be plotted, and is figure NOT open already?
 if flag_do_plots && isempty(findobj('Number',fig_num))
 
     figure(fig_num);

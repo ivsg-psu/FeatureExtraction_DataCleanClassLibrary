@@ -24,7 +24,7 @@ function [checked_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSe
 % OUTPUTS:
 %
 %      checked_flags: A structure 'flags' with field
-%      all_sensors_have_trigger_time added
+%      Trigger_Time_exists_in_all_sensors added
 %
 %      sensors_without_Trigger_Time: A string array containing sensor neams
 %      without Trigger_Time
@@ -165,14 +165,14 @@ end
 % Save outputs
 badSensorIndicies = find(flags_thisSensorHasTriggerTime==0);
 
-all_sensors_have_trigger_time = 1;
+Trigger_Time_exists_in_all_sensors = 1;
 sensors_without_Trigger_Time = [];
 if ~isempty(badSensorIndicies)
-    all_sensors_have_trigger_time = 0;
+    Trigger_Time_exists_in_all_sensors = 0;
     sensors_without_Trigger_Time = string(fields(badSensorIndicies));
 
 end
-checked_flags.all_sensors_have_trigger_time = all_sensors_have_trigger_time;
+checked_flags.Trigger_Time_exists_in_all_sensors = Trigger_Time_exists_in_all_sensors;
 
 
 

@@ -1,5 +1,4 @@
 function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, varargin)
-
 % fcn_DataClean_checkDataTimeConsistency_GPS
 % Checks a given dataset to verify whether data meets key time consistency
 % requirements, for GPS sensors. 
@@ -30,7 +29,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, (flags), (fid), (fig_num))
+%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, (flags), (fid), (plotFlags))
 %
 % INPUTS:
 %
@@ -45,9 +44,9 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %      fid: a file ID to print results of analysis. If not entered, no
 %      output is given (FID = 0). Set fid to 1 for printing to console.
 %
-%      fig_num: a figure number to plot results. If set to -1, skips any
-%      input checking or debugging, no figures will be generated, and sets
-%      up code to maximize speed.
+%      plotFlags: a structure of figure numbers to plot results. If set to
+%      -1, skips any input checking or debugging, no figures will be
+%      generated, and sets up code to maximize speed.
 %
 % OUTPUTS:
 %
@@ -89,10 +88,12 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % This function was written on 2024_09_30 by S. Brennan
 % Questions or comments? sbrennan@psu.edu 
 
-% Revision history:
-%     
+% Revision history:    
 % 2024_09_30: sbrennan@psu.edu
 % -- wrote the code originally by pulling out of checkDataTimeConsistency
+% 2024_11_07: sbrennan@psu.edu
+% -- added plotFlags instead of fig_num, to allow many different plotting
+% options
 
 %% Debugging and Input checks
 
@@ -174,12 +175,14 @@ if 3 <= nargin
     end
 end
 
-% Does user want to specify fig_num?
+% Does user want to specify plotFlags?
+% Set defaults
+plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = [];
 flag_do_plots = 0;
 if (0==flag_max_speed) &&  (4<=nargin)
     temp = varargin{end};
     if ~isempty(temp)
-        fig_num = temp; %#ok<NASGU>
+        plotFlags = temp;
         flag_do_plots = 1;
     end
 end
@@ -308,9 +311,7 @@ end
 %    * Manually fix, or
 %    * Remove this sensor
 
-fig_num = 12345678;
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', flags, 'GPS',fid, fig_num);
-
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
 if 0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
     return
 end

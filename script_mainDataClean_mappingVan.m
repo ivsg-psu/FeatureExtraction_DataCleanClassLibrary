@@ -193,7 +193,8 @@
 % that is used for creating a test causes a fail on one of the previous
 % flags. The code use to inject failures needs to account for this. (in
 % fillTestDataStructure)
-
+% -- delete fcn_DataClean_checkAllSensorsHaveTriggerTime. It can be
+% replaced by fcn_DataClean_checkIfFieldInSensors
 
 %% Prep the workspace
 close all
@@ -1659,10 +1660,11 @@ timeNumber = datetime(timeString,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 end % Ends fcn_INTERNAL_findTimeFromName
 
 
+%% fcn_INTERNAL_confirmDirectoryExists
 function fcn_INTERNAL_confirmDirectoryExists(directoryName)
 if 7~=exist(directoryName,'dir')
     warning('on','backtrace');
     warning('Unable to find folder: \n\t%s',directoryName);
     error('Desired directory: %s does not exist!',directoryName);
 end
-end
+end % Ends fcn_INTERNAL_confirmDirectoryExists

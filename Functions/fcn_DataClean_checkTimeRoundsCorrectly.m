@@ -230,7 +230,9 @@ for i_data = 1:length(sensor_names)
     % Set initial flag value
     flags_data_rounds_correctly = 1;
     
-    % Find multiplier
+    % Find multiplier that converts seconds into centiseconds. Usually,
+    % this is 100. But if centiSeconds is a weird number, like 7, it can
+    % introduce errors. In the case 
     multiplier = round(100/sensor_data.centiSeconds)*sensor_data.centiSeconds;
     
     % Round ROS_Time    
@@ -239,28 +241,38 @@ for i_data = 1:length(sensor_names)
     % Round the Trigger_Time
     Rounded_Trigger_Time_samples_centiSeconds   = round((sensor_data.(time_field)-sensor_data.(time_field)(1,1))*multiplier);
     
-    % FOR DEBUGGING:
-    % disp(Rounded_Field_Time_samples_centiSeconds(1:10));
-    % disp(Rounded_Trigger_Time_samples_centiSeconds(1:10));
-   
-    % Make sure it counts strictly up ()
-    % if ~isequal(Rounded_Field_Time_samples_centiSeconds,Rounded_Trigger_Time_samples_centiSeconds)
-    %     flags_data_rounds_correctly = 0;
-    % end
-    % Temp version
-    if ~all(mod(Rounded_Field_Time_samples_centiSeconds, 10)==0)
+    % Check if they are the same
+    if ~isequal(Rounded_Field_Time_samples_centiSeconds,Rounded_Trigger_Time_samples_centiSeconds)
         flags_data_rounds_correctly = 0;
     end
         
-    flags.(flag_name) = flags_data_rounds_correctly;
-
-    if 0==flags.(flag_name)
-        offending_sensor = sensor_name; % Save the name of the sensor
+    if 0==return_flag && ~flags_data_rounds_correctly
         return_flag = 1; % Indicate that the return was forced
-        return; % Exit the function immediately to avoid more processing
+    end
+
+    if 0==flags_data_rounds_correctly
+        if isempty(offending_sensor)
+            offending_sensor = sensor_name;
+        else
+            offending_sensor = cat(2,offending_sensor,' ',sensor_name); % Save the name of the sensor
+        end
+        return_flag = 1; % Indicate that the return was forced        
     end    
    
 end
+
+if 0==return_flag
+    flags.(flag_name) = 1;
+else
+    flags.(flag_name) = 0;
+end
+
+% Tell the user what is happening?
+if 0~=fid
+    fprintf(fid,'\n\t Flag %s set to: %.0f\n\n',flag_name, flags.(flag_name));
+end
+
+
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   _____       _

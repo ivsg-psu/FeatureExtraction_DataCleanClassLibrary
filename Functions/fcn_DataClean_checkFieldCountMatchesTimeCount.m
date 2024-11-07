@@ -245,16 +245,34 @@ for i_data = 1:length(sensor_names)
         
     end % Ends for loop through the subfields
     
-    
-    
-    flags.(flag_name) = flags_sensor_field_has_correct_length;
-    if 0==flags.(flag_name)
-        offending_sensor = sensor_name; % cat(2,sensor_name, ' ' ,subFieldName); % Save the name of the sensor
+    if 0==return_flag && ~flags_sensor_field_has_correct_length
         return_flag = 1; % Indicate that the return was forced
-        return; % Exit the function immediately to avoid more processing
+    end
+    
+    if 0==flags_sensor_field_has_correct_length
+        if isempty(offending_sensor)
+            offending_sensor = sensor_name;
+        else
+            offending_sensor = cat(2,offending_sensor,' ',sensor_name); % Save the name of the sensor
+        end
+        if 0~=fid
+            fprintf(fid,'\t\t The following sensor is not the correct length: %s\n',sensor_name);
+        end
     end    
    
 end
+
+if 0==return_flag
+    flags.(flag_name) = 1;
+else
+    flags.(flag_name) = 0;
+end
+
+% Tell the user what is happening?
+if 0~=fid
+    fprintf(fid,'\n\t Flag %s set to: %.0f\n\n',flag_name, flags.(flag_name));
+end
+
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

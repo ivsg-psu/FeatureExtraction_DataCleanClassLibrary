@@ -5,7 +5,7 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanTime(rawDataStr
 %
 % FORMAT:
 %
-%      cleanDataStruct = fcn_DataClean_cleanTime(rawDataStruct, (fid), (Flags), (fig_num))
+%      cleanDataStruct = fcn_DataClean_cleanTime(rawDataStruct, (fid), (Flags), (saveFlags), (plotFlags))
 %
 % INPUTS:
 %
@@ -28,9 +28,33 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanTime(rawDataStr
 %           Flags.flag_do_load_GST = 0; % Loads the GST field from Sparkfun GPS Units          
 %           Flags.flag_do_load_VTG = 0; % Loads the VTG field from Sparkfun GPS Units
 %
-%      fig_num: a figure number to plot results. If set to -1, skips any
-%      input checking or debugging, no figures will be generated, and sets
-%      up code to maximize speed.
+%      saveFlags: a structure of flags to determine how/where/if the
+%      results are saved. The defaults are below
+%
+%         saveFlags.flag_saveMatFile = 0; % Set to 1 to save each rawData
+%         file into the directory
+%
+%         saveFlags.flag_saveMatFile_directory = ''; % String with full
+%         path to the directory where to save mat files
+%
+%         saveFlags.flag_saveImages = 0; % Set to 1 to save each image
+%         file into the directory
+%
+%         saveFlags.flag_saveImages_directory = ''; % String with full
+%         path to the directory where to save image files
+%
+%      plotFlags: a structure of figure numbers to plot results. If set to
+%      -1, skips any input checking or debugging, no figures will be
+%      generated, and sets up code to maximize speed. The structure has the
+%      following format:
+%
+%         plotFlags.fig_num_plotAllRawTogether = 1111; % This is the figure
+%         where all the bag files are plotted together
+%
+%         plotFlags.fig_num_plotAllRawIndividually = 2222; % This is the
+%         number starting the count for all the figures that open,
+%         individually, for each bag file after it is loaded.
+%
 %
 % OUTPUTS:
 %
@@ -70,7 +94,7 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanTime(rawDataStr
 % -- removed name cleaning code and moved to a different function
 % -- separated cleanTime out from cleanData
 % -- removed refLLA input
-
+% -- added saveFlags and plotFlags
 
 %% Debugging and Input checks
 
@@ -78,7 +102,7 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanTime(rawDataStr
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
 flag_max_speed = 0;
-if (nargin==4 && isequal(varargin{end},-1))
+if (nargin==5 && isequal(varargin{end},-1))
     flag_do_debug = 0; % % % % Flag to plot the results for debugging
     flag_check_inputs = 0; % Flag to perform input checking
     flag_max_speed = 1;
@@ -121,7 +145,7 @@ end
 if 0 == flag_max_speed
     if flag_check_inputs == 1
         % Are there the right number of inputs?
-        narginchk(1,4);
+        narginchk(1,5);
 
     end
 end
@@ -144,7 +168,6 @@ Flags.flag_do_load_cameras = 0;
 Flags.flag_select_scan_duration = 0;
 Flags.flag_do_load_GST = 0;
 Flags.flag_do_load_VTG = 0; %#ok<STRNU>
-
 if 3 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
@@ -154,12 +177,29 @@ if 3 <= nargin
 end
 
 
-% Does user want to specify fig_num?
+
+% Does user specify saveFlags?
+% Set defaults
+saveFlags.flag_saveMatFile = 0;
+saveFlags.flag_saveMatFile_directory = '';
+saveFlags.flag_saveImages = 0;
+saveFlags.flag_saveImages_directory = '';
+if 4 <= nargin
+    temp = varargin{3};
+    if ~isempty(temp)
+        saveFlags = temp;
+    end
+end
+
+% Does user want to specify plotFlags?
+% Set defaults
+plotFlags.fig_num_plotAllRawTogether = [];
+plotFlags.fig_num_plotAllRawIndividually = [];
 flag_do_plots = 0;
-if (0==flag_max_speed) &&  (4<=nargin)
+if (0==flag_max_speed) &&  (5<=nargin)
     temp = varargin{end};
     if ~isempty(temp)
-        fig_num = temp; %#ok<NASGU>
+        plotFlags = temp;
         flag_do_plots = 1;
     end
 end
@@ -207,26 +247,6 @@ currentDataStructure = rawDataStruct;
 % Grab the Indentifiers field from the rawDataStructure
 Identifiers_Hold = rawDataStruct.Identifiers;
 
-% if isfield(currentDataStructure, 'Trigger_Raw')
-%     currentDataStructure = rmfield(currentDataStructure,'Trigger_Raw');
-% else
-%     nextDataStructure = currentDataStructure;
-% end
-% if isfield(currentDataStructure, 'Encoder_Raw')
-%     currentDataStructure = rmfield(currentDataStructure,'Encoder_Raw');
-% else
-%     nextDataStructure = currentDataStructure;
-% end
-% if isfield(currentDataStructure, 'Diag_Encoder')
-%     currentDataStructure = rmfield(currentDataStructure,'Diag_Encoder');
-% else
-%     nextDataStructure = currentDataStructure;
-% end
-% if isfield(currentDataStructure, 'Diag_Trigger')
-%     currentDataStructure = rmfield(currentDataStructure,'Diag_Trigger');
-% else
-%     nextDataStructure = currentDataStructure;
-% end
 
 %%
 while 1==flag_stay_in_main_loop   
@@ -283,7 +303,7 @@ while 1==flag_stay_in_main_loop
     end
 
     if (1==flag_keep_checking)
-        [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
+        [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure, fid, plotFlags);
     end
     
     fcn_INTERNAL_reportFlagStatus(time_flags,'TIMING FLAGS');
@@ -704,7 +724,7 @@ while 1==flag_stay_in_main_loop
 %     end
 
     %% If not, calculate Trigger_Time to rest of sensors
-    if (1==flag_keep_checking) && (0==time_flags.all_sensors_have_trigger_time)
+    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)
         warning('on','backtrace');
         warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
         nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure,sensors_without_Trigger_Time);
@@ -827,7 +847,103 @@ fprintf(fid,'Cleaning completed\n');
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if (1==flag_do_plots)
-    % Nothing to plot
+
+    if fid
+        fprintf(fid,'\nBEGINNING PLOTTING: \n');
+    end
+
+    %% Plot all of them together?
+    if ~isempty(plotFlags.fig_num_plotAllRawTogether)
+        fig_num_plotAllRawTogether = plotFlags.fig_num_plotAllRawTogether;
+        figure(fig_num_plotAllRawTogether);
+        clf;
+
+        % Test the function
+        clear plotFormat
+        plotFormat.LineStyle = '-';
+        plotFormat.LineWidth = 2;
+        plotFormat.Marker = 'none';
+        plotFormat.MarkerSize = 5;
+
+        legend_entries = cell(length(rawDataCellArray)+1,1);
+        for ith_rawData = 1:length(rawDataCellArray)
+            bagName = only_directory_filelist(ith_rawData).name;
+       
+            if fid
+                fprintf(fid,'\tPlotting file %.0d of %.0d: %s\n', ith_rawData, length(rawDataCellArray), bagName);
+            end
+            plotFormat.Color = fcn_geometry_fillColorFromNumberOrName(ith_rawData);
+            colorMap = plotFormat.Color;
+            fcn_DataClean_plotRawData(rawDataCellArray{ith_rawData}, (bagName), (plotFormat), (colorMap), (fig_num_plotAllRawTogether))
+            legend_entries{ith_rawData} = bagName;
+
+        end
+
+        % Plot the base station
+        fcn_plotRoad_plotLL([],[],fig_num_plotAllRawTogether);
+        legend_entries{end} = 'Base Station';
+
+        h_legend = legend(legend_entries);
+        set(h_legend,'Interpreter','none','FontSize',6)
+    
+        % Force the plot to fit
+        geolimits('auto');
+
+        title(Identifiers.WorkZoneScenario,'interpreter','none','FontSize',12)
+
+        % Save the image to file?
+        if 1==saveFlags.flag_saveImages
+            fcn_INTERNAL_saveImages(cat(2,'mapping_van_',Identifiers.WorkZoneScenario), saveFlags);
+        end
+
+    end
+
+
+
+
+    %% Plot all individually, and save all images and mat files
+    if ~isempty(plotFlags.fig_num_plotAllRawIndividually)
+        fig_num_plotAllRawIndividually = plotFlags.fig_num_plotAllRawIndividually;
+
+
+        for ith_rawData = 1:length(rawDataCellArray)
+            fig_num = fig_num_plotAllRawIndividually -1 +ith_rawData;
+            figure(fig_num);
+            clf;
+
+            % Plot the base station
+            fcn_plotRoad_plotLL([],[],fig_num);
+
+            % Plot the data
+            bagName = only_directory_filelist(ith_rawData).name;
+            fcn_DataClean_plotRawData(rawDataCellArray{ith_rawData}, (bagName), ([]), ([]), (fig_num))
+
+            pause(0.1);
+
+
+            % Save the image to file?
+            if 1==saveFlags.flag_saveImages
+
+                % Make sure bagName is good
+                if contains(bagName,'.')
+                    bagName_clean = extractBefore(bagName,'.');
+                else
+                    bagName_clean = bagName;
+                end
+
+                % Save to the name
+                fcn_INTERNAL_saveImages(char(bagName_clean), saveFlags);
+
+            end
+
+            % Save the mat file?
+            if 1 == saveFlags.flag_saveMatFile
+                fcn_INTERNAL_saveMATfile(rawDataCellArray{ith_rawData}, char(bagName_clean), saveFlags);
+            end
+        end
+    end
+
+
 
 end
 
@@ -887,3 +1003,34 @@ for ith_field = 1:length(fieldsToprint)
 end
 fprintf(1,'\n');
 end % Ends fcn_INTERNAL_reportFlagStatus
+
+
+%% fcn_INTERNAL_saveImages
+function fcn_INTERNAL_saveImages(imageName, saveFlags)
+
+pause(2); % Wait 2 seconds so that images can load
+
+Image = getframe(gcf);
+PNG_image_fname = cat(2,imageName,'.png');
+PNG_imagePath = fullfile(saveFlags.flag_saveImages_directory,PNG_image_fname);
+if 2~=exist(PNG_imagePath,'file') || 1==saveFlags.flag_forceImageOverwrite
+    imwrite(Image.cdata, PNG_imagePath);
+end
+
+FIG_image_fname = cat(2,imageName,'.fig');
+FIG_imagePath = fullfile(saveFlags.flag_saveImages_directory,FIG_image_fname);
+if 2~=exist(FIG_imagePath,'file') || 1==saveFlags.flag_forceImageOverwrite
+    savefig(FIG_imagePath);
+end
+end % Ends fcn_INTERNAL_saveImages
+
+%% fcn_INTERNAL_saveMATfile
+function  fcn_INTERNAL_saveMATfile(rawData, MATfileName, saveFlags)
+
+MAT_fname = cat(2,MATfileName,'.mat');
+MAT_fullPath = fullfile(saveFlags.flag_saveMatFile_directory,MAT_fname);
+if 2~=exist(MAT_fullPath,'file') || 1==saveFlags.flag_forceMATfileOverwrite
+    save(MAT_fullPath,'rawData');
+end
+
+end % Ends fcn_INTERNAL_saveMATfile

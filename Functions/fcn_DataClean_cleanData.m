@@ -688,7 +688,7 @@ while 1==flag_stay_in_main_loop
 %     end
 
     %% If not, calculate Trigger_Time to rest of sensors
-    if (1==flag_keep_checking) && (0==time_flags.all_sensors_have_trigger_time)
+    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)
         warning('on','backtrace');
         warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
         nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure,sensors_without_Trigger_Time);

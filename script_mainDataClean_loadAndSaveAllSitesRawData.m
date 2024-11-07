@@ -84,7 +84,7 @@ rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifier
 thresholdTimeNearby = 10;
 
 % Spedify the fid
-fid = 1; % 1 --> print to console
+% fid = 1; % 1 --> print to console
 readmeFilename = fullfile(cd,'Data','RawDataMerged',Identifiers.ProjectStage,Identifiers.WorkZoneScenario,'MergeProcessingMessages.txt');
 fid = fopen(readmeFilename,'w');
 
@@ -595,31 +595,52 @@ assert(iscell(uncommonFieldsCellArray));
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Load%20All%20Raw%20Data%20into%20MAT%20files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-poseOnlyParsedBagRoot_PoseOnly    = 'F:\MappingVanData\ParsedBags_PoseOnly';
-poseOnlyParsedMATLABRoot_PoseOnly = 'F:\MappingVanData\ParsedMATLAB_PoseOnly\RawData';
+% List which directory/directories need to be loaded
+DriveRoot = 'F:\Adrive';
+% rawBagRoot                  = cat(2,DriveRoot,'\MappingVanData\RawBags');
+poseOnlyParsedBagRoot       = cat(2,DriveRoot,'\MappingVanData\ParsedBags_PoseOnly');
+% fullParsedBagRoot           = cat(2,DriveRoot,'\MappingVanData\ParsedBags');
+parsedMATLAB_PoseOnly       = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\RawData');
+% parsedMATLAB_PoseOnlyMerged = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\RawDataMerged');
+% mergedTimeCleaned           = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\Merged_01_TimeCleaned');
+% mergedDataCleaned           = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\Merged_02_DataCleaned');
+% mergedKalmanFiltered        = cat(2,DriveRoot,'\MappingVanData\ParsedMATLAB_PoseOnly\Merged_03_KalmanFiltered');
 
-% Below were run on 10/12/2024
+% Make sure folders exist!
+% fcn_INTERNAL_confirmDirectoryExists(rawBagSearchDirectory);
+fcn_INTERNAL_confirmDirectoryExists(poseOnlyParsedBagRoot);
+% fcn_INTERNAL_confirmDirectoryExists(fullParsedBagRootDirectory);
+fcn_INTERNAL_confirmDirectoryExists(parsedMATLAB_PoseOnly);
+% fcn_INTERNAL_confirmDirectoryExists(parsedMATLAB_PoseOnlyMergedDirectory);
+% fcn_INTERNAL_confirmDirectoryExists(mergedTimeCleanedDirectory);
+% fcn_INTERNAL_confirmDirectoryExists(mergedDataCleanedDirectory);
+% fcn_INTERNAL_confirmDirectoryExists(mergedKalmanFilteredDirectory);
+
+
+% Below were run on 11/07/2024
 testingConditions = {
-    % '2024-02-01','4.2'; % NOT parsed
-    '2024-02-06','4.3'; % NOT done
+    % '2024-02-01','4.2'; % NOT parsed - bad data
+    '2024-02-06','4.3';             % Done - confirmed on 2024-11-07
     % '2024-04-19','2.3'; % NOT parsed
-    '2024-06-24','I376ParkwayPitt'; % NOT done
+    '2024-06-24','I376ParkwayPitt'; % Done - confirmed on 2024-11-07
     % '2024-06-28','4.1b'; % NOT parsed
-    '2024-07-10','I376ParkwayPitt'; % NOT done  
-    '2024-07-11','I376ParkwayPitt'; % NOT done
-    '2024-08-05','BaseMap';
-    '2024-08-12','BaseMap';
-    '2024-08-13','BaseMap';
-    '2024-08-14','4.1a';
-    '2024-08-15','4.1a';
-    '2024-08-15','4.3'; % NOT done
-    '2024-08-22','PA653Normalville';
-    '2024-09-04','5.1a';
-    '2024-09-13','5.2';
-    '2024-09-17','1.6';
-    '2024-09-19','PA51Aliquippa';
-    '2024-09-20','PA51Aliquippa';
-    '2024-10-16','I376ParkwayPitt'; % NOT done  
+    '2024-07-10','I376ParkwayPitt'; % Done - confirmed on 2024-11-07
+    '2024-07-11','I376ParkwayPitt'; % Done - confirmed on 2024-11-07
+    '2024-08-05','BaseMap';         % Done - confirmed on 2024-11-07
+    '2024-08-12','BaseMap';         % Done - confirmed on 2024-11-07
+    '2024-08-13','BaseMap';         % Done - confirmed on 2024-11-07
+    '2024-08-14','4.1a';            % Done - confirmed on 2024-11-07
+    '2024-08-15','4.1a';            % Done - confirmed on 2024-11-07
+    '2024-08-15','4.3';             % Done - confirmed on 2024-11-07
+    '2024-08-22','PA653Normalville';% Done - confirmed on 2024-11-07
+    '2024-09-04','5.1a';            % Done - confirmed on 2024-11-07
+    '2024-09-13','5.2';             % Done - confirmed on 2024-11-07
+    '2024-09-17','1.6';             % Done - confirmed on 2024-11-07
+    '2024-09-19','PA51Aliquippa';   % Done - confirmed on 2024-11-07
+    '2024-09-20','PA51Aliquippa';   % Done - confirmed on 2024-11-07
+    '2024-10-16','I376ParkwayPitt'; % Done - confirmed on 2024-11-07
+    '2024-10-24','4.1b'; 
+    '2024-10-31','6.1'; 
     };
 
 % List what will be saved
@@ -636,14 +657,15 @@ plotFlags.fig_num_plotAllRawIndividually = 11016;
 
 sizeConditions = size(testingConditions);
 allData = cell(sizeConditions(1),1);
-for ith_scenarioTest = 1:sizeConditions(1)
+for ith_scenarioTest = 18:sizeConditions(1)
     mappingDate = testingConditions{ith_scenarioTest,1};
     scenarioString = testingConditions{ith_scenarioTest,2};
 
     
     % Grab the identifiers. NOTE: this also sets the reference location for
     % plotting.
-    Identifiers = fcn_INTERNAL_identifyDataByScenarioDate(scenarioString, mappingDate);
+    Identifiers = fcn_DataClean_identifyDataByScenarioDate(scenarioString, mappingDate, 1,-1);
+
 
     % Specify the bagQueryString
     bagQueryString = cat(2,'mapping_van_',mappingDate,'*'); % The more specific, the better to avoid accidental loading of wrong information
@@ -661,17 +683,22 @@ for ith_scenarioTest = 1:sizeConditions(1)
     else
         fullScenarioString = scenarioString;
     end
-    rootdirs{1} = fullfile(poseOnlyParsedBagRoot_PoseOnly,Identifiers.ProjectStage,fullScenarioString,mappingDate);
+    rootdirs{1} = fullfile(poseOnlyParsedBagRoot,Identifiers.ProjectStage,fullScenarioString,mappingDate);
 
     % List what will be saved
-    saveFlags.flag_saveMatFile_directory = fullfile(poseOnlyParsedMATLABRoot_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
-    saveFlags.flag_saveImages_directory  = fullfile(poseOnlyParsedMATLABRoot_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveMatFile_directory = fullfile(parsedMATLAB_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
+    saveFlags.flag_saveImages_directory  = fullfile(parsedMATLAB_PoseOnly,Identifiers.ProjectStage,fullScenarioString);
 
     % Call the data loading function
     close all;
     allData{ith_scenarioTest}.rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
 
 end
+
+% % For debugging
+% allData{ith_scenarioTest}.rawDataCellArray{2}.GPS_SparkFun_RightRear_GGA.GPS_Time(1:10,:) - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_RightRear_GGA.GPS_Time(1,1)
+% allData{ith_scenarioTest}.rawDataCellArray{2}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1:10,:)  - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1,1)
+% allData{ith_scenarioTest}.rawDataCellArray{2}.GPS_SparkFun_Front_GGA.GPS_Time(1:10,:) - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_Front_GGA.GPS_Time(1,1)
 
 %% Merge all MAT files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -724,7 +751,7 @@ for ith_scenarioTest = 3:length(allData)
     
     % Grab the identifiers. NOTE: this also sets the reference location for
     % plotting.
-    Identifiers = fcn_INTERNAL_identifyDataByScenarioDate(scenarioString, mappingDate);
+    Identifiers = fcn_DataClean_identifyDataByScenarioDate(scenarioString, mappingDate, 1,-1);
 
     if ~isnan(str2double(scenarioString(1)))
         fullScenarioString = cat(2,'Scenario ',Identifiers.WorkZoneScenario);
@@ -841,195 +868,12 @@ if 1==0
 end
 
 
-%% fcn_INTERNAL_identifyDataByScenarioDate
-function Identifiers = fcn_INTERNAL_identifyDataByScenarioDate(scenarioString, dateString)
 
-Identifiers.DataSource = 'MappingVan'; % Can be 'MappingVan', 'AV', 'CV2X', etc. see key
-Identifiers.SourceBagFileName =''; % This is filled in automatically for each file
-
-if ~isnan(str2double(scenarioString(1))) || strcmp(scenarioString,'BaseMap')
-    % Location for Test Track base station
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.86368573');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-77.83592832');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
-    Identifiers.ProjectStage = 'TestTrack'; % Can be 'Simulation', 'TestTrack', or 'OnRoad'
-elseif strcmp(scenarioString,'I376ParkwayPitt')
-    % Location for Pittsburgh, site 1
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.44181017');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.76090840');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','327.428');
-    Identifiers.ProjectStage = 'OnRoad'; % Can be 'Simulation', 'TestTrack', or 'OnRoad'
-elseif strcmp(scenarioString,'PA653Normalville')
-    % Location for Site 2, Falling water
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','39.995339');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-79.445472');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
-    Identifiers.ProjectStage = 'OnRoad'; % Can be 'Simulation', 'TestTrack', or 'OnRoad'
-elseif strcmp(scenarioString,'PA51Aliquippa')
-    % Location for Aliquippa, site 3
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LATITUDE','40.694871');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_LONGITUDE','-80.263755');
-    setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','223.294');
-    Identifiers.ProjectStage = 'OnRoad'; % Can be 'Simulation', 'TestTrack', or 'OnRoad'
-else
-    error('Unknown site: %s',scenarioString);    
-end
-
-
-%%%%
-% Set the Identifiers
-% For details on identifiers, see https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_LoadWorkZone
-
-Identifiers.Project = 'PennDOT ADS Workzones'; % This is the project sponsoring the data collection
-Identifiers.WorkZoneScenario = scenarioString; % Can be one of the ~20 scenarios, see key
-
-switch scenarioString
-    case 'BaseMap'
-        Identifiers.WorkZoneDescriptor = 'BaseMap'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PreCalibration'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-08-05','2024-08-12','2024-08-13'};    
-    case '1.1'
-        Identifiers.WorkZoneDescriptor = 'ShoulderWorkWithMinorEncroachment'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '1.2'
-        Identifiers.WorkZoneDescriptor = 'RoadClosureWithDetour'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '1.3'
-        Identifiers.WorkZoneDescriptor = 'SelfRegulatingLaneShiftIntoOpposingLane'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '1.4'
-        Identifiers.WorkZoneDescriptor = 'SelfRegulatingLaneShiftIntoCenterOfTurnLane'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '1.5'
-        Identifiers.WorkZoneDescriptor = 'WorkInCenterTurnLane'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '1.6'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLaneOfUndividedHighway'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-09-17'};
-    case '2.1'
-        Identifiers.WorkZoneDescriptor = 'RoadClosureWithDetourAndNumberedTrafficRoute'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '2.2'
-        Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithSelfRegulatingStopControl'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '2.3'
-        Identifiers.WorkZoneDescriptor = 'LaneShiftToTemporaryRoadway'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-04-19'};
-    case '2.4'
-        Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '3.1'
-        Identifiers.WorkZoneDescriptor = 'MovingLaneClosure'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '4.1a'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLane'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-08-14','2024-08-15'};
-    case '4.1b'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLanePennTurnpike'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '4.2'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLaneNearExitRamp'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-02-01'};        
-    case '4.3'
-        Identifiers.WorkZoneDescriptor = 'WorkInEntranceRampWithStopControl'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-02-06','2024-08-15'};
-    case '5.1a'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzone'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-09-04'};
-    case '5.1b'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzonePennTurnpike'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case '5.2'
-        Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-09-13'};
-    case '6.1'
-        Identifiers.WorkZoneDescriptor = 'LongTermShoulderUse'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-07-10','2024-07-11'};
-    case 'I376ParkwayPitt'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLaneOfUndividedHighway'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-06-24','2024-07-10','2024-07-11','2024-10-16'};
-    case 'PA653Normalville'
-        Identifiers.WorkZoneDescriptor = 'SingleLaneApproachWithTemporarySignals'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-08-22'};
-    case 'PA51Aliquippa'
-        Identifiers.WorkZoneDescriptor = 'WorkInRightLaneMobileWorkzone'; % Can be one of the 20 descriptors, see key
-        Identifiers.Treatment = 'BaseMap'; % Can be one of 9 options, see key
-        Identifiers.AggregationType = 'PostRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        validDateStrings = {'2024-09-19','2024-09-20'};
-        if strcmp(validDateStrings{1},dateString)
-            Identifiers.AggregationType = 'PreRun'; % Can be 'PreCalibration', 'PreRun', 'Run', 'PostRun', or 'PostCalibration'
-        end
-    otherwise
-        warning('on','backtrace');
-        warning('Unknown scenario given: %s',scenarioString);
-        error('Unknown scenario given. Unable to continue.');
-end
-
-% Make sure the date string is valid
-if ~any(strcmp(dateString,validDateStrings))
+%% fcn_INTERNAL_confirmDirectoryExists
+function fcn_INTERNAL_confirmDirectoryExists(directoryName)
+if 7~=exist(directoryName,'dir')
     warning('on','backtrace');
-    warning('Invalid date string, %s, given for scenario: %s. Expecting one of:', dateString, scenarioString);    
-    for ith_valid = 1:length(validDateStrings)
-        fprintf(1,'\t%s\n',validDateStrings{ith_valid});
-    end
-    error('Unknown scenario given. Unable to continue.');
+    warning('Unable to find folder: \n\t%s',directoryName);
+    error('Desired directory: %s does not exist!',directoryName);
 end
-end % Ends fcn_INTERNAL_identifyDataByScenarioDate
-
-%% fcn_INTERNAL_findTimeFromName
-function timeNumber = fcn_INTERNAL_findTimeFromName(fileName)
-
-timeString = [];
-if length(fileName)>4
-    splitName = strsplit(fileName,{'_','.'});
-    for ith_split = 1:length(splitName)
-        if contains(splitName{ith_split},'-')
-            timeString = splitName{ith_split};
-        end
-    end
-end
-timeNumber = datetime(timeString,'InputFormat','yyyy-MM-dd-HH-mm-ss');
-end % Ends fcn_INTERNAL_findTimeFromName
+end % Ends fcn_INTERNAL_confirmDirectoryExists

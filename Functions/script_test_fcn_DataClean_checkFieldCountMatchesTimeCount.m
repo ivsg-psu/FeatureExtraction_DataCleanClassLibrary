@@ -128,7 +128,7 @@ fid = 1;
 
 [flags,offending_sensor] = fcn_DataClean_checkFieldCountMatchesTimeCount(initial_test_structure,field_name,flags,time_field,sensors_to_check,fid);
 assert(isequal(flags.fakeData_has_same_length_as_ROS_Time_in_all_sensors,0));
-assert(strcmp(offending_sensor,'sensor1'));
+assert(strcmp(offending_sensor,'sensor1 sensor2'));
 
 
 %% CASE 4: basic example - changing sensors_to_check, verbose
@@ -162,7 +162,7 @@ fid = 1;
 sensors_to_check = 'sensor';
 [flags,offending_sensor] = fcn_DataClean_checkFieldCountMatchesTimeCount(initial_test_structure,field_name,flags,time_field,sensors_to_check,fid);
 assert(isequal(flags.fakeData_has_same_length_as_ROS_Time_in_sensor_sensors,0));
-assert(strcmp(offending_sensor,'sensor1'));
+assert(strcmp(offending_sensor,'sensor1 sensor2'));
 
 sensors_to_check = 'car';
 [flags,offending_sensor] = fcn_DataClean_checkFieldCountMatchesTimeCount(initial_test_structure,field_name,flags,time_field,sensors_to_check,fid);

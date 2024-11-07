@@ -41,7 +41,7 @@ flags = struct;
 
 
 % Check flags
-assert(isequal(checked_flags.all_sensors_have_trigger_time,1));
+assert(isequal(checked_flags.Trigger_Time_exists_in_all_sensors,1));
 assert(isempty(sensors_without_Trigger_Time));
 
 %% Check merging of sensors where one has Trigger_Time as nan
@@ -60,7 +60,7 @@ flags = struct;
 
 
 % Check flags
-assert(isequal(checked_flags.all_sensors_have_trigger_time,0));
+assert(isequal(checked_flags.Trigger_Time_exists_in_all_sensors,0));
 assert(length(sensors_without_Trigger_Time)==1);
 assert(strcmp(sensors_without_Trigger_Time,"LiDAR_Velodyne_Rear"))
 
@@ -80,7 +80,7 @@ flags = struct;
 
 
 % Check flags
-assert(isequal(checked_flags.all_sensors_have_trigger_time,0));
+assert(isequal(checked_flags.Trigger_Time_exists_in_all_sensors,0));
 assert(length(sensors_without_Trigger_Time)==1);
 assert(strcmp(sensors_without_Trigger_Time,"LiDAR_Velodyne_Rear"))
 

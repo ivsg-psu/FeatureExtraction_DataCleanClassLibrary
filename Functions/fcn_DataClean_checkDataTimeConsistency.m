@@ -1,5 +1,4 @@
 function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(dataStructure, varargin)
-
 % fcn_DataClean_checkDataTimeConsistency
 % Checks a given dataset to verify whether data meets key time consistency
 % requirements. 
@@ -30,7 +29,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %
 % FORMAT:
 %
-%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure, (fid), (fig_num))
+%      [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure, (fid), (plotFlags))
 %
 % INPUTS:
 %
@@ -42,9 +41,9 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %      fid: a file ID to print results of analysis. If not entered, no
 %      output is given (FID = 0). Set fid to 1 for printing to console.
 %
-%      fig_num: a figure number to plot results. If set to -1, skips any
-%      input checking or debugging, no figures will be generated, and sets
-%      up code to maximize speed.
+%      plotFlags: a structure of figure numbers to plot results. If set to
+%      -1, skips any input checking or debugging, no figures will be
+%      generated, and sets up code to maximize speed.
 %
 % OUTPUTS:
 %
@@ -74,7 +73,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % 
 % # Trigger_Time tests include:
 %     ## Trigger_Time_exists_in_all_GPS_sensors
-%     ## all_sensors_have_trigger_time
+%     ## Trigger_Time_exists_in_all_sensors
 % 
 % # ROS_Time tests include:GPS
 %     ## ROS_Time_exists_in_all_GPS_sensors
@@ -120,6 +119,9 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % 2024_09_27: xfc5113@psu.edu
 % -- move fcn_DataClean_checkAllSensorsHaveTriggerTime in the function
 % -- add sensors_without_Trigger_Time as the output of the function
+% 2024_11_07: sbrennan@psu.edu
+% -- added plotFlags instead of fig_num, to allow many different plotting
+% options
 
 %% Debugging and Input checks
 
@@ -192,16 +194,18 @@ if 2 <= nargin
     end
 end
 
-% Does user want to specify fig_num?
+% Does user want to specify plotFlags?
+% Set defaults
+plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = [];
+plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime = [];
 flag_do_plots = 0;
 if (0==flag_max_speed) &&  (3<=nargin)
     temp = varargin{end};
     if ~isempty(temp)
-        fig_num = temp; %#ok<NASGU>
+        plotFlags = temp;
         flag_do_plots = 1;
     end
 end
-
 
 %% Main code starts here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -247,7 +251,8 @@ sensors_without_Trigger_Time = '';
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=GPS%20_%20Time%20%20Tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid);
+% Below uses plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid, plotFlags);
 
 % Do any of these produce an exit condition?
 fieldList = fieldnames(flags);
@@ -357,8 +362,8 @@ end
 %    * Manually fix, or
 %    * Remove this sensor
 
-fig_num = 98765432;
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time',flags, 'GPS',fid, fig_num);
+% Below uses plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time',flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime);
 if 0==flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
     return
 end
@@ -379,12 +384,12 @@ end
 
 % [flags,offending_sensor,~] = fcn_INTERNAL_checkD ataStrictlyIncreasing(fid, dataStructure, flags, 'ROS_Time');
 [flags,offending_sensor,~] = fcn_DataClean_checkDataStrictlyIncreasing(dataStructure, 'ROS_Time', (flags), ([]), (fid), ([]));
-error('check flags');
-if 0==flags.ROS_Time_strictly_ascends
+if 0==flags.ROS_Time_strictly_ascends_in_all_sensors
     return
 end
 
 %% Check if ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
+% Check that, for each trigger time, there's a ROS time
 %    ### ISSUES with this:
 %    * The Trigger_Time represents, for many sensors, when they were
 %    commanded to collect data. If the number of data in the ROS time list
@@ -402,8 +407,6 @@ if 0==flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
 end
 
 %% Check if ROS_Time_rounds_correctly_to_Trigger_Time
-
-% error('NOT FINISHED')
 % Check that the ROS Time, when rounded to the nearest sampling interval,
 % matches the Trigger time.
 %    ### ISSUES with this:
@@ -418,14 +421,12 @@ end
 
 [flags,offending_sensor,~] = fcn_DataClean_checkTimeRoundsCorrectly(dataStructure, 'ROS_Time',flags,'Trigger_Time','GPS',fid);
 if 0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
-    warning('on','backtrace');
-    warning('ROS_Time need to be rounded to Trigger_Time in all GPS sensors')
+    % warning('on','backtrace');
+    % warning('ROS_Time needs to be rounded to Trigger_Time in all GPS sensors')
     return
-else
-    disp("ROS_Time is rounded correctly")
 end
 
-%% Check all_sensors_have_trigger_time
+%% Check Trigger_Time_exists_in_all_sensors
 % Do all sensors have Trigger Time, not just GPS sensors
 % Check that the ROS Time, when rounded to the nearest sampling interval,
 % matches the Trigger time.
@@ -439,13 +440,12 @@ end
 %    ### FIXES:
 %    * Remove and interpolate time field if not strictly increasing
 % error('stop here');
-[flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,flags,fid);
-if 0==flags.all_sensors_have_trigger_time
+
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'Trigger_Time',flags,'all',[],fid);
+if 0==flags.Trigger_Time_exists_in_all_sensors
     warning('on','backtrace');
     warning('Not all sensors have Trigger Time')
     return
-else
-    disp("All sensors have Trigger Time")
 end
 
 %% Plot the results (for debugging)?

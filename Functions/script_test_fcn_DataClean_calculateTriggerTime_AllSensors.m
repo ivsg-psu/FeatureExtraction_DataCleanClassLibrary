@@ -24,7 +24,7 @@ flags = [];
 % COMMENTED OUT UNTIL FUNCTION IS DONE
 
 % [flags, ~] = fcn_DataClean_checkAllSensorsHaveTriggerTime(dataStructure,fid,flags);
-% assert(isequal(flags.all_sensors_have_trigger_time,1));
+% assert(isequal(flags.Trigger_Time_exists_in_all_sensors,1));
 % 
 % time_time_corruption_type = 2^9; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
 % [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
@@ -41,4 +41,4 @@ flags = [];
 % 
 % % Make sure it worked
 % [flags, ~] = fcn_DataClean_checkAllSensorsHaveTriggerTime(fixed_dataStructure,fid,flags);
-% assert(isequal(flags.all_sensors_have_trigger_time,1));
+% assert(isequal(flags.Trigger_Time_exists_in_all_sensors,1));

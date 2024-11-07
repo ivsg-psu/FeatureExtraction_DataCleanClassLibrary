@@ -438,6 +438,9 @@ end % Ends main function
 
 %% fcn_INTERNAL_saveImages
 function fcn_INTERNAL_saveImages(imageName, saveFlags)
+
+pause(2); % Wait 2 seconds so that images can load
+
 Image = getframe(gcf);
 PNG_image_fname = cat(2,imageName,'.png');
 PNG_imagePath = fullfile(saveFlags.flag_saveImages_directory,PNG_image_fname);

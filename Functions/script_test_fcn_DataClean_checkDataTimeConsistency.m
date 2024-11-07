@@ -30,8 +30,14 @@ assert(strcmp(offending_sensor,''));
 dataStructure = fcn_DataClean_fillTestDataStructure;
 fid = 1;
 
+
+% List what will be plotted, and the figure numbers
+plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = 1111;
+plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime = 2222;
+
+
 fprintf(1,'\nCASE 2: basic consistency check, no errors, verbose\n');
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid);
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure,fid, plotFlags);
 fprintf(1,'\nCASE 2: Done!\n\n');
 
 assert(isequal(flags.GPS_Time_exists_in_at_least_one_GPS_sensor,1));
@@ -160,7 +166,7 @@ fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_str
 [flags, ~] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
 assert(isequal(flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors,1));
 
-%% Check ROS_Time_strictly_ascends
+%% Check ROS_Time_strictly_ascends_in_all_sensors
 fid = 1;
 
 % Define a dataset with corrupted ROS_Time where it is not increasing
@@ -169,10 +175,10 @@ time_time_corruption_type = 2^17; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_strictly_ascends,0));
+assert(isequal(flags.ROS_Time_strictly_ascends_in_all_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
-%% Check ROS_Time_strictly_ascends
+%% Check ROS_Time_strictly_ascends_in_all_sensors
 fid = 1;
 
 % Define a dataset with corrupted ROS_Time via repeat
@@ -181,7 +187,7 @@ time_time_corruption_type = 2^18; % Type 'help fcn_DataClean_fillTestDataStructu
 fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_strictly_ascends,0));
+assert(isequal(flags.ROS_Time_strictly_ascends_in_all_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 %% Check ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors

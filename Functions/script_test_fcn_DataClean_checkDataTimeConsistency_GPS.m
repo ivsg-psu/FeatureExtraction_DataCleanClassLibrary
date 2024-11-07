@@ -30,8 +30,13 @@ dataStructure = fcn_DataClean_fillTestDataStructure;
 fid = 1;
 flags = [];
 
+% List what will be plotted, and the figure numbers
+clear plotFlags
+plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = 1111;
+
+
 fprintf(1,'\nCASE 2: basic consistency check, no errors, verbose\n');
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid);
+[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid, plotFlags);
 fprintf(1,'\nCASE 2: Done!\n\n');
 
 assert(isequal(flags.GPS_Time_exists_in_at_least_one_GPS_sensor,1));
