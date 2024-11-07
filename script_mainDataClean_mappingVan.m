@@ -188,6 +188,11 @@
 % 2024_11_06 - S. Brennan
 % -- need to move functions inside checkDataTimeConsistency_GPS to own functions 
 % for example: fcn_INTERNAL_checkIfFieldHasRepeatedValues
+% -- fix last test case in
+% script_test_fcn_DataClean_checkDataTimeConsistency_GPS. The added error
+% that is used for creating a test causes a fail on one of the previous
+% flags. The code use to inject failures needs to account for this. (in
+% fillTestDataStructure)
 
 
 %% Prep the workspace

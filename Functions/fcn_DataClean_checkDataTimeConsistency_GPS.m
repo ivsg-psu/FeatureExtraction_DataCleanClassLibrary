@@ -281,7 +281,7 @@ end
 %% Check if GPS_Time_has_no_repeats_in_GPS_sensors
 %    ### ISSUES with this:
 %    * If there are many repeated time values, the calculation of sampling
-%    time in the next step produces incorrect results
+%    time in the next step produces grossly incorrect results
 %    ### DETECTION:
 %    * Examine if time values are unique
 %    ### FIXES:
@@ -399,8 +399,8 @@ custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(dataStructure,'GPS_Time',flags,threshold_in_standard_deviations, custom_lower_threshold,'any','GPS', fid);
 
 if 0==flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
-    warning('on','backtrace');
-    warning('There are jumps in differences of GPS time, GPS time needs to be interpolated')
+    % warning('on','backtrace');
+    % warning('There are jumps in differences of GPS time, GPS time needs to be interpolated')
     return
 end
 
@@ -416,20 +416,16 @@ end
 %    ### FIXES:
 %    * Interpolate time field if only a small segment is missing
 
-warning('on','backtrace');
-warning('This code looks wrong - need to check.')
-
 threshold_for_agreement = 0.0001; % Data must agree within this interval
-expectedJump = 0.01; 
+expectedJump = []; % Forces default to centiSeconds*0.01 
 string_any_or_all = 'any'; 
 sensors_to_check = 'GPS'; 
-fid = 0; 
 
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure, 'GPS_Time', (flags), (threshold_for_agreement), (expectedJump), (string_any_or_all), (sensors_to_check), (fid));
 if 0==flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
-    warning('on','backtrace');
-    warning('There are missing data in differences of GPS time, GPS time need to be interpolated')
+    % warning('on','backtrace');
+    % warning('There are missing data causing jumps in the differences of GPS time. To fix, GPS time needs to be interpolated')
     return
 end
 

@@ -357,8 +357,14 @@ end
 flags.(flag_name) = flag_field_passes_test;
 if 0==flags.(flag_name)
     return_flag = 1; % Indicate that the return was forced
-    return; % Exit the function immediately to avoid more processing
 end
+
+
+% Tell the user what is happening?
+if 0~=fid
+    fprintf(fid,'\n\t Flag %s set to: %.0f\n\n',flag_name, flags.(flag_name));
+end
+
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

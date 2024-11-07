@@ -38,11 +38,12 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 %      into the structure to allow a pass-through of flags structure
 % 
 %      threshold_for_agreement: the threshold for data to be missing. Data
-%      would be flagged as missing if any difference in data, relative to
-%      the centiSeconds, is larger than this threshold. Default is 1e-5
-%      seconds (e.g. 10 microseconds).
+%      would be flagged as missing if any difference in data jump is larger than
+%      this threshold. Default is 1E-5;
 %
-%      expectedJump: the expected difference in the data. Default is 0.
+%      expectedJump: the expected difference in the data. If empty
+%      (default), threshold_for_agreement is set to the centiSeconds field
+%      of the data converted to seconds.
 %
 %      string_any_or_all: a string consisting of 'any' or 'all' indicating
 %      whether the data should be flagged if any sensor has jumps
@@ -152,7 +153,7 @@ if 3 <= nargin
 end
 
 % Does the user want to specify the threshold_for_agreement?
-threshold_for_agreement = 1e-5;
+threshold_for_agreement = 1E-5;
 if 4 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
@@ -161,7 +162,7 @@ if 4 <= nargin
 end
 
 % Does the user want to specify the expectedJump?
-expectedJump = 0; % Default
+expectedJump = []; % Default
 if 5 <= nargin
     temp = varargin{3};
     if ~isempty(temp)
@@ -244,7 +245,7 @@ switch lower(string_any_or_all)
         if flag_check_all_sensors
             flag_name = sprintf('no_missings_in_differences_of_%s_in_all_sensors',field_name);
         else
-            flag_name = sprintf('no_missings_in_differences_of_%s__in_all_%s_sensors',field_name, sensors_to_check);
+            flag_name = sprintf('no_missings_in_differences_of_%s_in_all_%s_sensors',field_name, sensors_to_check);
         end
     otherwise
         error('Unrecognized setting on string_any_or_all when checking if fields are in sensors.');
@@ -283,6 +284,9 @@ for ith_sensor = 1:length(sensor_names)
     % Grab the sensor subfield name
     sensor_name = sensor_names{ith_sensor};
     sensor_data = dataStructure.(sensor_name);
+    if isempty(expectedJump)
+        expectedJump = sensor_data.centiSeconds*0.01;
+    end
     
     % Tell the user what is happening?
     if 0~=fid
@@ -299,10 +303,25 @@ for ith_sensor = 1:length(sensor_names)
     if ~isfield(sensor_data,field_name)
         flag_this_sensor_passes_test = 0;
     else
-        differences_in_field_data = diff(sensor_data.(field_name));
-
-        if any(abs(differences_in_field_data-expectedJump)>threshold_for_agreement)
+        testData = sensor_data.(field_name);
+        differences_in_field_data = diff(testData);
+        jumps = abs(differences_in_field_data-expectedJump);
+        if any(jumps>threshold_for_agreement)
             flag_this_sensor_passes_test = 0;
+            if 0~=fid
+                fprintf(fid,'\t\t Sensor %s fails difference test!\n',sensor_name);
+                fprintf(fid,'\t\t\t Expected jump: %.5f +/- %.5f\n',expectedJump, threshold_for_agreement);                
+                fprintf(fid,'\t\t\t Example output at point of failure:\n');                
+
+                Nchars = 30;
+                fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters('Data',Nchars),fcn_DebugTools_debugPrintStringToNCharacters('Jumps',Nchars));
+                indexOfFailure = find(abs(differences_in_field_data-expectedJump)>threshold_for_agreement,1);
+                beforeIndex = max(indexOfFailure-5,1);
+                afterIndex  = min(indexOfFailure+5,length(testData));
+                for ith_index = beforeIndex:afterIndex
+                    fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',testData(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',differences_in_field_data(ith_index,1)),Nchars));
+                end
+            end
         end
     end
     sensors_pass_test_flags(ith_sensor,1) = flag_this_sensor_passes_test;
@@ -332,8 +351,14 @@ end
 flags.(flag_name) = flag_field_passes_test;
 if 0==flags.(flag_name)
     return_flag = 1; % Indicate that the return was forced
-    return; % Exit the function immediately to avoid more processing
 end
+
+
+% Tell the user what is happening?
+if 0~=fid
+    fprintf(fid,'\n\t Flag %s set to: %.0f\n\n',flag_name, flags.(flag_name));
+end
+
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

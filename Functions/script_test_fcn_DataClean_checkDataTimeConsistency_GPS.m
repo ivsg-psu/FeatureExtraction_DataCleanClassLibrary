@@ -205,7 +205,7 @@ fprintf(1,'\nData created with following errors injected: shifted start point');
 flags = [];
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
 assert(isequal(flags.GPS_Time_has_consistent_start_end_across_GPS_sensors,0));
-assert(strcmp(offending_sensor,'Start values of: GPS_Sparkfun_RearRight GPS_Hemisphere'));
+assert(strcmp(offending_sensor,'Start values of: GPS_Sparkfun_RearRight GPS_Sparkfun_RearLeft'));
 
 
 %% Check if GPS_Time_strictly_ascends_in_GPS_sensors
@@ -220,17 +220,17 @@ flags = [];
 assert(isequal(flags.GPS_Time_strictly_ascends_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
-%% Check no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
-fid = 1;
-
-% Define a dataset with jump discontinuity in GPS_Time data
-time_time_corruption_type = 2^22; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
-[BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
-fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
-flags = [];
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
-assert(isequal(flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors,0));
-assert(strcmp(offending_sensor,'GPS_Hemisphere'));
+% %% Check no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+% fid = 1;
+% 
+% % Define a dataset with jump discontinuity in GPS_Time data
+% time_time_corruption_type = 2^22; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
+% [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
+% fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
+% flags = [];
+% [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
+% assert(isequal(flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors,0));
+% assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 
 

@@ -425,7 +425,7 @@ assert(strcmp(offending_sensor,'cow1'));
 
 string_any_or_all = 'all';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(initial_test_structure, field_name, (flags), (threshold_for_agreement), (expectedJump), (string_any_or_all),(sensors_to_check),(fid));
-assert(isequal(flags.no_missings_in_differences_of_measurements__in_all_cow_sensors,0));
+assert(isequal(flags.no_missings_in_differences_of_measurements_in_all_cow_sensors,0));
 assert(strcmp(offending_sensor,'cow1'));
 
 

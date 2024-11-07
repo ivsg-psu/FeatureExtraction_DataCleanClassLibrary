@@ -147,6 +147,9 @@ function [dataStructure, time_corruption_type_string] = fcn_DataClean_fillTestDa
 %     
 % 2023_06_19: sbrennan@psu.edu
 % -- wrote the code originally 
+% 2024_11_07: sbrennan@psu.edu
+% -- fixed bug where time start was different for different sensors. Fixed
+% by adding variable to record start time --> nowTime
 
 % TO DO
 % 
@@ -341,6 +344,7 @@ Longitude_full_data = LLA_full_data(:,1);
 Altitude_full_data = LLA_full_data(:,1);
 
 
+nowTime = posixtime(datetime('now'));
 
 names = fieldnames(dataStructure); % Grab all the fields that are in rawData structure
 for i_data = 1:length(names)
@@ -369,7 +373,7 @@ for i_data = 1:length(names)
         % Check to see if this subField is in the time calculationlist
         if any(strcmp(subFieldName,fields_to_calculate_times_for))
             
-            timeSimulated = timeSensor  + posixtime(datetime('now'));
+            timeSimulated = timeSensor  + nowTime;
             
             if strcmp(subFieldName,'ROS_Time')
                 timeSimulated = timeSimulated+ROS_time_offset;
