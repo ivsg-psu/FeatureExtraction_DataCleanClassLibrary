@@ -168,7 +168,7 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ~exist('sensors_to_check','var')
+if isempty(sensors_to_check)
     flag_check_all_sensors = 1;    
 else
     flag_check_all_sensors = 0;

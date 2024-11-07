@@ -103,6 +103,8 @@
 % -- updated DebugTools to 2024_10_27
 % 2024_11_05 - S. Brennan, sbrennan@psu.edu
 % -- functionalized out cleanNaming
+% -- fixed function checkDataTimeConsistency_GPS and subfunctions
+% -- moved INTERNAL functions inside checkDataTimeConsistency_GPS to stand-alone functions 
 
 
 %
@@ -186,8 +188,6 @@
 % -- need to change field names in fcn_DataClean_loadMappingVanDataFromFile so that
 % they pass the "standard" names listed in fcn_DataClean_renameSensorsToStandardNames
 % 2024_11_06 - S. Brennan
-% -- need to move functions inside checkDataTimeConsistency_GPS to own functions 
-% for example: fcn_INTERNAL_checkIfFieldHasRepeatedValues
 % -- fix last test case in
 % script_test_fcn_DataClean_checkDataTimeConsistency_GPS. The added error
 % that is used for creating a test causes a fail on one of the previous

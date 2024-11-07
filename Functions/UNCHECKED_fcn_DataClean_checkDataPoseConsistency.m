@@ -286,7 +286,7 @@ end
 %    ### FIXES:
 %    * Remove repeats
 
-[flags,offending_sensor,~] = fcn_INTERNAL_checkIfFieldHasRepeatedValues(fid, dataStructure, flags, 'GPS_Time','GPS');
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldHasRepeatedValues(dataStructure,'GPS_Time',flags, 'GPS', (fid),(-1));
 if 0==flags.GPS_Time_has_no_repeats_in_GPS_sensors
     return
 end
@@ -888,74 +888,6 @@ end % Ends main function
 %
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
-
-%% fcn_INTERNAL_checkIfFieldHasRepeatedValues
-function [flags,offending_sensor,return_flag] = fcn_INTERNAL_checkIfFieldHasRepeatedValues(fid, dataStructure, flags, field_name,sensors_to_check)
-% Checks to see if a particular sensor has any repeated values in the
-% requested field
-
-if ~exist('sensors_to_check','var')
-    flag_check_all_sensors = 1;    
-else
-    flag_check_all_sensors = 0;
-end
-
-% Initialize offending_sensor
-offending_sensor = '';
-return_flag = 0;
-
-% Produce a list of all the sensors (each is a field in the structure)
-if flag_check_all_sensors
-    sensor_names = fieldnames(dataStructure); % Grab all the fields that are in dataStructure structure
-else
-    % Produce a list of all the sensors that meet the search criteria, and grab
-    % their data also
-    [~,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, field_name,sensors_to_check);
-end
-
-
-if 0~=fid
-    fprintf(fid,'Checking for repeats in %s data ',field_name);
-    if flag_check_all_sensors
-        fprintf(fid,':\n');
-    else
-        fprintf(fid,'in all %s sensors:\n', sensors_to_check);
-    end
-end
-
-for i_data = 1:length(sensor_names)
-    % Grab the sensor subfield name
-    sensor_name = sensor_names{i_data};   
-    sensor_data = dataStructure.(sensor_name);
-    
-    if 0~=fid
-        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
-    end
-    
-    unique_values = unique(sensor_data.(field_name),'stable');
-    
-    if ~isequal(unique_values,sensor_data.(field_name))
-        flag_no_repeats_detected = 0;
-    else
-        flag_no_repeats_detected = 1;
-    end
-    
-    if flag_check_all_sensors
-        flag_name = cat(2,field_name,'_has_no_repeats_in_all_sensors');
-    else
-        flag_name = cat(2,field_name,sprintf('_has_no_repeats_in_%s_sensors',sensors_to_check));
-    end
-    flags.(flag_name) = flag_no_repeats_detected;
-    
-    if 0==flags.(flag_name)
-        offending_sensor = sensor_name; % Save the name of the sensor
-        return_flag = 1; % Indicate that the return was forced
-        return; % Exit the function immediately to avoid more processing
-    end
-end % Ends for loop
-
-end % Ends fcn_INTERNAL_checkIfFieldHasRepeatedValues
-
 
 
 % %% fcn_INTERNAL_checkTimeOrdering
