@@ -693,6 +693,12 @@ for ith_scenarioTest = 18:sizeConditions(1)
     close all;
     allData{ith_scenarioTest}.rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));
 
+    format long
+    index_to_check = 1;
+    allData{ith_scenarioTest}.rawDataCellArray{index_to_check}.Identifiers
+    temp1 = allData{ith_scenarioTest}.rawDataCellArray{index_to_check}.GPS_SparkFun_RightRear_GGA.GPS_Time(1:20,:) - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_RightRear_GGA.GPS_Time(1,1);
+    disp(temp1)
+
 end
 
 %%
