@@ -105,7 +105,8 @@
 % -- functionalized out cleanNaming
 % -- fixed function checkDataTimeConsistency_GPS and subfunctions
 % -- moved INTERNAL functions inside checkDataTimeConsistency_GPS to stand-alone functions 
-
+% 2024_11_07 - S. Brennan, sbrennan@psu.edu
+% -- updated PlotRoad to fix plotting bugs
 
 %
 % Known issues:
@@ -248,9 +249,9 @@ library_folders{ith_library} = {'Functions'};
 library_url{ith_library}     = 'https://github.com/ivsg-psu/FeatureExtraction_DataClean_BreakDataIntoLaps/archive/refs/tags/BreakDataIntoLaps_v2023_08_25.zip';
 
 ith_library = ith_library+1;
-library_name{ith_library}    = 'PlotRoad_v2024_09_14';
+library_name{ith_library}    = 'PlotRoad_v2024_11_07';
 library_folders{ith_library} = {'Functions', 'Data'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_PlotRoad/archive/refs/tags/PlotRoad_v2024_09_14.zip'; 
+library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_PlotRoad/archive/refs/tags/PlotRoad_v2024_11_07.zip'; 
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'GeometryClass_v2024_08_28';
