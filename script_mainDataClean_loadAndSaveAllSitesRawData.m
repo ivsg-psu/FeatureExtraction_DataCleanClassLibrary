@@ -644,15 +644,15 @@ testingConditions = {
     };
 
 % List what will be saved
-saveFlags.flag_saveMatFile = 1;
-saveFlags.flag_saveImages = 1;
+saveFlags.flag_saveMatFile = 0;
+saveFlags.flag_saveImages = 0;
 saveFlags.flag_forceDirectoryCreation = 1;
 saveFlags.flag_forceImageOverwrite = 1;
 saveFlags.flag_forceMATfileOverwrite = 1;
 
 % List what will be plotted, and the figure numbers
-plotFlags.fig_num_plotAllRawTogether = 10016;
-plotFlags.fig_num_plotAllRawIndividually = 11016;
+plotFlags.fig_num_plotAllRawTogether = []; %10016;
+plotFlags.fig_num_plotAllRawIndividually = []; %11016;
 
 
 sizeConditions = size(testingConditions);
@@ -695,10 +695,16 @@ for ith_scenarioTest = 18:sizeConditions(1)
 
 end
 
+%%
 % % For debugging
-% allData{ith_scenarioTest}.rawDataCellArray{2}.GPS_SparkFun_RightRear_GGA.GPS_Time(1:10,:) - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_RightRear_GGA.GPS_Time(1,1)
-% allData{ith_scenarioTest}.rawDataCellArray{2}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1:10,:)  - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1,1)
-% allData{ith_scenarioTest}.rawDataCellArray{2}.GPS_SparkFun_Front_GGA.GPS_Time(1:10,:) - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_Front_GGA.GPS_Time(1,1)
+format long
+index_to_check = 22;
+allData{ith_scenarioTest}.rawDataCellArray{index_to_check}.Identifiers
+temp1 = allData{ith_scenarioTest}.rawDataCellArray{index_to_check}.GPS_SparkFun_RightRear_GGA.GPS_Time(1:20,:) - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_RightRear_GGA.GPS_Time(1,1);
+temp2 = allData{ith_scenarioTest}.rawDataCellArray{index_to_check}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1:20,:)  - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1,1);
+temp3 = allData{ith_scenarioTest}.rawDataCellArray{index_to_check}.GPS_SparkFun_Front_GGA.GPS_Time(1:20,:) - allData{ith_scenarioTest}.rawDataCellArray{1}.GPS_SparkFun_Front_GGA.GPS_Time(1,1);
+fprintf(1,'GPS_SparkFun_RightRear_GGA   GPS_SparkFun_LeftRear_GGA    GPS_SparkFun_Front_GGA\n')
+disp([temp1 temp2 temp3])
 
 %% Merge all MAT files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
