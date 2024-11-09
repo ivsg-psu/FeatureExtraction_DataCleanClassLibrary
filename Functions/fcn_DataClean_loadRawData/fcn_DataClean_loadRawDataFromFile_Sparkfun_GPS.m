@@ -119,6 +119,51 @@ if strcmp(datatype,'gps')
         SparkFun_GPS_data_structure.StdLat             = datatable.StdLat;
         SparkFun_GPS_data_structure.StdLon             = datatable.StdLon;
         SparkFun_GPS_data_structure.StdAlt             = datatable.StdAlt;
+    elseif contains(topic_name,"PVT")
+        SparkFun_GPS_data_structure = fcn_DataClean_initializeDataByType(datatype);
+        time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
+        SparkFun_GPS_data_structure.ROS_Time = time_stamp;
+        SparkFun_GPS_data_structure.iTOW = datatable.iTOW; % GPS Millisecond time of week [ms]
+        SparkFun_GPS_data_structure.Year = datatable.year;
+        SparkFun_GPS_data_structure.Month = datatable.month;
+        SparkFun_GPS_data_structure.Day = datatable.day;
+        SparkFun_GPS_data_structure.Hour = datatable.hour;
+        SparkFun_GPS_data_structure.Minute = datatable.min;
+        SparkFun_GPS_data_structure.Second = datatable.sec;
+        SparkFun_GPS_data_structure.Valid = datatable.year; % Validity flags, need to check later, might be a structure contain differnet flags
+        SparkFun_GPS_data_structure.timeAccuracy = datatable.tAcc; % time accuracy estimate [ns] (UTC)
+        SparkFun_GPS_data_structure.nanoSecs = datatable.nano;
+        % Calculate GPS time in second, the actual GPS epoch is 1980/01/06,
+        % use 1970/01/01 here to have the same time line with UTC Time
+        % (Need to discuss)
+        gps_epoch = datetime(1970,1,1,0,0,0,'TimeZone','UTC');
+        current_utc_time = datetime(datatable.year, datatable.month, datatable.day, datatable.hour, datatable.min, datatable.sec, 'TimeZone', 'UTC');
+        elapsed_seconds = seconds(current_utc_time - gps_epoch);
+        GPS_TimeSeconds = elapsed_seconds;
+        SparkFun_GPS_data_structure.GPS_Time = GPS_TimeSeconds+SparkFun_GPS_data_structure.nanoSecs*(1E-9);
+        SparkFun_GPS_data_structure.fixType = datatable.fixType; % DGPS Mode, need to discuss whether we want to use our standard
+        SparkFun_GPS_data_structure.flags = datatable.flags; %
+        SparkFun_GPS_data_structure.flags2 = datatable.flags2;
+        SparkFun_GPS_data_structure.numSatellites = datatable.numSV;
+        SparkFun_GPS_data_structure.Latitude     = datatable.lat;  % The latitude [deg/1e-7]
+        SparkFun_GPS_data_structure.Longitude    = datatable.lon;  % The longitude [deg/1e-7]
+        SparkFun_GPS_data_structure.Altitude     = datatable.height;  % The altitude above Ellipsoid [mm]
+        SparkFun_GPS_data_structure.HightAboveSea  = datatable.hMSL;  % The latitude [deg]
+        SparkFun_GPS_data_structure.HonAccuracyEst   = datatable.hAcc;  % Horizontal accuracy estimate [mm]
+        SparkFun_GPS_data_structure.VerAccuracyEst    = datatable.vAcc;  % Vertical accuracy estimate [mm]
+        SparkFun_GPS_data_structure.velEast    = datatable.velE;  % NED East Velocity [mm/s]
+        SparkFun_GPS_data_structure.velNorth    = datatable.velN;  % NED North Velocity [mm/s]
+        SparkFun_GPS_data_structure.velDown    = datatable.vAcc;  % NED Down Velocity [mm/s]
+        SparkFun_GPS_data_structure.goundSpeed  = datatable.gSpeed;  % Ground Speed [mm/s]
+        SparkFun_GPS_data_structure.headingMotion    = datatable.heading;  % Heading of motion [deg /1e-5]
+        SparkFun_GPS_data_structure.SpeedAccuracyEst    = datatable.sAcc;  % Speed accuracy estimate [mm/s]
+        SparkFun_GPS_data_structure.HeadingAccuracyEst    = datatable.headAcc;  % Heading accuracy estimate [deg /1e-5]
+        SparkFun_GPS_data_structure.PDOP  = datatable.pDOP;  % Position DOP [1/0.01]
+
+        SparkFun_GPS_data_structure.reserved = datatable.reserved1; % Reserved (Don't understand)
+        SparkFun_GPS_data_structure.headingVehicle = datatable.headVeh; % Heading of vehicle [deg/1e-5]
+        SparkFun_GPS_data_structure.MagneticDec = datatable.magDec; % # Magnetic declination [deg/1e-2]
+        SparkFun_GPS_data_structure.MagneticAccuracyEst = datatable.magAcc; % Magnetic declination accuracy [deg 1e-2]
     end
         
 else

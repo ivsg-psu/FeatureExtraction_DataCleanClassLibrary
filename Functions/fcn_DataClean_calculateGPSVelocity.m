@@ -1,0 +1,1 @@
+function calculated_dataStructure = fcn_DataClean_calculateGPSVelocity(dataStructure)
