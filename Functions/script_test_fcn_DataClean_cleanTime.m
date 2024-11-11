@@ -17,8 +17,8 @@ end
 
 
 % fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData.mat');
-fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData2.mat');
-% fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData3.mat');
+% fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData2.mat');
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_cleanData3.mat');
 
 load(fullExampleFilePath,'dataStructure')
 
@@ -26,7 +26,10 @@ load(fullExampleFilePath,'dataStructure')
 % Run the command
 fid = 1;
 Flags = [];
+
 % List what will be saved
+Identifiers = dataStructure.Identifiers;
+clear saveFlags
 saveFlags.flag_saveMatFile = 0;
 saveFlags.flag_saveMatFile_directory = fullfile(cd,'Data','RawData',Identifiers.ProjectStage,Identifiers.WorkZoneScenario);
 saveFlags.flag_saveImages = 0;
