@@ -1,8 +1,9 @@
 function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure, field_name, varargin)
-% fcn_DataClean_checkTimeSamplingConsistency
-% Checks to see if the sensor's observed, average sampling time in
-% centiSeconds matches the actual sampling time when time samples are
-% rounded to closest centisecond interval
+% fcn_DataClean_checkTimeSamplingConsistency Checks to see if the sensor's
+% measured sampling time, when rounded to the desired samping interval in
+% centiSeconds, matches the desired sampling time. Basically, if a sensor
+% is set to measure every 10 centiSeconds, this checks that indeed data
+% appears to be measured every 10 centiSeconds.
 %
 % FORMAT:
 %
@@ -66,7 +67,8 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingC
 % 2024_11_10: sbrennan@psu.edu
 % -- updated plotting
 % -- updated calculation of consistency to match values where the data
-% would round
+%    would round
+% -- updated debugging outputs
 
 
 %% Debugging and Input checks
@@ -224,19 +226,19 @@ allTimeDifferences = cell(Ndata,1);
 for i_data = 1:Ndata
     
     % Grab the sensor subfield name
-    GPS_sensor_name = sensor_names{i_data};
-    sensor_data = dataStructure.(GPS_sensor_name);
+    sensor_name = sensor_names{i_data};
+    sensor_data = dataStructure.(sensor_name);
     
     if 0~=fid
-        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),GPS_sensor_name);
+        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
     end
     
-    flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
     centiSeconds = sensor_data.centiSeconds(1);
 
     % Calculate the time differences. Repeat the last one so that the
     % differences match the data length
-    timeDifferences = diff(sensor_data.(field_name));
+    timeData = sensor_data.(field_name);
+    timeDifferences = diff(timeData);
     timeDifferences = [timeDifferences; timeDifferences(end)]; %#ok<AGROW>
     allTimeDifferences{i_data,1} = timeDifferences;
 
@@ -245,27 +247,77 @@ for i_data = 1:Ndata
     % interval. We want to check if values would ALWAYS round to 1 sampling
     % interval.
 
+    % If the data is correct, then the rounding operation in the next line
+    % will always produce a value of 1
     effectiveSamplingIntervals = round(timeDifferences*100/centiSeconds);
+
+    % NOTE: the rounding operation above will still produce 1 values if the
+    % sampling rate is systematically off, say 6 centiSeconds instead of 5.
+    % Need to also check that the expected number of samples is there.
+    expectedNsamples = round((max(timeData) - min(timeData))/(0.01*centiSeconds))+1;
+
+    % Find indicies of any situations that are NOT 1, these are errors
     indiciesOfBadIntervals = find(1~=effectiveSamplingIntervals);
-    if isempty(indiciesOfBadIntervals)
+    [modeInterval, modeCount] = mode(effectiveSamplingIntervals);
+
+    % Hopefully, there are not bad indicies. If none are bad, set flag that
+    % the interval meets the indended sampling
+    if isempty(indiciesOfBadIntervals) && (length(timeData)==expectedNsamples)
         flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
     else
         flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
-        NbadIntervals = length(indiciesOfBadIntervals);
-        ratioBadIntervals = NbadIntervals/length(timeDifferences);
-        warning('on','backtrace');
-        warning('The sensor: %s has bad sampling intervals.\n \t Percentage with an incorrect sample rate: %.2f %%.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (centiSec): %.4f \n',...
-            GPS_sensor_name,field_name,centiSeconds,effective_centiSeconds,meanSamplingInterval*100);
     end
        
-    
-    % Set the flag and then exit immediately
-    flags.(flag_name) = flags_dataTimeIntervalMatchesIntendedSamplingRate;    
-    if 0==flags.(flag_name)
-        offending_sensor = GPS_sensor_name; % Save the name of the sensor
+
+    if 0==return_flag && ~flags_dataTimeIntervalMatchesIntendedSamplingRate
         return_flag = 1; % Indicate that the return was forced
-        return; % Exit the function immediately to avoid more processing
     end
+
+    if 0==flags_dataTimeIntervalMatchesIntendedSamplingRate
+        if isempty(offending_sensor)
+            offending_sensor = sensor_name;
+        else
+            offending_sensor = cat(2,offending_sensor,' ',sensor_name); % Save the name of the sensor
+        end
+        NbadIntervals = length(indiciesOfBadIntervals);
+        ratioBadIntervals = NbadIntervals/length(timeDifferences);
+        maxInterval = max(timeDifferences(indiciesOfBadIntervals));
+        minInterval = min(timeDifferences(indiciesOfBadIntervals));
+        meanInterval = mean(timeDifferences);
+
+        if 0~=fid
+            fprintf(fid,'\t\t Sensor failed!\n');
+            fprintf(fid,'\t\t Sensor had %.0f errors (out of %.0f intervals), or %.0f percent.\n',NbadIntervals,length(timeDifferences), ratioBadIntervals*100);
+            fprintf(fid,'\t\t Mean interval: %.5f seconds.\n',meanInterval);
+            fprintf(fid,'\t\t Max interval:  %.5f seconds.\n',maxInterval);
+            fprintf(fid,'\t\t Min interval:  %.5f seconds.\n',minInterval);
+            fprintf(fid,'\t\t Mode interval: %.2f times the centiSeconds (%.0f) at a frequency of %.0f (out of %.0f intervals, or %.0f percent)\n',...
+                modeInterval, centiSeconds, modeCount, length(timeDifferences), modeCount/length(timeDifferences)*100);
+            fprintf(fid,'\t\t Expected number of samples:  %.0f.\n',expectedNsamples);
+            fprintf(fid,'\t\t Actual number of samples:    %.0f.\n',length(timeData));
+        else
+            warning('on','backtrace');
+            warning(['The sensor: %s has bad sampling intervals.\n' ...
+                '\t Percentage with an incorrect sample rate: %.0f percent.\n' ...
+                '\t The total number bad: %.0f of %.0f\n' ...
+                '\t The maximum time sampling interval: %.5f seconds\n' ...
+                '\t The minimum time sampling interval: %.5f seconds\n' ...
+                '\t Effective sampling interval, average: %.2f seconds\n'],...
+                sensor_name,...
+                ratioBadIntervals*100,...
+                NbadIntervals,length(timeDifferences),...
+                maxInterval,...
+                minInterval,...
+                meanInterval);
+        end
+    end
+
+end
+
+if 0==return_flag
+    flags.(flag_name) = 1;
+else
+    flags.(flag_name) = 0;
 end
 
 
@@ -345,8 +397,8 @@ if flag_do_plots && isempty(findobj('Number',fig_num))
         nexttile
 
         % Grab the sensor subfield name
-        GPS_sensor_name = GPS_sensor_names{ith_sensor};
-        sensor_data = dataStructure.(GPS_sensor_name);
+        sensor_name = GPS_sensor_names{ith_sensor};
+        sensor_data = dataStructure.(sensor_name);
 
         LLdata = [sensor_data.Latitude sensor_data.Longitude];
 
@@ -398,7 +450,7 @@ if flag_do_plots && isempty(findobj('Number',fig_num))
 
         % Force the plot to fit
         geolimits('auto');
-        title(sprintf('%s errors for %s',field_name, GPS_sensor_name),'interpreter','none','FontSize',12)
+        title(sprintf('%s errors for %s',field_name, sensor_name),'interpreter','none','FontSize',12)
         cb = colorbar();
         ylabel(cb,'% drop in last 1 second')
     end
