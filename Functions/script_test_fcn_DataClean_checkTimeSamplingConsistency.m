@@ -142,14 +142,16 @@ assert(isequal(offending_sensor,''));
 
 %% CASE 900: Real world data
 fig_num = 900;
-figure(fig_num);
-clf;
+if ~isempty(findobj('Number',fig_num))
+    figure(fig_num);
+    clf;
+end
 
 fullExampleFilePath = fullfile(cd,'Data','ExampleData_checkDataTimeConsistency.mat');
 load(fullExampleFilePath,'dataStructure');
 
 flags = []; 
-field_name = 'GPS_Time';
+field_name = 'ROS_Time';
 sensors_to_check = 'GPS';
 fid = 1;
 

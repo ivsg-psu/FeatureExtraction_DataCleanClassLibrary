@@ -1,8 +1,8 @@
 function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure, field_name, varargin)
-
 % fcn_DataClean_checkTimeSamplingConsistency
 % Checks to see if the sensor's observed, average sampling time in
-% centiSeconds matches the actual sampling time
+% centiSeconds matches the actual sampling time when time samples are
+% rounded to closest centisecond interval
 %
 % FORMAT:
 %
@@ -63,6 +63,11 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingC
 % -- added debug flag area
 % -- added fig_num input, fixed the plot flag
 % -- fixed warning and errors
+% 2024_11_10: sbrennan@psu.edu
+% -- updated plotting
+% -- updated calculation of consistency to match values where the data
+% would round
+
 
 %% Debugging and Input checks
 
@@ -235,14 +240,21 @@ for i_data = 1:Ndata
     timeDifferences = [timeDifferences; timeDifferences(end)]; %#ok<AGROW>
     allTimeDifferences{i_data,1} = timeDifferences;
 
-    meanSamplingInterval = mean(timeDifferences);
-    effective_centiSeconds = round(100*meanSamplingInterval);
-    if centiSeconds > effective_centiSeconds
+    % From the time differences, determine where they would round. This is
+    % done by taking the time differences and dividing by the sampling
+    % interval. We want to check if values would ALWAYS round to 1 sampling
+    % interval.
+
+    effectiveSamplingIntervals = round(timeDifferences*100/centiSeconds);
+    indiciesOfBadIntervals = find(1~=effectiveSamplingIntervals);
+    if isempty(indiciesOfBadIntervals)
+        flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
+    else
         flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
-    end
-    if centiSeconds ~= effective_centiSeconds
+        NbadIntervals = length(indiciesOfBadIntervals);
+        ratioBadIntervals = NbadIntervals/length(timeDifferences);
         warning('on','backtrace');
-        warning('The sensor: %s is missing so much data that the field: %s effectively has an incorrect sample rate.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (centiSec): %.4f \n',...
+        warning('The sensor: %s has bad sampling intervals.\n \t Percentage with an incorrect sample rate: %.2f %%.\n \t The commanded centiSeconds: %d \n\t The effective centiSeconds: %d \n\t The mean time sampling difference (centiSec): %.4f \n',...
             GPS_sensor_name,field_name,centiSeconds,effective_centiSeconds,meanSamplingInterval*100);
     end
        
@@ -386,13 +398,16 @@ if flag_do_plots && isempty(findobj('Number',fig_num))
 
         % Force the plot to fit
         geolimits('auto');
-        title(sprintf('GPS errors for %s',GPS_sensor_name),'interpreter','none','FontSize',12)
+        title(sprintf('%s errors for %s',field_name, GPS_sensor_name),'interpreter','none','FontSize',12)
         cb = colorbar();
         ylabel(cb,'% drop in last 1 second')
     end
 
-    
-    sgtitle('Histograms of time samples');
+    if flag_check_all_sensors
+        sgtitle(sprintf('Checking Time Sampling Consistency for field: %s, among all sensors',field_name),'interpreter','none');
+    else
+        sgtitle(sprintf('Checking Time Sampling Consistency for field: %s, among sensors: %s',field_name, sensors_to_check),'interpreter','none');
+    end
 
     % % Make axis slightly larger?
     % if flag_rescale_axis
