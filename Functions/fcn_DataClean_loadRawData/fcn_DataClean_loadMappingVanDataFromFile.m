@@ -471,6 +471,11 @@ for file_idx = 1:num_files
             SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_GST = SparkFun_GPS_RearLeft_GST;
 
+        elseif contains(topic_name, 'GPS_SparkFun_RearLeft_PVT')
+            SparkFun_GPS_RearLeft_PVT = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            rawData.GPS_SparkFun_LeftRear_PVT = SparkFun_GPS_RearLeft_PVT;
+
+
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_GGA')
             sparkfun_gps_rear_right_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_GGA = sparkfun_gps_rear_right_GGA;
@@ -484,6 +489,10 @@ for file_idx = 1:num_files
         elseif contains(topic_name, 'GPS_SparkFun_RearRight_GST') && flag_do_load_GST
             sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_GST = sparkfun_gps_rear_right_GST;
+
+        elseif contains(topic_name, 'GPS_SparkFun_RearRight_PVT')
+            SparkFun_GPS_RearRight_PVT = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
+            rawData.GPS_SparkFun_RightRear_PVT = SparkFun_GPS_RearRight_PVT;
 
         elseif contains(topic_name, 'Trigger_diag')
             diagnostic_trigger = fcn_DataClean_loadRawDataFromFile_Diagnostic(full_file_path,datatype,fid,topic_name);

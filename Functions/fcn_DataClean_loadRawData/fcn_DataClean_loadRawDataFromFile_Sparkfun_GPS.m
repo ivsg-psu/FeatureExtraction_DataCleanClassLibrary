@@ -50,7 +50,7 @@ if strcmp(datatype,'gps')
         
 
 
-        SparkFun_GPS_data_structure.GPS_Time           = GPSsecs + GPSmicrosecs*10^-6;  % This is the GPS time, UTC, as reported by the unit
+        SparkFun_GPS_data_structure.GPS_Time     = GPSsecs + GPSmicrosecs*10^-6;  % This is the GPS time, UTC, as reported by the unit
 
         
         % FOR DEBUGGING:
@@ -130,7 +130,7 @@ if strcmp(datatype,'gps')
         SparkFun_GPS_data_structure.Hour = datatable.hour;
         SparkFun_GPS_data_structure.Minute = datatable.min;
         SparkFun_GPS_data_structure.Second = datatable.sec;
-        SparkFun_GPS_data_structure.Valid = datatable.year; % Validity flags, need to check later, might be a structure contain differnet flags
+        SparkFun_GPS_data_structure.Valid = datatable.valid; % Validity flags, need to check later, might be a structure contain differnet flags
         SparkFun_GPS_data_structure.timeAccuracy = datatable.tAcc; % time accuracy estimate [ns] (UTC)
         SparkFun_GPS_data_structure.nanoSecs = datatable.nano;
         % Calculate GPS time in second, the actual GPS epoch is 1980/01/06,
@@ -140,7 +140,7 @@ if strcmp(datatype,'gps')
         current_utc_time = datetime(datatable.year, datatable.month, datatable.day, datatable.hour, datatable.min, datatable.sec, 'TimeZone', 'UTC');
         elapsed_seconds = seconds(current_utc_time - gps_epoch);
         GPS_TimeSeconds = elapsed_seconds;
-        SparkFun_GPS_data_structure.GPS_Time = GPS_TimeSeconds+SparkFun_GPS_data_structure.nanoSecs*(1E-9);
+        SparkFun_GPS_data_structure.GPS_Time = GPS_TimeSeconds+SparkFun_GPS_data_structure.nanoSecs*(10^-9);
         SparkFun_GPS_data_structure.fixType = datatable.fixType; % DGPS Mode, need to discuss whether we want to use our standard
         SparkFun_GPS_data_structure.flags = datatable.flags; %
         SparkFun_GPS_data_structure.flags2 = datatable.flags2;
@@ -148,7 +148,7 @@ if strcmp(datatype,'gps')
         SparkFun_GPS_data_structure.Latitude     = datatable.lat;  % The latitude [deg/1e-7]
         SparkFun_GPS_data_structure.Longitude    = datatable.lon;  % The longitude [deg/1e-7]
         SparkFun_GPS_data_structure.Altitude     = datatable.height;  % The altitude above Ellipsoid [mm]
-        SparkFun_GPS_data_structure.HightAboveSea  = datatable.hMSL;  % The latitude [deg]
+        SparkFun_GPS_data_structure.HightAboveSea  = datatable.hMSL;  % The altitude above sea level [mm]
         SparkFun_GPS_data_structure.HonAccuracyEst   = datatable.hAcc;  % Horizontal accuracy estimate [mm]
         SparkFun_GPS_data_structure.VerAccuracyEst    = datatable.vAcc;  % Vertical accuracy estimate [mm]
         SparkFun_GPS_data_structure.velEast    = datatable.velE;  % NED East Velocity [mm/s]
