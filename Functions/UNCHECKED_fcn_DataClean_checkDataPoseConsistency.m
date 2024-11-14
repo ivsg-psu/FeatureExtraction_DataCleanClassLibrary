@@ -206,17 +206,22 @@ flags = struct;
 % they are not true, there are procedures to fix these errors and these are
 % typically performed via other functions in the DataClean library.
 %
-% ## GPS_Time_exists_in_at_least_one_GPS_sensor
-% ## GPS_Time_exists_in_all_GPS_sensors
-% ## centiSeconds_exists_in_all_GPS_sensors
-% ## GPS_Time_has_no_repeats_in_GPS_sensors
-% ## GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
-% ## GPS_Time_has_consistent_start_end_across_GPS_sensors
+%                    GPS_Time_exists_in_at_least_one_GPS_sensor: 1
+%                            GPS_Time_exists_in_all_GPS_sensors: 1
+%                        centiSeconds_exists_in_all_GPS_sensors: 1
+%                        GPS_Time_has_no_repeats_in_GPS_sensors: 1
+%                      GPS_Time_strictly_ascends_in_GPS_sensors: 1
+%       GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
+%            GPS_Time_has_consistent_start_end_within_5_seconds: 1
+%          GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
+%             GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
+% GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
+%
 % ## Trigger_Time_exists_in_all_GPS_sensors
 % ## GPS_Time_strictly_ascends_in_GPS_sensors
 % ## ROS_Time_exists_in_all_GPS_sensors
 % ## ROS_Time_scaled_correctly_as_seconds
-% ## ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+% ## ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
 % ## ROS_Time_strictly_ascends
 % ## ROS_Time_has_correct_length
 % ## ROS_Time_rounds_correctly_to_Trigger_Time
@@ -308,9 +313,9 @@ end
 %    * Remove this sensor
 
 %% Check consistency of expected and actual time sampling for GPS_Time
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time',flags, 'GPS',fid);
-
-if 0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+verificationTypeFlag = 0; 
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', verificationTypeFlag, flags, 'GPS',fid);
+if 0==flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     return
 end
 
@@ -434,9 +439,10 @@ end
 %    * Remove this sensor
 
 %% Check consistency of expected and actual time sampling for ROS_Time in GPS sensors
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time',flags, 'GPS',fid);
+verificationTypeFlag = 0; 
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time', verificationTypeFlag, flags, 'GPS',fid);
 
-if 0==flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+if 0==flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     return
 end
 

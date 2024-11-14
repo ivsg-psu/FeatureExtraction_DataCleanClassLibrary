@@ -48,12 +48,8 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanTime(rawDataStr
 %      generated, and sets up code to maximize speed. The structure has the
 %      following format:
 %
-%         plotFlags.fig_num_plotAllRawTogether = 1111; % This is the figure
-%         where all the bag files are plotted together
-%
-%         plotFlags.fig_num_plotAllRawIndividually = 2222; % This is the
-%         number starting the count for all the figures that open,
-%         individually, for each bag file after it is loaded.
+%            plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
+%            plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime
 %
 %
 % OUTPUTS:
@@ -193,8 +189,8 @@ end
 
 % Does user want to specify plotFlags?
 % Set defaults
-plotFlags.fig_num_plotAllRawTogether = [];
-plotFlags.fig_num_plotAllRawIndividually = [];
+plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = [];
+plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime = [];
 flag_do_plots = 0;
 if (0==flag_max_speed) &&  (5<=nargin)
     temp = varargin{end};
@@ -289,11 +285,11 @@ while 1==flag_stay_in_main_loop
     %                           GPS_Time_exists_in_all_GPS_sensors: 1
     %                       centiSeconds_exists_in_all_GPS_sensors: 1
     %                       GPS_Time_has_no_repeats_in_GPS_sensors: 1
-    % GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors: 1
+    %      GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
     %           GPS_Time_has_consistent_start_end_within_5_seconds: 1
     %         GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
     %                     GPS_Time_strictly_ascends_in_GPS_sensors: 1
-    %       no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors: 1
+    %            GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
 
     % Used to create test data
     if 1==0
@@ -381,7 +377,7 @@ while 1==flag_stay_in_main_loop
 
 
 
-    %% Check if GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+    %% Check if GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
     %    * This field is used to confirm GPS sampling rates for all
     %    GPS-triggered sensors
@@ -397,7 +393,7 @@ while 1==flag_stay_in_main_loop
     %    * Manually fix, or
     %    * Remove this sensor
     
-    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors)
         warning('on','backtrace');
         warning('A GPS sensor has a sampling rate different than expected by centiSeconds!?');
         error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
@@ -471,7 +467,7 @@ while 1==flag_stay_in_main_loop
     end
 
 
-    %% Check if no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+    %% Check if GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors
     %    ### ISSUES with this:
     %    * The GPS_Time may have small jumps which could occur if the sensor
     %    pauses for a moment, then restarts
@@ -490,12 +486,12 @@ while 1==flag_stay_in_main_loop
         save(fullExampleFilePath,'dataStructure');
     end
 
-    if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors)
         nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure, fid);
         flag_keep_checking = 0;
     end
     
-    % %% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+    % %% Check if GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors
     % %    ### ISSUES with this:
     % %    * The GPS_Time may have small jumps which could occur if the sensor
     % %    pauses for a moment, then restarts
@@ -507,7 +503,7 @@ while 1==flag_stay_in_main_loop
     % %    ### FIXES:
     % %    * Interpolate time field if only a small segment is missing        
     % 
-    if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors)
         nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure, fid);
         flag_keep_checking = 0;    
     end
@@ -555,7 +551,7 @@ while 1==flag_stay_in_main_loop
     % end
     % %%%%%
 
-
+% URHERE - need to check GPS_Time to see if interpolation is required!
 
     %% ROS_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -604,7 +600,7 @@ while 1==flag_stay_in_main_loop
         flag_keep_checking = 0;
     end
     
-    %% Check if ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+    %% Check if ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
     %    * The ROS time and GPS time should both have approximately the same
     %    sampling rates, and we use this alignment to calibrate ROS time to GPS
@@ -617,7 +613,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors)
         warning('on','backtrace');
         warning('Fundamental error on ROS_time: a GPS sensor was found that has a ROS time sample rate different than the GPS sample rate!?');
         error('ROS time is mis-sampled.\');            
@@ -852,96 +848,35 @@ if (1==flag_do_plots)
         fprintf(fid,'\nBEGINNING PLOTTING: \n');
     end
 
-    %% Plot all of them together?
-    if ~isempty(plotFlags.fig_num_plotAllRawTogether)
-        fig_num_plotAllRawTogether = plotFlags.fig_num_plotAllRawTogether;
-        figure(fig_num_plotAllRawTogether);
-        clf;
 
-        % Test the function
-        clear plotFormat
-        plotFormat.LineStyle = '-';
-        plotFormat.LineWidth = 2;
-        plotFormat.Marker = 'none';
-        plotFormat.MarkerSize = 5;
-
-        legend_entries = cell(length(rawDataCellArray)+1,1);
-        for ith_rawData = 1:length(rawDataCellArray)
-            bagName = only_directory_filelist(ith_rawData).name;
-       
-            if fid
-                fprintf(fid,'\tPlotting file %.0d of %.0d: %s\n', ith_rawData, length(rawDataCellArray), bagName);
-            end
-            plotFormat.Color = fcn_geometry_fillColorFromNumberOrName(ith_rawData);
-            colorMap = plotFormat.Color;
-            fcn_DataClean_plotRawData(rawDataCellArray{ith_rawData}, (bagName), (plotFormat), (colorMap), (fig_num_plotAllRawTogether))
-            legend_entries{ith_rawData} = bagName;
-
-        end
-
-        % Plot the base station
-        fcn_plotRoad_plotLL([],[],fig_num_plotAllRawTogether);
-        legend_entries{end} = 'Base Station';
-
-        h_legend = legend(legend_entries);
-        set(h_legend,'Interpreter','none','FontSize',6)
-    
-        % Force the plot to fit
-        geolimits('auto');
-
-        title(Identifiers.WorkZoneScenario,'interpreter','none','FontSize',12)
-
+    %% Save plotted images?
+    if ~isempty(plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime)
         % Save the image to file?
         if 1==saveFlags.flag_saveImages
-            fcn_INTERNAL_saveImages(cat(2,'mapping_van_',Identifiers.WorkZoneScenario), saveFlags);
+            figure(plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
+            fcn_INTERNAL_saveImages(cat(2,'cleanTime_GPS_',Identifiers.WorkZoneScenario), saveFlags);
+        end
+
+    end
+
+    if  ~isempty(plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime)
+        % Save the image to file?
+        if 1==saveFlags.flag_saveImages
+            figure(plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime);
+            fcn_INTERNAL_saveImages(cat(2,'cleanTime_ROS_',Identifiers.WorkZoneScenario), saveFlags);
         end
 
     end
 
 
 
-
-    %% Plot all individually, and save all images and mat files
-    if ~isempty(plotFlags.fig_num_plotAllRawIndividually)
-        fig_num_plotAllRawIndividually = plotFlags.fig_num_plotAllRawIndividually;
-
-
-        for ith_rawData = 1:length(rawDataCellArray)
-            fig_num = fig_num_plotAllRawIndividually -1 +ith_rawData;
-            figure(fig_num);
-            clf;
-
-            % Plot the base station
-            fcn_plotRoad_plotLL([],[],fig_num);
-
-            % Plot the data
-            bagName = only_directory_filelist(ith_rawData).name;
-            fcn_DataClean_plotRawData(rawDataCellArray{ith_rawData}, (bagName), ([]), ([]), (fig_num))
-
-            pause(0.1);
-
-
-            % Save the image to file?
-            if 1==saveFlags.flag_saveImages
-
-                % Make sure bagName is good
-                if contains(bagName,'.')
-                    bagName_clean = extractBefore(bagName,'.');
-                else
-                    bagName_clean = bagName;
-                end
-
-                % Save to the name
-                fcn_INTERNAL_saveImages(char(bagName_clean), saveFlags);
-
-            end
-
-            % Save the mat file?
-            if 1 == saveFlags.flag_saveMatFile
-                fcn_INTERNAL_saveMATfile(rawDataCellArray{ith_rawData}, char(bagName_clean), saveFlags);
-            end
-        end
-    end
+    % %% Save mat file?
+    % if ~isempty(plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime)
+    %     % Save the mat file?
+    %     if 1 == saveFlags.flag_saveMatFile
+    %         fcn_INTERNAL_saveMATfile(rawDataCellArray{ith_rawData}, char(bagName_clean), saveFlags);
+    %     end
+    % end
 
 
 

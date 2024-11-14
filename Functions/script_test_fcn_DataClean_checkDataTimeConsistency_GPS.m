@@ -171,7 +171,7 @@ assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 
 
-%% Check GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+%% Check GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
 fid = 1;
 
 % Define a dataset with corrupted centiSeconds where the field is
@@ -181,7 +181,7 @@ time_time_corruption_type = 2^7; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 flags = [];
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
-assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors,0));
+assert(isequal(flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
 
@@ -225,7 +225,7 @@ flags = [];
 assert(isequal(flags.GPS_Time_strictly_ascends_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
-% %% Check no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+% %% Check GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors
 % fid = 1;
 % 
 % % Define a dataset with jump discontinuity in GPS_Time data
@@ -234,7 +234,7 @@ assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 % fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
 % flags = [];
 % [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(BadDataStructure, flags, fid);
-% assert(isequal(flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors,0));
+% assert(isequal(flags.GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors,0));
 % assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 

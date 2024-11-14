@@ -61,7 +61,7 @@ fid = 0; %#ok<NASGU>
 
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 % Fix the error
@@ -70,7 +70,7 @@ modified_test_structure.pig3.data  = good_data;
 
 % Show an error is not detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(modified_test_structure,field_name);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,1));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,1));
 assert(isequal(offending_sensor,''));
 
 %% CASE 2: basic example - no inputs, verbose
@@ -116,7 +116,7 @@ fid = 1;
 
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 % Fix the error
@@ -125,7 +125,7 @@ modified_test_structure.pig3.data  = good_data;
 
 % Show an error is not detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(modified_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,1));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,1));
 assert(isequal(offending_sensor,''));
 
 %% CASE 3: basic example - show effect of fields
@@ -169,20 +169,20 @@ fid = 1;
 
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 % Try a different field, which is bad in cow1
 field_name = 'measurements';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_measurements_in_any_sensors,0));
+assert(isequal(flags.measurements_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'cow1'));
 
 % Try a different field, which is bad in pig data because it does not
 % contain any 'values' field
 field_name = 'values';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_values_in_any_sensors,0));
+assert(isequal(flags.values_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig1'));
 
 
@@ -230,7 +230,7 @@ fid = 1;
 flags.this_is_a_test = 1;
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 assert(isequal(flags.this_is_a_test,1));
@@ -279,7 +279,7 @@ fid = 1;
 
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 % Fix the error
@@ -288,7 +288,7 @@ modified_test_structure.pig3.data  = good_data;
 
 % Show an error is not detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(modified_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,1));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,1));
 assert(isequal(offending_sensor,''));
 
 % Now lower the threshold, and show error comes back
@@ -296,7 +296,7 @@ assert(isequal(offending_sensor,''));
 % previous segment of code, but with lower standard deviations.
 threshold_in_standard_deviations = 1; % One standard deviation will cause many regular data to show up in error
 [flags,~] = fcn_DataClean_checkFieldDifferencesForJumps(modified_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 
 
 %% CASE 6: basic example - custom_lower_threshold changed, verbose
@@ -342,7 +342,7 @@ fid = 1;
 
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 % Fix the error
@@ -351,7 +351,7 @@ modified_test_structure.pig3.data  = good_data;
 
 % Show an error is not detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(modified_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,1));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,1));
 assert(isequal(offending_sensor,''));
 
 % Now lower the threshold, and show error comes back
@@ -360,7 +360,7 @@ custom_lower_threshold = .99; % Some jumps are smaller than this
 % NOTE: other than the lower threshold, this is exactly the same as the
 % previous segment of code, but with lower standard deviations.
 [flags,~] = fcn_DataClean_checkFieldDifferencesForJumps(modified_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 
 
 %% CASE 7 - string_any_or_all changed, verbose
@@ -409,12 +409,12 @@ field_name = 'data';
 
 string_any_or_all = 'any';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 string_any_or_all = 'all';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_all_sensors,1));
+assert(isequal(flags.data_has_no_sampling_jumps_in_all_sensors,1));
 assert(strcmp(offending_sensor,''));
 
 
@@ -423,12 +423,12 @@ field_name = 'measurements';
 
 string_any_or_all = 'any';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_measurements_in_any_sensors,0));
+assert(isequal(flags.measurements_has_no_sampling_jumps_in_any_sensors,0));
 assert(strcmp(offending_sensor,'cow1'));
 
 string_any_or_all = 'all';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_measurements_in_all_sensors,1));
+assert(isequal(flags.measurements_has_no_sampling_jumps_in_all_sensors,1));
 assert(strcmp(offending_sensor,''));
 
 % Try a different field, and limit to JUST cows - these are ALL bad
@@ -437,12 +437,12 @@ sensors_to_check = 'cow';
 
 string_any_or_all = 'any';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_measurements_in_any_cow_sensors,0));
+assert(isequal(flags.measurements_has_no_sampling_jumps_in_any_cow_sensors,0));
 assert(strcmp(offending_sensor,'cow1'));
 
 string_any_or_all = 'all';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_measurements__in_all_cow_sensors,0));
+assert(isequal(flags.measurements_has_no_sampling_jumps_in_all_cow_sensors,0));
 assert(strcmp(offending_sensor,'cow1'));
 
 
@@ -491,11 +491,11 @@ fid = 1;
 % Show an error is detected in pig data
 sensors_to_check = 'pig';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_pig_sensors,0));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_pig_sensors,0));
 assert(strcmp(offending_sensor,'pig3'));
 
 % Show an error is not detected in cow data
 sensors_to_check = 'cow';
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(initial_test_structure,field_name,flags,threshold_in_standard_deviations, custom_lower_threshold,string_any_or_all,sensors_to_check, fid);
-assert(isequal(flags.no_jumps_in_differences_of_data_in_any_cow_sensors,1));
+assert(isequal(flags.data_has_no_sampling_jumps_in_any_cow_sensors,1));
 assert(strcmp(offending_sensor,''));

@@ -43,7 +43,11 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %
 %      plotFlags: a structure of figure numbers to plot results. If set to
 %      -1, skips any input checking or debugging, no figures will be
-%      generated, and sets up code to maximize speed.
+%      generated, and sets up code to maximize speed. The following flags
+%      are currently used:
+%
+%            plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
+%            plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime
 %
 % OUTPUTS:
 %
@@ -62,14 +66,16 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % typically performed via other functions in the DataClean library.
 %
 % # GPS_Time tests include:
-%     ## GPS_Time_exists_in_at_least_one_GPS_sensor
-%     ## GPS_Time_exists_in_all_GPS_sensors
-%     ## centiSeconds_exists_in_all_GPS_sensors
-%     ## GPS_Time_has_no_repeats_in_GPS_sensors
-%     ## GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
-%     ## GPS_Time_has_consistent_start_end_within_5_seconds
-%     ## GPS_Time_has_consistent_start_end_across_GPS_sensors
-%     ## GPS_Time_strictly_ascends_in_GPS_sensors
+%                    GPS_Time_exists_in_at_least_one_GPS_sensor: 1
+%                            GPS_Time_exists_in_all_GPS_sensors: 1
+%                        centiSeconds_exists_in_all_GPS_sensors: 1
+%                        GPS_Time_has_no_repeats_in_GPS_sensors: 1
+%                      GPS_Time_strictly_ascends_in_GPS_sensors: 1
+%       GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
+%            GPS_Time_has_consistent_start_end_within_5_seconds: 1
+%          GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
+%             GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
+% GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
 % 
 % # Trigger_Time tests include:
 %     ## Trigger_Time_exists_in_all_GPS_sensors
@@ -78,7 +84,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % # ROS_Time tests include:GPS
 %     ## ROS_Time_exists_in_all_GPS_sensors
 %     ## ROS_Time_scaled_correctly_as_seconds
-%     ## ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+%     ## ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
 %     ## ROS_Time_strictly_ascends
 %     ## ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
 %     ## ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
@@ -121,7 +127,13 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % -- add sensors_without_Trigger_Time as the output of the function
 % 2024_11_07: sbrennan@psu.edu
 % -- added plotFlags instead of fig_num, to allow many different plotting
-% options
+%    options
+% -- swapped order on some of the flags, as there's no way that flags can
+% "pass" on one and then "fail" on the other.
+% ROS_Time_strictly_ascends_in_all_sensors cannot be tested as that same
+% condition would fail in testing
+% ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors. So have to
+% test "strictly ascends" first, before "same rate" testing.
 
 %% Debugging and Input checks
 
@@ -251,6 +263,19 @@ sensors_without_Trigger_Time = '';
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=GPS%20_%20Time%20%20Tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% # GPS_Time tests include:
+%                    GPS_Time_exists_in_at_least_one_GPS_sensor: 1
+%                            GPS_Time_exists_in_all_GPS_sensors: 1
+%                        centiSeconds_exists_in_all_GPS_sensors: 1
+%                        GPS_Time_has_no_repeats_in_GPS_sensors: 1
+%                      GPS_Time_strictly_ascends_in_GPS_sensors: 1
+%       GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
+%            GPS_Time_has_consistent_start_end_within_5_seconds: 1
+%          GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
+%             GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
+% GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
+
+
 % Below uses plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
 [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid, plotFlags);
 
@@ -348,27 +373,6 @@ if 0==flags.ROS_Time_scaled_correctly_as_seconds
     return
 end
 
-%% Check if ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
-%    ### ISSUES with this:
-%    * The ROS time and GPS time should both have approximately the same
-%    sampling rates, and we use this alignment to calibrate ROS time to GPS
-%    time absolutely.
-%    * If they do not agree, then either the GPS or the ROS master are
-%    giving wrong data
-%    ### DETECTION:
-%    * Examine if centiSeconds calculation of time interval matches ROS
-%    time interval for data collection, on average
-%    ### FIXES:
-%    * Manually fix, or
-%    * Remove this sensor
-
-% Below uses plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time',flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime);
-if 0==flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
-    return
-end
-
-
 %% Check if ROS_Time_strictly_ascends
 %    ### ISSUES with this:
 %    * This field is used to calibrate ROS to GPS time via interpolation, and must
@@ -387,6 +391,28 @@ end
 if 0==flags.ROS_Time_strictly_ascends_in_all_sensors
     return
 end
+
+%% Check if ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
+%    ### ISSUES with this:
+%    * The ROS time and GPS time should both have approximately the same
+%    sampling rates, and we use this alignment to calibrate ROS time to GPS
+%    time absolutely.
+%    * If they do not agree, then either the GPS or the ROS master are
+%    giving wrong data
+%    ### DETECTION:
+%    * Examine if centiSeconds calculation of time interval matches ROS
+%    time interval for data collection, on average
+%    ### FIXES:
+%    * Manually fix, or
+%    * Remove this sensor
+
+% Below uses plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime
+verificationTypeFlag = 0; 
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime);
+if 0==flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
+    return
+end
+
 
 %% Check if ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
 % Check that, for each trigger time, there's a ROS time

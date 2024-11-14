@@ -151,7 +151,7 @@ time_time_corruption_type = 2^7; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, offending_sensor] = fcn_DataClean_checkDataPoseConsistency(BadDataStructure,fid);
-assert(isequal(flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors,0));
+assert(isequal(flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Sparkfun_RearRight'));
 
 
@@ -202,7 +202,7 @@ time_time_corruption_type = 2^8; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, ~] = fcn_DataClean_checkDataPoseConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors,1));
+assert(isequal(flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors,1));
 
 %% Missing Trigger_Time field test - the Trigger_Time field is completely missing
  

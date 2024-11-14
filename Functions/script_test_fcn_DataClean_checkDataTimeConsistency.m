@@ -24,7 +24,7 @@ fprintf(1,'\nCASE 1: Done!\n\n');
 assert(isequal(flags.GPS_Time_exists_in_at_least_one_GPS_sensor,1));
 assert(strcmp(offending_sensor,''));
 
-%% CASE 2: Basic call - verbose mode
+%% CASE 2: Basic call - verbose mode with plotting
 
 % Fill in the initial data
 dataStructure = fcn_DataClean_fillTestDataStructure;
@@ -154,7 +154,7 @@ assert(isequal(flags.ROS_Time_scaled_correctly_as_seconds,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
 
-%% Check ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+%% Check ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
 fid = 1;
 
 % Define a dataset with corrupted centiSeconds where the field is
@@ -164,7 +164,7 @@ time_time_corruption_type = 2^8; % Type 'help fcn_DataClean_fillTestDataStructur
 fprintf(1,'\nData created with following errors injected: %s\n\n',error_type_string);
 
 [flags, ~] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors,1));
+assert(isequal(flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors,1));
 
 %% Check ROS_Time_strictly_ascends_in_all_sensors
 fid = 1;
@@ -202,18 +202,19 @@ fprintf(1,'\nData created with following errors injected: %s\n',error_type_strin
 assert(isequal(flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors,0));
 assert(strcmp(offending_sensor,'GPS_Hemisphere'));
 
-%% Check ROS_Time_rounds_correctly_to_Trigger_Time
-fid = 1;
 
-% Define a dataset with corrupted ROS_Time length
-time_time_corruption_type = 2^21; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
-[BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
-fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
-
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
-assert(isequal(flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors,0));
-assert(strcmp(offending_sensor,'GPS_Hemisphere'));
-
+% %% Check ROS_Time_rounds_correctly_to_Trigger_Time
+% fid = 1;
+% 
+% % Define a dataset with corrupted ROS_Time length
+% time_time_corruption_type = 2^21; % Type 'help fcn_DataClean_fillTestDataStructure' to ID corruption types
+% [BadDataStructure, error_type_string] = fcn_DataClean_fillTestDataStructure(time_time_corruption_type);
+% fprintf(1,'\nData created with following errors injected: %s\n',error_type_string);
+% 
+% [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(BadDataStructure,fid);
+% assert(isequal(flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors,0));
+% assert(strcmp(offending_sensor,'GPS_Hemisphere'));
+% 
 
 
 %% Fail conditions

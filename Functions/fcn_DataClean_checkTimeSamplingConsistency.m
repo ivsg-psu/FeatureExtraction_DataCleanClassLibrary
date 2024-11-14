@@ -1,4 +1,4 @@
-function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure, field_name, varargin)
+function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure, field_name, verificationTypeFlag, varargin)
 % fcn_DataClean_checkTimeSamplingConsistency Checks to see if the sensor's
 % measured sampling time, when rounded to the desired samping interval in
 % centiSeconds, matches the desired sampling time. Basically, if a sensor
@@ -8,7 +8,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingC
 % FORMAT:
 %
 %      [flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(...
-%          dataStructure,field_name,...
+%          dataStructure, field_name, verificationTypeFlag, ...
 %          (flags), (sensors_to_check), (fid), (fig_num))
 %
 % INPUTS:
@@ -16,6 +16,27 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingC
 %      dataStructure: a data structure to be analyzed
 %
 %      field_name: the field to be checked
+%
+%      verificationTypeFlag: a flag that checks the verification type. The
+%      following types are allowed:
+%
+%            0: mode matching - the code calculates the sampling itervals,
+%               rounds them to the nearest centiSecond, and finds the most
+%               common result (the mode of the data). The flag passes if
+%               the mode matches the centiSecond setting. This method is
+%               useful to check that the centiSeconds is set correctly.
+%               (default)
+%
+%            1: interval matching - the code calculates the sampling
+%               intervals and divides every result by the expected sampling
+%               interval calculated from the intended centiSeconds. It then
+%               rounds to the nearest integer. To pass, all observed
+%               sampling intervals must round to 1. This method is useful
+%               to catch if all the data are correctly sampled.
+%
+%            2: count matching - the code calculated the number of expected
+%               samples based on the centiSeconds. This method is useful to
+%               check that the amount of data agrees with expected amounts.
 %
 %      (OPTIONAL INPUTS)
 %
@@ -69,6 +90,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingC
 % -- updated calculation of consistency to match values where the data
 %    would round
 % -- updated debugging outputs
+% -- added verificationTypeFlag
 
 
 %% Debugging and Input checks
@@ -77,7 +99,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkTimeSamplingC
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
 flag_max_speed = 0;
-if (nargin==6 && isequal(varargin{end},-1))
+if (nargin==7 && isequal(varargin{end},-1))
     flag_do_debug = 0; % % % % Flag to plot the results for debugging
     flag_check_inputs = 0; % Flag to perform input checking
     flag_max_speed = 1;
@@ -118,13 +140,18 @@ end
 if (0==flag_max_speed)
     if flag_check_inputs
         % Are there the right number of inputs?
-        narginchk(2,6);
+        narginchk(3,7);
     end
+end
+
+% Does the user specify verificationTypeFlag?
+if isempty(verificationTypeFlag)
+    verificationTypeFlag = 0;
 end
 
 % Does the user want to specify the flags?
 flags = struct;
-if 3 <= nargin
+if 4 <= nargin
     temp = varargin{1};
     if ~isempty(temp)
         flags = temp;
@@ -133,7 +160,7 @@ end
 
 % Does the user want to specify the sensors_to_check?
 sensors_to_check = '';
-if 4 <= nargin
+if 5 <= nargin
     temp = varargin{2};
     if ~isempty(temp)
         sensors_to_check = temp;
@@ -145,7 +172,7 @@ end
 fid = 0;
 if (0==flag_max_speed)
     % Check for user input
-    if 5 <= nargin
+    if 6 <= nargin
         temp = varargin{3};
         if ~isempty(temp)
             % Check that the FID works
@@ -165,7 +192,7 @@ end
 
 % Does user want to specify fig_num?
 flag_do_plots = 0;
-if (0==flag_max_speed) &&  (6<=nargin)
+if (0==flag_max_speed) &&  (7<=nargin)
     temp = varargin{end};
     if ~isempty(temp)
         fig_num = temp;
@@ -191,10 +218,20 @@ else
 end
 
 % Set up the field name
-if flag_check_all_sensors
-    flag_name = cat(2,field_name,'_has_same_sample_rate_as_centiSeconds');
+if 0==verificationTypeFlag
+    flagNameFront = '_sample_modes_match_centiSeconds';
+elseif 1==verificationTypeFlag
+    flagNameFront = '_sample_intervals_match_centiSeconds';
+elseif 2==verificationTypeFlag
+    flagNameFront = '_sample_counts_match_centiSeconds';
 else
-    flag_name = cat(2,field_name,sprintf('_has_same_sample_rate_as_centiSeconds_in_%s_sensors',sensors_to_check));
+    error('Unknown verificationTypeFlag encountered: %.0f',verificationTypeFlag);
+end
+
+if flag_check_all_sensors
+    flag_name = cat(2,field_name,flagNameFront);
+else
+    flag_name = cat(2,field_name,flagNameFront,sprintf('_in_%s_sensors',sensors_to_check));
 end
 
 % Initialize offending_sensor
@@ -243,9 +280,9 @@ for i_data = 1:Ndata
     allTimeDifferences{i_data,1} = timeDifferences;
 
     % From the time differences, determine where they would round. This is
-    % done by taking the time differences and dividing by the sampling
-    % interval. We want to check if values would ALWAYS round to 1 sampling
-    % interval.
+    % done by calculating the sampling intervals and dividing by the expected sampling
+    % interval calculated from the intended centiSeconds. To pass, all
+    % values must round to 1.
 
     % If the data is correct, then the rounding operation in the next line
     % will always produce a value of 1
@@ -258,15 +295,36 @@ for i_data = 1:Ndata
 
     % Find indicies of any situations that are NOT 1, these are errors
     indiciesOfBadIntervals = find(1~=effectiveSamplingIntervals);
-    [modeInterval, modeCount] = mode(effectiveSamplingIntervals);
 
-    % Hopefully, there are not bad indicies. If none are bad, set flag that
-    % the interval meets the indended sampling
-    if isempty(indiciesOfBadIntervals) && (length(timeData)==expectedNsamples)
-        flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
+    % Find the time sampling interval that occurs most often, in
+    % centiSeconds
+    [modeInterval, modeCount] = mode(round(timeDifferences*100));
+
+    % Based on verificationTypeFlag, check to see if flag passes
+    if 0==verificationTypeFlag
+        if modeInterval==centiSeconds
+            flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
+        else
+            flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
+        end
+    elseif 1==verificationTypeFlag
+        if isempty(indiciesOfBadIntervals) 
+            flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
+        else
+            flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
+        end
+    elseif 2==verificationTypeFlag
+        if length(timeData)==expectedNsamples
+            flags_dataTimeIntervalMatchesIntendedSamplingRate = 1;
+        else
+            flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
+        end
+
     else
-        flags_dataTimeIntervalMatchesIntendedSamplingRate = 0;
+        error('Unknown verificationTypeFlag encountered: %.0f',verificationTypeFlag);
     end
+
+
        
 
     if 0==return_flag && ~flags_dataTimeIntervalMatchesIntendedSamplingRate
@@ -281,8 +339,8 @@ for i_data = 1:Ndata
         end
         NbadIntervals = length(indiciesOfBadIntervals);
         ratioBadIntervals = NbadIntervals/length(timeDifferences);
-        maxInterval = max(timeDifferences(indiciesOfBadIntervals));
-        minInterval = min(timeDifferences(indiciesOfBadIntervals));
+        maxInterval = max(timeDifferences);
+        minInterval = min(timeDifferences);
         meanInterval = mean(timeDifferences);
 
         if 0~=fid
@@ -291,24 +349,33 @@ for i_data = 1:Ndata
             fprintf(fid,'\t\t Mean interval: %.5f seconds.\n',meanInterval);
             fprintf(fid,'\t\t Max interval:  %.5f seconds.\n',maxInterval);
             fprintf(fid,'\t\t Min interval:  %.5f seconds.\n',minInterval);
-            fprintf(fid,'\t\t Mode interval: %.2f times the centiSeconds (%.0f) at a frequency of %.0f (out of %.0f intervals, or %.0f percent)\n',...
-                modeInterval, centiSeconds, modeCount, length(timeDifferences), modeCount/length(timeDifferences)*100);
+            fprintf(fid,'\t\t Mode interval: %.0 centiSeconds at a frequency of %.0f (out of %.0f intervals, or %.0f percent)\n',...
+                modeInterval, modeCount, length(timeDifferences), modeCount/length(timeDifferences)*100);
             fprintf(fid,'\t\t Expected number of samples:  %.0f.\n',expectedNsamples);
             fprintf(fid,'\t\t Actual number of samples:    %.0f.\n',length(timeData));
         else
-            warning('on','backtrace');
-            warning(['The sensor: %s has bad sampling intervals.\n' ...
-                '\t Percentage with an incorrect sample rate: %.0f percent.\n' ...
-                '\t The total number bad: %.0f of %.0f\n' ...
-                '\t The maximum time sampling interval: %.5f seconds\n' ...
-                '\t The minimum time sampling interval: %.5f seconds\n' ...
-                '\t Effective sampling interval, average: %.2f seconds\n'],...
-                sensor_name,...
-                ratioBadIntervals*100,...
-                NbadIntervals,length(timeDifferences),...
-                maxInterval,...
-                minInterval,...
-                meanInterval);
+            % Throw warnings on catastrophic errors that are not fixable
+            if 0==verificationTypeFlag
+                warning('on','backtrace');
+                warning(['The sensor: %s has a catastrophic sampling interval error.\n' ...
+                    '\t Expecting a sample rate (from centiSeconds): %.4f seconds.\n' ...
+                    '\t Mode sampling interval:                      %.4f seconds\n',...
+                    '\t           Mode count: %.0f (out of %.0f intervals, or %.0f percent wrong)\n',...
+                    '\t Effective sampling interval, average:        %.4f seconds\n',...
+                    '\t Percentage with an incorrect sample intervals: %.0f percent wrong.\n' ...
+                    '\t The total number of bad intervals: %.0f of %.0f\n' ...
+                    '\t The maximum time sampling interval: %.5f seconds\n' ...
+                    '\t The minimum time sampling interval: %.5f seconds\n'],...
+                    sensor_name,...
+                    centiSeconds*0.01,...
+                    modeInterval*0.01,...
+                    modeCount, length(timeDifferences), modeCount/length(timeDifferences)*100,...
+                    meanInterval,...
+                    ratioBadIntervals*100,...
+                    NbadIntervals,length(timeDifferences),...
+                    maxInterval,...
+                    minInterval);
+            end
         end
     end
 
@@ -340,9 +407,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Does this need to be plotted, and is figure NOT open already?
-if flag_do_plots && isempty(findobj('Number',fig_num))
+if flag_do_plots && 1==verificationTypeFlag && isempty(findobj('Number',fig_num))
 
     figure(fig_num);
+    set(fig_num,'WindowState','maximized');
+
     
     % check whether the figure already has data
     % temp_h = figure(fig_num); 

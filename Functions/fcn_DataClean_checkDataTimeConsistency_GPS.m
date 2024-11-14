@@ -46,7 +46,9 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %
 %      plotFlags: a structure of figure numbers to plot results. If set to
 %      -1, skips any input checking or debugging, no figures will be
-%      generated, and sets up code to maximize speed.
+%      generated, and sets up code to maximize speed. Uses the following:
+%
+%            plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
 %
 % OUTPUTS:
 %
@@ -65,13 +67,16 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % typically performed via other functions in the DataClean library.
 %
 % # GPS_Time tests include:
-%     ## GPS_Time_exists_in_at_least_one_GPS_sensor
-%     ## GPS_Time_exists_in_all_GPS_sensors
-%     ## centiSeconds_exists_in_all_GPS_sensors
-%     ## GPS_Time_has_no_repeats_in_GPS_sensors
-%     ## GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
-%     ## GPS_Time_has_consistent_start_end_across_GPS_sensors
-%     ## GPS_Time_strictly_ascends_in_GPS_sensors
+%                    GPS_Time_exists_in_at_least_one_GPS_sensor: 1
+%                            GPS_Time_exists_in_all_GPS_sensors: 1
+%                        centiSeconds_exists_in_all_GPS_sensors: 1
+%                        GPS_Time_has_no_repeats_in_GPS_sensors: 1
+%                      GPS_Time_strictly_ascends_in_GPS_sensors: 1
+%       GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
+%            GPS_Time_has_consistent_start_end_within_5_seconds: 1
+%          GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
+%             GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
+% GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
 %
 % The above issues are explained in more detail in the following
 % sub-sections of code.
@@ -296,7 +301,28 @@ if 0==flags.GPS_Time_has_no_repeats_in_GPS_sensors
 end
 
 
-%% Check if GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+%% Check if GPS_Time_strictly_ascends_in_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to calibrate ROS time via interpolation, and must
+%    be STRICTLY increasing
+%    * If data packets arrive out-of-order with this sensor, times may not
+%    be in an increasing sequence
+%    * If a GPS is glitching, its time may be temporarily incorrect
+%    ### DETECTION:
+%    * Examine if time data from sensor is STRICTLY increasing
+%    ### FIXES:
+%    * Remove and interpolate time field if not strictkly increasing
+%    * Re-order data, if minor ordering error
+
+% [flags,offending_sensor,~] = fcn_INTERNAL_checkDataStrictlyI ncreasing(fid, dataStructure, flags, 'GPS_Time','GPS');
+[flags,offending_sensor,~] = fcn_DataClean_checkDataStrictlyIncreasing(dataStructure, 'GPS_Time', (flags), ('GPS'), (fid), ([]));
+if 0==flags.GPS_Time_strictly_ascends_in_GPS_sensors
+    return
+end
+
+
+
+%% Check if GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
 %    ### ISSUES with this:
 %    * This field is used to confirm GPS sampling rates for all
 %    GPS-triggered sensors
@@ -311,8 +337,9 @@ end
 %    * Manually fix, or
 %    * Remove this sensor
 
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
-if 0==flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+verificationTypeFlag = 0; 
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
+if 0==flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     return
 end
 
@@ -363,27 +390,7 @@ if 0==flags.GPS_Time_has_consistent_start_end_across_GPS_sensors
     return
 end
 
-
-%% Check if GPS_Time_strictly_ascends_in_GPS_sensors
-%    ### ISSUES with this:
-%    * This field is used to calibrate ROS time via interpolation, and must
-%    be STRICTLY increasing
-%    * If data packets arrive out-of-order with this sensor, times may not
-%    be in an increasing sequence
-%    * If a GPS is glitching, its time may be temporarily incorrect
-%    ### DETECTION:
-%    * Examine if time data from sensor is STRICTLY increasing
-%    ### FIXES:
-%    * Remove and interpolate time field if not strictkly increasing
-%    * Re-order data, if minor ordering error
-
-% [flags,offending_sensor,~] = fcn_INTERNAL_checkDataStrictlyI ncreasing(fid, dataStructure, flags, 'GPS_Time','GPS');
-[flags,offending_sensor,~] = fcn_DataClean_checkDataStrictlyIncreasing(dataStructure, 'GPS_Time', (flags), ('GPS'), (fid), ([]));
-if 0==flags.GPS_Time_strictly_ascends_in_GPS_sensors
-    return
-end
-
-%% Check if no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+%% Check if GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors
 %    ### ISSUES with this:
 %    * The GPS_Time may have small jumps which could occur if the sensor
 %    pauses for a moment, then restarts
@@ -399,13 +406,13 @@ threshold_in_standard_deviations = 5;
 custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(dataStructure,'GPS_Time',flags,threshold_in_standard_deviations, custom_lower_threshold,'any','GPS', fid);
 
-if 0==flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+if 0==flags.GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors
     % warning('on','backtrace');
     % warning('There are jumps in differences of GPS time, GPS time needs to be interpolated')
     return
 end
 
-%% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+%% Check if GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors
 %    ### ISSUES with this:
 %    * The GPS_Time may have small missing portions which could occur if
 %    the sensor pauses for a moment, then restarts
@@ -424,7 +431,7 @@ sensors_to_check = 'GPS';
 
 % Show an error is detected
 [flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure, 'GPS_Time', (flags), (threshold_for_agreement), (expectedJump), (string_any_or_all), (sensors_to_check), (fid));
-if 0==flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+if 0==flags.GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors
     % warning('on','backtrace');
     % warning('There are missing data causing jumps in the differences of GPS time. To fix, GPS time needs to be interpolated')
     return

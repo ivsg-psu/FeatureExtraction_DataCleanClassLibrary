@@ -259,11 +259,11 @@ while 1==flag_stay_in_main_loop
     %                           GPS_Time_exists_in_all_GPS_sensors: 1
     %                       centiSeconds_exists_in_all_GPS_sensors: 1
     %                       GPS_Time_has_no_repeats_in_GPS_sensors: 1
-    % GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors: 1
+    %      GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
     %           GPS_Time_has_consistent_start_end_within_5_seconds: 1
     %         GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
-    %                     GPS_Time_strictly_ascends_in_GPS_sensors: 0
-    %       no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors: 0
+    %                     GPS_Time_strictly_ascends_in_GPS_sensors: 1
+    %            GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
 
     % Used to create test data
     if 1==0
@@ -351,7 +351,7 @@ while 1==flag_stay_in_main_loop
 
 
 
-    %% Check if GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+    %% Check if GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
     %    * This field is used to confirm GPS sampling rates for all
     %    GPS-triggered sensors
@@ -367,7 +367,7 @@ while 1==flag_stay_in_main_loop
     %    * Manually fix, or
     %    * Remove this sensor
     
-    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors)
         warning('on','backtrace');
         warning('A GPS sensor has a sampling rate different than expected by centiSeconds!?');
         error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
@@ -441,7 +441,7 @@ while 1==flag_stay_in_main_loop
     end
 
 
-    %% Check if no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors
+    %% Check if GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors
     %    ### ISSUES with this:
     %    * The GPS_Time may have small jumps which could occur if the sensor
     %    pauses for a moment, then restarts
@@ -460,12 +460,12 @@ while 1==flag_stay_in_main_loop
         save(fullExampleFilePath,'dataStructure');
     end
 
-    if (1==flag_keep_checking) && (0==time_flags.no_jumps_in_differences_of_GPS_Time_in_any_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors)
         nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure, fid);
         flag_keep_checking = 0;
     end
     
-    % %% Check if no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors
+    % %% Check if GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors
     % %    ### ISSUES with this:
     % %    * The GPS_Time may have small jumps which could occur if the sensor
     % %    pauses for a moment, then restarts
@@ -477,7 +477,7 @@ while 1==flag_stay_in_main_loop
     % %    ### FIXES:
     % %    * Interpolate time field if only a small segment is missing        
     % 
-    if (1==flag_keep_checking) && (0==time_flags.no_missings_in_differences_of_GPS_Time_in_any_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors)
         nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure, fid);
         flag_keep_checking = 0;    
     end
@@ -568,7 +568,7 @@ while 1==flag_stay_in_main_loop
         flag_keep_checking = 0;
     end
     
-    %% Check if ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors
+    %% Check if ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
     %    * The ROS time and GPS time should both have approximately the same
     %    sampling rates, and we use this alignment to calibrate ROS time to GPS
@@ -581,7 +581,7 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Manually fix, or
     %    * Remove this sensor
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_sample_rate_as_centiSeconds_in_GPS_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors)
         warning('on','backtrace');
         warning('Fundamental error on ROS_time: a GPS sensor was found that has a ROS time sample rate different than the GPS sample rate!?');
         error('ROS time is mis-sampled.\');            

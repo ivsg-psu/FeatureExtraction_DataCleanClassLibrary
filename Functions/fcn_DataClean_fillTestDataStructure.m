@@ -817,8 +817,8 @@ if time_corruption_type>1
     if binary_time_corruption(20)
         time_corruption_type_string = cat(2,time_corruption_type_string,'ROS_Time has wrong length, ');
  
-        % Add one more tiny data point to end
-        BadDataStructure.GPS_Hemisphere.ROS_Time(end+1,:) = dataStructure.GPS_Hemisphere.ROS_Time(end,:)+0.001;
+        % Add one more data point to end
+        BadDataStructure.GPS_Hemisphere.ROS_Time(end+1,:) = dataStructure.GPS_Hemisphere.ROS_Time(end,:)+dataStructure.GPS_Hemisphere.centiSeconds*0.01;
     end
     
     %% 2^20 bit = 1: The GPS_Time field in a GPS sensor has repeated but ordered entries.

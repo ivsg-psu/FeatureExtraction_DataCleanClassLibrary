@@ -39,8 +39,8 @@ saveFlags.flag_forceImageOverwrite = 1;
 saveFlags.flag_forceMATfileOverwrite = 1;
 
 % List what will be plotted, and the figure numbers
-plotFlags.fig_num_plotAllRawTogether = []; %1111;
-plotFlags.fig_num_plotAllRawIndividually = []; %2222;
+plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = 1111;
+plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime = 2222;
 
 dataStructure_cleanedNames = fcn_DataClean_cleanNaming(dataStructure, (fid), (Flags), (-1));
 dataStructure_cleanedTime = fcn_DataClean_cleanTime(dataStructure_cleanedNames, (fid), (Flags), (saveFlags), (plotFlags));
@@ -84,8 +84,8 @@ saveFlags.flag_forceImageOverwrite = 1;
 saveFlags.flag_forceMATfileOverwrite = 1;
 
 % List what will be plotted, and the figure numbers
-plotFlags.fig_num_plotAllRawTogether = []; %1111;
-plotFlags.fig_num_plotAllRawIndividually = []; %2222;
+plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = []; %1111;
+plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime = []; %2222;
 
 % Call the function
 rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags));

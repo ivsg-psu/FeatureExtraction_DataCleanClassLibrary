@@ -98,6 +98,9 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkFieldDifferen
 % -- updated comments
 % -- added debug flag area
 % -- fixed fid printing error
+% 2024_11_14: sbrennan@psu.edu
+% -- changed flag naming to be consistent with other check functions, with
+% the sensor name first
 
 
 %% Debugging and Input checks
@@ -241,18 +244,19 @@ else
 end
 
 % Set up output flag name string
+flag_prefix = sprintf('%s_has_no_sampling_jumps',field_name);
 switch lower(string_any_or_all)
     case {'any'}
         if flag_check_all_sensors
-            flag_name = sprintf('no_jumps_in_differences_of_%s_in_any_sensors',field_name);
+            flag_name = sprintf('%s_in_any_sensors',flag_prefix);
         else
-            flag_name = sprintf('no_jumps_in_differences_of_%s_in_any_%s_sensors',field_name,sensors_to_check);
+            flag_name = sprintf('%s_in_any_%s_sensors',flag_prefix,sensors_to_check);
         end
     case {'all'}
         if flag_check_all_sensors
-            flag_name = sprintf('no_jumps_in_differences_of_%s_in_all_sensors',field_name);
+            flag_name = sprintf('%s_in_all_sensors',flag_prefix);
         else
-            flag_name = sprintf('no_jumps_in_differences_of_%s__in_all_%s_sensors',field_name, sensors_to_check);
+            flag_name = sprintf('%s_in_all_%s_sensors',flag_prefix, sensors_to_check);
         end
     otherwise
         error('Unrecognized setting on string_any_or_all when checking if fields are in sensors.');
