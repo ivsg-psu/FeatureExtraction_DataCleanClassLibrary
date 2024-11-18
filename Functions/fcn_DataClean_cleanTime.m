@@ -535,10 +535,10 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
 
-    warning('on','backtrace');    
-    warning('time_flags.Trigger_Time_exists_in_all_GPS_sensors is not working --- skipping');
-
     if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
+        warning('on','backtrace');
+        warning('time_flags.Trigger_Time_exists_in_all_GPS_sensors is not working --- skipping');
+
         nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
         flag_keep_checking = 0;
     end
