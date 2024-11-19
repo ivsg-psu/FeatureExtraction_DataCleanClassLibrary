@@ -54,9 +54,9 @@ if strcmp(datatype,'gps')
 
         
         % FOR DEBUGGING:
-        fprintf(1,'GPS microseconds:\n');
-        format long
-        disp(GPSmicrosecs(1:20,1));
+        % fprintf(1,'GPS microseconds:\n');
+        % format long
+        % disp(GPSmicrosecs(1:20,1));
    
         SparkFun_GPS_data_structure.ROS_Time           = time_stamp;  % This is the ROS time that the data arrived into the bag
         SparkFun_GPS_data_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)

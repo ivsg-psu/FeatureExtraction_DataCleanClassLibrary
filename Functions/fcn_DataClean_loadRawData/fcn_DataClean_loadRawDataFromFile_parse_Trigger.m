@@ -29,6 +29,9 @@ function parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(file_pat
 % -- added modeCount to the struct array
 % 2024_07_08 xfc5113@psu.edu
 % -- convert mode field from cell array to string array
+% 2024_11_18 xfc5113@psu.edu
+% -- fix the typo for mode field. (Mode -> mode)
+
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -59,7 +62,7 @@ if strcmp(datatype,'trigger')
     mode_string = string(mode_cell);
     mode_string_clean = erase(mode_string,"''");
     mode_string_clean = erase(mode_string_clean,"""");
-    parseTrigger.Mode                              = mode_string_clean;     % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
+    parseTrigger.mode                              = mode_string_clean;     % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
     parseTrigger.modeCount                         = datatable.mode_counts; % This is the count of the Locked mode (empty for other mode)
     parseTrigger.adjone                            = datatable.adjone;   % This is phase adjustment magnitude relative to the calculated period of the output pulse
     parseTrigger.adjtwo                            = datatable.adjtwo;   % This is phase adjustment magnitude relative to the calculated period of the output pulse

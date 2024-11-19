@@ -20,10 +20,52 @@ Identifiers.SourceBagFileName =''; % This is filled in automatically for each fi
 %% Load static LiDAR scan
 fid = 1;
 clear rawDataCellArray
-rootdirs{1} = fullfile(cd,'LargeData','2024-11-11');
-bagQueryString = 'mapping_van_2024-11-11*';
-rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers,bagQueryString, fid,Flags);
+rootdirs{1} = fullfile(cd,'LargeData','2024-11-15','Lane 3');
+bagQueryString = 'mapping_van_2024-11-15*';
+rawDataCellArrayLaneOne = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers,bagQueryString, fid,Flags);
+%%
+N_cells = length(rawDataCellArrayLaneOne);
+flag_trigger_box_data_loss_array = [];
+ROS_Time_Trigger_Box_CellArray = {};
+Trigger_Mode_CellArray = {};
+plot_colors_CellArray = {};
 
+for idx_cell = 1:N_cells
+    dataStructure = rawDataCellArrayLaneOne{idx_cell};
+    [ROS_Time_Trigger_Box,ROS_Time_diff ,flag_trigger_box_data_loss]= fcn_DataClean_checkDataTimeConsistency_TriggerBox(dataStructure);
+    flag_trigger_box_data_loss_array = [flag_trigger_box_data_loss_array; flag_trigger_box_data_loss];
+    ROS_Time_Trigger_Box_CellArray{idx_cell,1} = ROS_Time_Trigger_Box;
+    [Trigger_Mode_cell, ~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure,'mode','Trigger_Raw');
+    Trigger_Mode = Trigger_Mode_cell{1};
+    Trigger_Mode_CellArray{idx_cell,1} = Trigger_Mode;
+    plot_colors = zeros(length(Trigger_Mode),3);
+
+    plot_colors(Trigger_Mode == 'L',3) = 1;
+    plot_colors(Trigger_Mode ~= 'L',1) = 1;
+    plot_colors_CellArray{idx_cell,1} = plot_colors;
+end
+%%
+cell_index_to_plot = 7;
+
+ROS_Time_Trigger_Box = ROS_Time_Trigger_Box_CellArray{cell_index_to_plot};
+Trigger_Mode = Trigger_Mode_CellArray{cell_index_to_plot};
+Triggered_indices = find((Trigger_Mode=='L'));
+UnTriggered_indices = find(~(Trigger_Mode=='L'));
+N_times = length(ROS_Time_Trigger_Box);
+% plot_colors = plot_colors_CellArray{cell_index_to_plot};
+ROS_Time_Trigger_Box_ZeroStart = ROS_Time_Trigger_Box - ROS_Time_Trigger_Box(1);
+figure(870)
+clf
+scatter(Triggered_indices, ROS_Time_Trigger_Box_ZeroStart(Triggered_indices,:), 10, 'blue','filled')
+hold on
+scatter(UnTriggered_indices, ROS_Time_Trigger_Box_ZeroStart(UnTriggered_indices,:), 10, 'red','filled')
+% plot(1:N_times, ROS_Time_Trigger_Box - ROS_Time_Trigger_Box(1),'k-','LineWidth',2)
+legend('Triggered Data', 'Untriggered Data')
+xlabel('Time Index')
+ylabel('ROS Time [s]')
+
+ROS_Time_ave_triggered = mean(diff(ROS_Time_Trigger_Box(Triggered_indices,:)));
+ROS_Time_ave_untriggered = mean(diff(ROS_Time_Trigger_Box(UnTriggered_indices,:)));
 %%
 OneMinute_rawData = rawDataCellArray{3};
 [cell_array_GPS_Time, cell_array_GPS_Topics] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(OneMinute_rawData,'GPS_Time','gps');
