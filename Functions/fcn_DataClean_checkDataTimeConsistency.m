@@ -66,6 +66,7 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataS
 % typically performed via other functions in the DataClean library.
 %
 % flagged tests include:
+%
 %                    GPS_Time_exists_in_at_least_one_GPS_sensor: 1
 %                            GPS_Time_exists_in_all_GPS_sensors: 1
 %                        centiSeconds_exists_in_all_GPS_sensors: 1
@@ -82,12 +83,13 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataS
 %                      ROS_Time_strictly_ascends_in_all_sensors: 1
 %       ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
 %       ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors: 1
-%      ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors: 
-%                            Trigger_Time_exists_in_all_sensors: 1
+%                               ROS_Time_calibrated_to_GPS_Time: 0
+%      ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors: 0
+%   ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors: 0
 %
 % The above issues are explained in more detail in the following
 % sub-sections of code.
-% 
+%
 % DEPENDENCIES:
 %
 %      fcn_DebugTools_checkInputsToFunctions
@@ -270,11 +272,215 @@ flags = struct;
 %          GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
 %             GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
 % GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
+%                        Trigger_Time_exists_in_all_GPS_sensors: 1
 
 
-% Below uses plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
-[flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid, plotFlags);
+% % Below uses plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
+% [flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency_GPS(dataStructure, flags, fid, plotFlags);
 
+
+
+%% Check if GPS_Time_exists_in_at_least_one_GPS_sensor
+%    ### ISSUES with this:
+%    * There is no absolute time base to use for the data
+%    * The tracking of vehicle data relative to external sources is no
+%    longer possible
+%    ### DETECTION:
+%    * Examine if GPS time fields exist on any GPS sensor
+%    ### FIXES:
+%    * Catastrophic error. Data collection should end.
+%    * One option? Check if ROS_Time recorded, and is locked to UTC via NTP, use ROS
+%    Time as stand-in
+%    * Otherwise, complete failure of sensor recordings
+
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'GPS_Time',flags,'any','GPS',fid);
+
+if 0==flags.GPS_Time_exists_in_at_least_one_GPS_sensor
+    return
+end
+
+%% Check if GPS_Time_exists_in_all_GPS_sensors
+%    ### ISSUES with this:
+%    * There is no absolute time base to use for the sensor
+%    * This usually indicates back lock for the GPS
+%    ### DETECTION:
+%    * Examine if GPS time fields exist on all GPS sensors
+%    ### FIXES:
+%    * If another GPS is available, use its time alongside the GPS data
+%    * Remove this GPS data field
+
+
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'GPS_Time',flags,'all','GPS',fid);
+if 0==flags.GPS_Time_exists_in_all_GPS_sensors
+    return
+end
+
+%% Check if centiSeconds_exists_in_all_GPS_sensors
+%    ### ISSUES with this:
+%    * This field defines the expected sample rate for each sensor
+%    ### DETECTION:
+%    * Examine if centiSeconds fields exist on all sensors
+%    ### FIXES:
+%    * Manually fix, or
+%    * Remove this sensor
+
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'centiSeconds',flags,'all','GPS',fid);
+if 0==flags.centiSeconds_exists_in_all_GPS_sensors
+    return
+end
+
+%% Check if GPS_Time_has_no_repeats_in_GPS_sensors
+%    ### ISSUES with this:
+%    * If there are many repeated time values, the calculation of sampling
+%    time in the next step produces grossly incorrect results
+%    ### DETECTION:
+%    * Examine if time values are unique
+%    ### FIXES:
+%    * Remove repeats
+
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldHasRepeatedValues(dataStructure,'GPS_Time',flags, 'GPS', (fid),(-1));
+if 0==flags.GPS_Time_has_no_repeats_in_GPS_sensors
+    return
+end
+
+
+%% Check if GPS_Time_strictly_ascends_in_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to calibrate ROS time via interpolation, and must
+%    be STRICTLY increasing
+%    * If data packets arrive out-of-order with this sensor, times may not
+%    be in an increasing sequence
+%    * If a GPS is glitching, its time may be temporarily incorrect
+%    ### DETECTION:
+%    * Examine if time data from sensor is STRICTLY increasing
+%    ### FIXES:
+%    * Remove and interpolate time field if not strictkly increasing
+%    * Re-order data, if minor ordering error
+
+% [flags,offending_sensor,~] = fcn_INTERNAL_checkDataStrictlyI ncreasing(fid, dataStructure, flags, 'GPS_Time','GPS');
+[flags,offending_sensor,~] = fcn_DataClean_checkDataStrictlyIncreasing(dataStructure, 'GPS_Time', (flags), ('GPS'), (fid), ([]));
+if 0==flags.GPS_Time_strictly_ascends_in_GPS_sensors
+    return
+end
+
+
+
+%% Check if GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to confirm GPS sampling rates for all
+%    GPS-triggered sensors
+%    * These sensors are used to correct ROS timings, so if any are misisng, the
+%    timing and thus positioning of vehicle data may be wrong
+%    * The GPS unit may be configured wrong
+%    * The GPS unit may be faililng or operating incorrectly
+%    ### DETECTION:
+%    * Examine if centiSeconds calculation of time interval matches GPS
+%    time interval for data collection, on average
+%    ### FIXES:
+%    * Manually fix, or
+%    * Remove this sensor
+
+verificationTypeFlag = 0; 
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
+if 0==flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
+    return
+end
+
+%% Check if GPS_Time_has_consistent_start_end_across_GPS_sensors_within_5_seconds
+%    ### ISSUES with this:
+%    * The start times and end times of all data collection assumes all GPS
+%    systems are operating simultaneously
+%    * The calculation of Trigger_Time assumes that all start times are the
+%    same, and all end times are the same
+%    * If they are not the same, the count of data in one sensor may be
+%    different than another, especially if each were referencing different
+%    GPS sources.
+%    ### DETECTION:
+%    * Seach through the GPS time fields for all sensors, rounding them to
+%    their appropriate centi-second values
+%    * Check that they all agree
+%    ### FIXES:
+%    * Crop all data to same starting centi-second value
+
+
+% Check GPS_Time_has_consistent_start_end_across_GPS_sensors
+[flags, offending_sensor, ~] = fcn_DataClean_checkConsistencyOfStartEnd(dataStructure, 'GPS_Time', (flags), ('GPS'), ('_within_5_seconds'), (5.0), (fid), ([]));
+if 0==flags.GPS_Time_has_consistent_start_end_within_5_seconds
+    return
+end
+
+%% Check if GPS_Time_has_consistent_start_end_across_GPS_sensors
+%    ### ISSUES with this:
+%    * The start times and end times of all data collection assumes all GPS
+%    systems are operating simultaneously
+%    * The calculation of Trigger_Time assumes that all start times are the
+%    same, and all end times are the same
+%    * If they are not the same, the count of data in one sensor may be
+%    different than another, especially if each were referencing different
+%    GPS sources.
+%    ### DETECTION:
+%    * Seach through the GPS time fields for all sensors, making sure all
+%    would round to their appropriate centi-second values (at 20 Hz, this
+%    is rounding to 0.05 seconds, so all should be within 0.025 seconds)
+%    * Check that they all agree
+%    ### FIXES:
+%    * Crop all data to same starting centi-second value
+
+
+% Check GPS_Time_has_consistent_start_end_across_GPS_sensors
+[flags, offending_sensor, ~] = fcn_DataClean_checkConsistencyOfStartEnd(dataStructure, 'GPS_Time', (flags), ('GPS'), ('_across_GPS_sensors'), (.025), (fid), ([]));
+if 0==flags.GPS_Time_has_consistent_start_end_across_GPS_sensors
+    return
+end
+
+%% Check if GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors
+%    ### ISSUES with this:
+%    * The GPS_Time may have small jumps which could occur if the sensor
+%    pauses for a moment, then restarts
+%    * If these jumps are large, the data from the sensor may be corrupted
+%    ### DETECTION:
+%    * Examine if the differences in GPS_Time are out of ordinary by
+%    looking at the standard deviations of the differences relative to the
+%    mean differences
+%    ### FIXES:
+%    * Interpolate time field if only a small segment is missing
+
+threshold_in_standard_deviations = 5;
+custom_lower_threshold = 0.0001; % Time steps cannot be smaller than this
+[flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForJumps(dataStructure,'GPS_Time',flags,threshold_in_standard_deviations, custom_lower_threshold,'any','GPS', fid);
+
+if 0==flags.GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors
+    % warning('on','backtrace');
+    % warning('There are jumps in differences of GPS time, GPS time needs to be interpolated')
+    return
+end
+
+%% Check if GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors
+%    ### ISSUES with this:
+%    * The GPS_Time may have small missing portions which could occur if
+%    the sensor pauses for a moment, then restarts
+%    * If these missings are large, the data from the sensor may be corrupted
+%    ### DETECTION:
+%    * Examine if the differences in GPS_Time are out of ordinary by
+%    looking at the standard deviations of the differences relative to the
+%    mean differences
+%    ### FIXES:
+%    * Interpolate time field if only a small segment is missing
+
+threshold_for_agreement = 0.0001; % Data must agree within this interval
+expectedJump = []; % Forces default to centiSeconds*0.01 
+string_any_or_all = 'any'; 
+sensors_to_check = 'GPS'; 
+
+% Show an error is detected
+[flags,offending_sensor] = fcn_DataClean_checkFieldDifferencesForMissings(dataStructure, 'GPS_Time', (flags), (threshold_for_agreement), (expectedJump), (string_any_or_all), (sensors_to_check), (fid));
+if 0==flags.GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors
+    % warning('on','backtrace');
+    % warning('There are missing data causing jumps in the differences of GPS time. To fix, GPS time needs to be interpolated')
+    return
+end
+
+%%%%%%%%%%%%%%%%%%%%%
 % Do any of these produce an exit condition?
 fieldList = fieldnames(flags);
 for ith_field = 1:length(fieldList)
@@ -315,8 +521,8 @@ end
 
 [flags,offending_sensor,~] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'Trigger_Time',flags,'all','GPS',fid);
 if 0==flags.Trigger_Time_exists_in_all_GPS_sensors
-    warning('on','backtrace');
-    warning('Trigger time does not exist in GPS sensors')
+    % warning('on','backtrace');
+    % warning('Trigger time does not exist in GPS sensors')
     return
 end
 
@@ -458,6 +664,55 @@ if 0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
     % warning('on','backtrace');
     % warning('ROS_Time needs to be rounded to Trigger_Time in all GPS sensors')
     % return
+end
+
+%% Check if ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to confirm ROS sampling rates for all
+%    GPS-triggered sensors
+%    * If the ROS sampling interval is wrong, this means that there are
+%    significant amounts of missing data
+%    ### DETECTION:
+%    * calculate the sampling intervals and divide every result by the
+%    expected sampling interval calculated from the intended centiSeconds.
+%    Round this to the nearest integer. To pass, all observed sampling
+%    intervals must round to 1, e.g. that they would have one, and only
+%    one, sample per each sample interval
+%    ### FIXES:
+%    * Resample the sensor?
+
+verificationTypeFlag = 1; 
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
+if 0==flags.ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors
+    return
+end
+
+%% All Sensor Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%           _ _      _____                               _______        _
+%     /\   | | |    / ____|                             |__   __|      | |
+%    /  \  | | |   | (___   ___ _ __  ___  ___  _ __       | | ___  ___| |_ ___
+%   / /\ \ | | |    \___ \ / _ \ '_ \/ __|/ _ \| '__|      | |/ _ \/ __| __/ __|
+%  / ____ \| | |    ____) |  __/ | | \__ \ (_) | |         | |  __/\__ \ |_\__ \
+% /_/    \_\_|_|   |_____/ \___|_| |_|___/\___/|_|         |_|\___||___/\__|___/
+%
+%
+% http://patorjk.com/software/taag/#p=display&f=Big&t=All%20%20%20Sensor%20%20%20Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Check if centiSeconds_exists_in_all_sensors
+%    ### ISSUES with this:
+%    * This field defines the expected sample rate for each sensor
+%    ### DETECTION:
+%    * Examine if centiSeconds fields exist on all sensors
+%    ### FIXES:
+%    * Manually fix, or
+%    * Remove this sensor
+
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'centiSeconds',flags,'all',[],fid);
+if 0==flags.centiSeconds_exists_in_all_sensors
+    return
 end
 
 

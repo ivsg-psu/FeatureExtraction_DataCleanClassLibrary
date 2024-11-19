@@ -1,4 +1,4 @@
-function [flags, fitting_parameters] = fcn_DataClean_fitROSTime2GPSTime(dataStructure, varargin)
+function [flags, fitting_parameters, fit_sensors] = fcn_DataClean_fitROSTime2GPSTime(dataStructure, varargin)
 % fcn_DataClean_fitROSTime2GPSTime
 % Checks a given dataStructure to check, for each sensor, whether the field
 % is there. If so, it sets a flag = 1 whose name is customized by the input
@@ -31,8 +31,11 @@ function [flags, fitting_parameters] = fcn_DataClean_fitROSTime2GPSTime(dataStru
 %      of the verification check. The name of the flag is formatted by the
 %      argument inputs. 
 %
-%      offending_sensor: this is the string corresponding to the sensor
-%      field in the data structure that caused a flag to become zero. 
+%      fitting_parameters: a cell array of fit parameters, one for each GPS
+%      sensor
+%
+%      fit_sensors: a cell array of the string names of each GPS sensor used
+%      for fitting
 % 
 % DEPENDENCIES:
 %
@@ -170,6 +173,8 @@ end
 [cell_array_GPS_Time,~]            = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time',    'GPS');
 % [cell_array_Trigger_Time,~]        = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS');
 [cell_array_ROS_Time,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time',    'GPS');
+
+fit_sensors = sensor_names;
 
 % Make sure that length of GPS Times and ROS Times match
 for ith_array = 1:length(cell_array_GPS_Time)

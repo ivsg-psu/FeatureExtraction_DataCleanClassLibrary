@@ -196,6 +196,10 @@
 % fillTestDataStructure)
 % -- delete fcn_DataClean_checkAllSensorsHaveTriggerTime. It can be
 % replaced by fcn_DataClean_checkIfFieldInSensors
+% -- remove fcn_DataClean_checkDataTimeConsistency_GPS - started moving
+% this code into checkDataTimeConsistency
+% -- fcn_DataClean_recalculateTriggerTimes needs better test cases, and
+% needs to be formatted correctly
 
 %% Prep the workspace
 close all

@@ -252,6 +252,7 @@ while 1==flag_stay_in_main_loop
     main_data_clean_loop_iteration_number = main_data_clean_loop_iteration_number+1;
     debugging_data_structure_sequence{main_data_clean_loop_iteration_number} = currentDataStructure;
 
+    fprintf(1,'\n\n ----------------------------------------------------------------------------------------------------------------\n');
     fprintf(1,'\n\nTime Cleaning Iteration #%.0d\n',main_data_clean_loop_iteration_number);
 
     %% Remove Identifiers, temporarily
@@ -547,22 +548,10 @@ while 1==flag_stay_in_main_loop
     %    * Recalculate Trigger_Time fields as needed, using centiSeconds
 
     if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_GPS_sensors)
-        warning('on','backtrace');
-        warning('time_flags.Trigger_Time_exists_in_all_GPS_sensors is not working --- skipping');
-
         nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
         flag_keep_checking = 0;
     end
 
-    % %%%%
-    % [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'GPS_Time',flags,'any','GPS',fid);
-    % 
-    % if 0==flags.GPS_Time_exists_in_at_least_one_GPS_sensor
-    %     return
-    % end
-    % %%%%%
-
-% URHERE - need to check GPS_Time to see if interpolation is required!
 
     %% ROS_Time Tests
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -630,7 +619,6 @@ while 1==flag_stay_in_main_loop
         error('ROS time is mis-sampled.\');            
         flag_keep_checking = 0;
     end
-    
     
 
     %% Check if ROS_Time_strictly_ascends_in_all_sensors
@@ -706,10 +694,38 @@ while 1==flag_stay_in_main_loop
             save(fullExampleFilePath,'dataStructure');
         end
 
-        [time_flags, fitParameters] = fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
+        [time_flags, fit_Parameters, fit_sensors] = fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
     end
 
-    %% Check ROS_Time_rounds_correctly_to_Trigger_Time
+    %% Fix errors in ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors
+    %    ### ISSUES with this:
+    %    * This field is used to confirm ROS sampling rates for all
+    %    GPS-triggered sensors
+    %    * If the ROS sampling interval is wrong, this means that there are
+    %    significant amounts of missing data
+    %    ### DETECTION:
+    %    * calculate the sampling intervals and divide every result by the
+    %    expected sampling interval calculated from the intended centiSeconds.
+    %    Round this to the nearest integer. To pass, all observed sampling
+    %    intervals must round to 1, e.g. that they would have one, and only
+    %    one, sample per each sample interval
+    %    ### FIXES:
+    %    * Resample the sensor?
+
+    URHERE
+    
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors)
+        % Used to create test data
+        if 1==0
+            fullExampleFilePath = fullfile(cd,'Data','ExampleData_fitROSTime2GPSTime.mat');
+            dataStructure = nextDataStructure;
+            save(fullExampleFilePath,'dataStructure');
+        end
+
+        nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
+    end
+    
+    % %% Check ROS_Time_rounds_correctly_to_Trigger_Time
     % % Check that the ROS Time, when rounded to the nearest sampling interval,
     % % matches the Trigger time.
     % %    ### ISSUES with this:
@@ -730,18 +746,48 @@ while 1==flag_stay_in_main_loop
     % 
     % end
 
-%% ALL SENSORS STARTS HERE
+    %% ALL SENSORS STARTS HERE
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Make sure centiseconds in all
-% Make sure trigger time in all
-% make sure ROS time has no repeats
-% make sure ROS time strictly ascends
-% calculate trigger surrogate
-% make sure sample modes match centiseconds
-% make sure ROS time has same length as Trigger time
-% make sure trigger time strictly ascends
-% make sure trigger time has no missing sample differences
-% trim start/ends based on trigger time
+    %   _____      _ _ _               _                    _ _      _____                                  _          _______   _                          _______ _
+    %  / ____|    | (_) |             | |             /\   | | |    / ____|                                | |        |__   __| (_)                        |__   __(_)
+    % | |     __ _| |_| |__  _ __ __ _| |_ ___       /  \  | | |   | (___   ___ _ __  ___  ___  _ __ ___   | |_ ___      | |_ __ _  __ _  __ _  ___ _ __      | |   _ _ __ ___   ___
+    % | |    / _` | | | '_ \| '__/ _` | __/ _ \     / /\ \ | | |    \___ \ / _ \ '_ \/ __|/ _ \| '__/ __|  | __/ _ \     | | '__| |/ _` |/ _` |/ _ \ '__|     | |  | | '_ ` _ \ / _ \
+    % | |___| (_| | | | |_) | | | (_| | ||  __/    / ____ \| | |    ____) |  __/ | | \__ \ (_) | |  \__ \  | || (_) |    | | |  | | (_| | (_| |  __/ |        | |  | | | | | | |  __/
+    %  \_____\__,_|_|_|_.__/|_|  \__,_|\__\___|   /_/    \_\_|_|   |_____/ \___|_| |_|___/\___/|_|  |___/   \__\___/     |_|_|  |_|\__, |\__, |\___|_|        |_|  |_|_| |_| |_|\___|
+    %                                                                                                                               __/ | __/ |
+    %                                                                                                                              |___/ |___/
+    % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Calibrate%20%20%20All%20%20%20Sensors%20%20to%20Trigger%20%20Time
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Make sure centieconds in all
+
+    %% Check if centiSeconds_exists_in_all_sensors
+    %    ### ISSUES with this:
+    %    * This field defines the expected sample rate for each sensor
+    %    ### DETECTION:
+    %    * Examine if centiSeconds fields exist on all sensors
+    %    ### FIXES:
+    %    * Manually fix, or
+    %    * Remove this sensor
+
+    if (1==flag_keep_checking) && (0==time_flags.centiSeconds_exists_in_all_GPS_sensors)
+        disp(nextDataStructure.(offending_sensor))
+        warning('on','backtrace');
+        warning('Fundamental error on GPS_time: a GPS sensor is missing centiSeconds!?');
+        error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);
+    end
+
+
+    % Make sure trigger time in all
+    % make sure ROS time has no repeats
+    % make sure ROS time strictly ascends
+    % calculate trigger surrogate
+    % make sure sample modes match centiseconds
+    % make sure ROS time has same length as Trigger time
+    % make sure trigger time strictly ascends
+    % make sure trigger time has no missing sample differences
+    % trim start/ends based on trigger time
 
     %% If not, calculate Trigger_Time to rest of sensors
     if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)

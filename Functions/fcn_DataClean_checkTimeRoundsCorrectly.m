@@ -215,7 +215,7 @@ if 0<fid
     else
         temp_sensors_to_check = sensors_to_check;
     end
-    fprintf(fid,'Checking that %s would round correctly in %s sensors:\n',time_field,temp_sensors_to_check);
+    fprintf(fid,'Checking that %s would round correctly to %s in %s sensors:\n',field_name, time_field,temp_sensors_to_check);
 end
 
 for i_data = 1:length(sensor_names)
