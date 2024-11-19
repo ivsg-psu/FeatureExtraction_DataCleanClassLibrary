@@ -41,6 +41,7 @@ saveFlags.flag_forceMATfileOverwrite = 1;
 % List what will be plotted, and the figure numbers
 plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = 1111;
 plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime = 2222;
+plotFlags.fig_num_fitROSTime2GPSTime                   = 3333;
 
 dataStructure_cleanedNames = fcn_DataClean_cleanNaming(dataStructure, (fid), (Flags), (-1));
 dataStructure_cleanedTime = fcn_DataClean_cleanTime(dataStructure_cleanedNames, (fid), (Flags), (saveFlags), (plotFlags));

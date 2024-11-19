@@ -50,6 +50,7 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanTime(rawDataStr
 %
 %            plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime
 %            plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime
+%            plotFlags.fig_num_fitROSTime2GPSTime
 %
 %
 % OUTPUTS:
@@ -191,6 +192,7 @@ end
 % Set defaults
 plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime = [];
 plotFlags.fig_num_checkTimeSamplingConsistency_ROSTime = [];
+plotFlags.fig_num_fitROSTime2GPSTime                   = [];
 flag_do_plots = 0;
 if (0==flag_max_speed) &&  (5<=nargin)
     temp = varargin{end};
@@ -281,15 +283,24 @@ while 1==flag_stay_in_main_loop
     
     %% Check data for errors in Time data related to GPS-enabled sensors -- Done
     % Fills in the following
-    %                   GPS_Time_exists_in_at_least_one_GPS_sensor: 1
-    %                           GPS_Time_exists_in_all_GPS_sensors: 1
-    %                       centiSeconds_exists_in_all_GPS_sensors: 1
-    %                       GPS_Time_has_no_repeats_in_GPS_sensors: 1
-    %      GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
-    %           GPS_Time_has_consistent_start_end_within_5_seconds: 1
-    %         GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
-    %                     GPS_Time_strictly_ascends_in_GPS_sensors: 1
-    %            GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
+    % GPS_Time_exists_in_at_least_one_GPS_sensor        	yes
+    % GPS_Time_exists_in_all_GPS_sensors                	yes
+    % centiSeconds_exists_in_all_GPS_sensors            	yes
+    % GPS_Time_has_no_repeats_in_GPS_sensors            	yes
+    % GPS_Time_strictly_ascends_in_GPS_sensors          	yes
+    % GPS_Time_sample_modes_match_centiSeconds_in_GPS_se	yes
+    % GPS_Time_has_consistent_start_end_within_5_seconds	yes
+    % GPS_Time_has_consistent_start_end_across_GPS_senso	yes
+    % GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors 	yes
+    % GPS_Time_has_no_missing_sample_differences_in_any_	yes
+    % Trigger_Time_exists_in_all_GPS_sensors            	yes
+    % ROS_Time_exists_in_all_GPS_sensors                	yes
+    % ROS_Time_scaled_correctly_as_seconds              	yes
+    % ROS_Time_strictly_ascends_in_all_sensors          	yes
+    % ROS_Time_sample_modes_match_centiSeconds_in_GPS_se	yes
+    % ROS_Time_has_same_length_as_Trigger_Time_in_GPS_se	yes
+    % ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_s	yes
+    % Trigger_Time_exists_in_all_sensors                	yes
 
     % Used to create test data
     if 1==0
@@ -299,7 +310,7 @@ while 1==flag_stay_in_main_loop
     end
 
     if (1==flag_keep_checking)
-        [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure, fid, plotFlags);
+        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure, fid, plotFlags);
     end
     
     fcn_INTERNAL_reportFlagStatus(time_flags,'TIMING FLAGS');
@@ -622,7 +633,7 @@ while 1==flag_stay_in_main_loop
     
     
 
-    %% Check if ROS_Time_strictly_ascends
+    %% Check if ROS_Time_strictly_ascends_in_all_sensors
     %    ### ISSUES with this:
     %    * This field is used to calibrate ROS to GPS time via interpolation, and must
     %    be STRICTLY increasing for the interpolation function to work
@@ -630,11 +641,11 @@ while 1==flag_stay_in_main_loop
     %    be in an increasing sequence
     %    * If the ROS topic is glitching, its time may be temporarily incorrect
     %    ### DETECTION:
-    %    * Examine if time data from sensor is STRICTLY increasing
+    %    * Examine if time data from every sensor is STRICTLY increasing
     %    ### FIXES:
-    %    * Remove and interpolate time field if not strictkly increasing
+    %    * Remove and interpolate time field if not strictly increasing
     %    * Re-order data, if minor ordering error
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends_in_all_sensors)
         warning('on','backtrace');
         warning('Fundamental error on ROS_time: it is not counting up!?');
         error('ROS time is not strictly ascending.');
@@ -665,9 +676,9 @@ while 1==flag_stay_in_main_loop
     %    * Count the number of data in Trigger_Time, and compare it with
     %    ROS_Time - these should match
     %    ### FIXES:
-    %    * Remove and interpolate time field if not strictly increasing
-    
-    %% Check that ROS_Time data has expected count
+    %    * Remove and interpolate time field if not strictly increasing    
+    % Check that ROS_Time data has expected count
+
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors)
         warning('on','backtrace');
         warning('Fundamental error on ROS_time: unexpected count');
@@ -677,117 +688,89 @@ while 1==flag_stay_in_main_loop
 
 
     
-    %% Check ROS_Time_rounds_correctly_to_Trigger_Time
-    % Check that the ROS Time, when rounded to the nearest sampling interval,
-    % matches the Trigger time.
+    %% Calibrate ROS time to GPS time  ---> ROS_Time_calibrated_to_GPS_Time
+    % Perform regression to match ROS time to GPS time.
     %    ### ISSUES with this:
-    %    * The data on some sensors are triggered, inlcuding the GPS sensors
-    %    which are self-triggered
-    %    * If the rounding does not work, this indicates a problem in the ROS
-    %    master
+    %    * The ROS time will not match the GPS time. Need to fit GPS time to
+    %    ROS time
     %    ### DETECTION:
-    %    * Round the ROS Time and compare to the Trigger_Times
+    %    * (none) assume data is bad by default
     %    ### FIXES:
-    %    * Remove and interpolate time field if not strictly increasing
+    %    * Perform regression fit
 
-    
-    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time 
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
-        warning('on','backtrace');
-        warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
-        % figure(123)
-        % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
-        % hold on
-        % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
-        % plot(nextDataStructure.GPS_SparkFun_Front.ROS_Time,'b','LineWidth',2)
-        nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
-        flag_keep_checking = 0;
-        % clf
-        % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
-        % hold on
-        % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
-        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time,'k','LineWidth',2)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_calibrated_to_GPS_Time)
+        % Used to create test data
+        if 1==0
+            fullExampleFilePath = fullfile(cd,'Data','ExampleData_fitROSTime2GPSTime.mat');
+            dataStructure = nextDataStructure;
+            save(fullExampleFilePath,'dataStructure');
+        end
+
+        [time_flags, fitParameters] = fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
     end
-    
-    %%
-    
-    %% Entering this section indicates all time in GPS units have been checked and fixed
-    %% First, check whether all sensors have Trigger_Time 
-    % Moved into fcn_DataClean_checkDataTimeConsistency
-%     if (1==flag_keep_checking)         
-% %         error('stop here');
-%         [time_flags,sensors_without_Trigger_Time] = fcn_DataClean_checkAllSensorsHaveTriggerTime(nextDataStructure,fid,time_flags);
-%     end
+
+    %% Check ROS_Time_rounds_correctly_to_Trigger_Time
+    % % Check that the ROS Time, when rounded to the nearest sampling interval,
+    % % matches the Trigger time.
+    % %    ### ISSUES with this:
+    % %    * The data on some sensors are triggered, inlcuding the GPS sensors
+    % %    which are self-triggered
+    % %    * If the rounding does not work, this indicates a problem in the ROS
+    % %    master
+    % %    ### DETECTION:
+    % %    * Round the ROS Time and compare to the Trigger_Times
+    % %    ### FIXES:
+    % %    * Remove and interpolate time field if not strictly increasing
+    % % Check that ROS_Time_rounds_correctly_to_Trigger_Time 
+    % 
+    % if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
+    % 
+    %     nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
+    %     flag_keep_checking = 0;
+    % 
+    % end
+
+%% ALL SENSORS STARTS HERE
+
+% Make sure centiseconds in all
+% Make sure trigger time in all
+% make sure ROS time has no repeats
+% make sure ROS time strictly ascends
+% calculate trigger surrogate
+% make sure sample modes match centiseconds
+% make sure ROS time has same length as Trigger time
+% make sure trigger time strictly ascends
+% make sure trigger time has no missing sample differences
+% trim start/ends based on trigger time
 
     %% If not, calculate Trigger_Time to rest of sensors
     if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)
-        warning('on','backtrace');
-        warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
-        nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure,sensors_without_Trigger_Time);
+        % warning('on','backtrace');
+        % warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
+        nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure);
+        URHERE
         flag_all_trigger_time_calculated = 1;
         flag_keep_checking = 0;
     end
     %%
   
-    %% Start to work on other sensors, start with Velodyne LiDAR
-    if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)
-        % figure(123)
-        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
-        % hold on
-        % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
-        % plot(nextDataStructure.TRIGGER_TrigBox_RearTop.Trigger_Time)
-        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(nextDataStructure,fid);
-        flag_keep_checking = 0;
-        % figure(124)
-        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
-        % hold on
-        % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
-        % 
-    end
-
-    %% TO-DO - Create a time analysis function - and add it here
-    % Fix the x-axes to match the time duration, e.g. index*centiSeconds*0.01
-
-    % Examine the offset deviations between the different time sources
-    % [cell_array_centiSeconds,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'centiSeconds','GPS');
-    % [cell_array_GPS_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'GPS_Time','GPS');
-    % [cell_array_Trigger_Time,~] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'Trigger_Time','GPS');
-    % [cell_array_ROS_Time,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time','GPS');
-    % 
-    % % Calculate ROS_Time - Trigger_time, plot this versus duration
-    % figure(1818);
-    % clf;
-    % hold on;
-    % grid on;
-    % xlabel('Duration of Data Collection (seconds)');
-    % ylabel('Deviations in Time (seconds)');
-    % title('Differences, ROS Time - Trigger Time');
-    % 
-    % for ith_sensor = 1:length(sensor_names)
-    % 
-    %     xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
-    %     deviations_in_time = (cell_array_ROS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
-    %     plot(xdata,deviations_in_time);
+    % %% Start to work on other sensors, start with Velodyne LiDAR
+    % if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)
+    %     % figure(123)
+    %     % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
+    %     % hold on
+    %     % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
+    %     % plot(nextDataStructure.TRIGGER_TrigBox_RearTop.Trigger_Time)
+    %     nextDataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(nextDataStructure,fid);
+    %     flag_keep_checking = 0;
+    %     % figure(124)
+    %     % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
+    %     % hold on
+    %     % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
+    %     % 
     % end
-    % legend(sensor_names,'Interpreter','none')
-    % 
-    % % Calculate GPS_Time - Trigger_time, plot this versus duration
-    % figure(1819);
-    % clf;
-    % hold on;
-    % grid on;
-    % xlabel('Duration of Data Collection (seconds)');
-    % ylabel('Deviations in Time (seconds)');
-    % title('Differences, GPS Time - Trigger Time');
-    % 
-    % for ith_sensor = 1:length(sensor_names)
-    %     xdata = (1:length(cell_array_Trigger_Time{ith_sensor}))'*0.01*cell_array_centiSeconds{ith_sensor};
-    %     deviations_in_time = (cell_array_GPS_Time{ith_sensor} - cell_array_Trigger_Time{ith_sensor});
-    %     plot(xdata,deviations_in_time);
-    % end
-    % legend(sensor_names,'Interpreter','none')
-    % 
-    % 
+
+   
 
 
     %% Done? Check Exiting conditions
@@ -797,19 +780,7 @@ while 1==flag_stay_in_main_loop
     %     dataset{1} = temp;
     % end
 
-    %     % fieldList = fieldnames(time_flags);
-    % % for ith_field = 1:length(fieldList)
-    % %     if 0==time_flags.(fieldList{ith_field})
-    % %         return
-    % %     end
-    % % end
-    % 
-    % 
-    % % Only way to get here is if everything above worked - can exit!
-    % if (0==flag_keep_checking)
-    %     flag_stay_in_main_loop = 0; %#ok<NASGU>
-    % end
-    % 
+
     currentDataStructure = nextDataStructure;
     currentDataStructure.Identifiers = Identifiers_Hold;
       

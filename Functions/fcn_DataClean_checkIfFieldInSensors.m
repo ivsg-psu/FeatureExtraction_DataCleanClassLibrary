@@ -280,8 +280,12 @@ if strcmp(string_any_or_all,'all') && any(any_sensor_exists_results==0)
     % If any sensors have to have the field, then if all are nan, this
     % flag fails
     flag_field_exists = 0;
-    first_failure = find(any_sensor_exists_results==0,1,'first');
-    offending_sensor = sensor_names{first_failure};
+    failing_indicies = find(any_sensor_exists_results==0);
+    offending_sensor = '';
+    for ith_failure = 1:length(failing_indicies)
+        current_index = failing_indicies(ith_failure);
+        offending_sensor = cat(2,offending_sensor,sensor_names{current_index},' ');
+    end
 end
 
 % Check the any case

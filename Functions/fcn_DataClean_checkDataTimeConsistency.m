@@ -1,4 +1,4 @@
-function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(dataStructure, varargin)
+function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataStructure, varargin)
 % fcn_DataClean_checkDataTimeConsistency
 % Checks a given dataset to verify whether data meets key time consistency
 % requirements. 
@@ -65,7 +65,7 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 % they are not true, there are procedures to fix these errors and these are
 % typically performed via other functions in the DataClean library.
 %
-% # GPS_Time tests include:
+% flagged tests include:
 %                    GPS_Time_exists_in_at_least_one_GPS_sensor: 1
 %                            GPS_Time_exists_in_all_GPS_sensors: 1
 %                        centiSeconds_exists_in_all_GPS_sensors: 1
@@ -76,18 +76,14 @@ function [flags,offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_c
 %          GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
 %             GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
 % GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
-% 
-% # Trigger_Time tests include:
-%     ## Trigger_Time_exists_in_all_GPS_sensors
-%     ## Trigger_Time_exists_in_all_sensors
-% 
-% # ROS_Time tests include:GPS
-%     ## ROS_Time_exists_in_all_GPS_sensors
-%     ## ROS_Time_scaled_correctly_as_seconds
-%     ## ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
-%     ## ROS_Time_strictly_ascends
-%     ## ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
-%     ## ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
+%                        Trigger_Time_exists_in_all_GPS_sensors: 1
+%                            ROS_Time_exists_in_all_GPS_sensors: 1
+%                          ROS_Time_scaled_correctly_as_seconds: 1
+%                      ROS_Time_strictly_ascends_in_all_sensors: 1
+%       ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
+%       ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors: 1
+%      ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors: 
+%                            Trigger_Time_exists_in_all_sensors: 1
 %
 % The above issues are explained in more detail in the following
 % sub-sections of code.
@@ -232,7 +228,7 @@ end
 
 % Initialize flags
 flags = struct;
-sensors_without_Trigger_Time = '';
+
 % flags.GPS_Time_exists_in_at_least_one_sensor = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -432,9 +428,21 @@ if 0==flags.ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
     return
 end
 
-%% Check if ROS_Time_rounds_correctly_to_Trigger_Time
+%% Calibrate ROS time to GPS time  ---> ROS_Time_calibrated_to_GPS_Time
+% Perform regression to match ROS time to GPS time.
+%    ### ISSUES with this:
+%    * The ROS time will not match the GPS time. Need to fit GPS time to
+%    ROS time
+%    ### DETECTION:
+%    * (none) assume data is bad by default
+%    ### FIXES:
+%    * Perform regression fit
+flags.ROS_Time_calibrated_to_GPS_Time = 0;
+
+
+%% Check if ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
 % Check that the ROS Time, when rounded to the nearest sampling interval,
-% matches the Trigger time.
+% matches the Trigger time in all GPS sensors
 %    ### ISSUES with this:
 %    * The data on some sensors are triggered, inlcuding the GPS sensors
 %    which are self-triggered
@@ -445,12 +453,13 @@ end
 %    ### FIXES:
 %    * Remove and interpolate time field if not strictly increasing
 
-[flags,offending_sensor,~] = fcn_DataClean_checkTimeRoundsCorrectly(dataStructure, 'ROS_Time',flags,'Trigger_Time','GPS',fid);
+[flags,offending_sensor,~] = fcn_DataClean_checkTimeRoundsCorrectly(dataStructure, 'ROS_Time',flags,'Trigger_Time','GPS',fid); %#ok<ASGLU>
 if 0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
     % warning('on','backtrace');
     % warning('ROS_Time needs to be rounded to Trigger_Time in all GPS sensors')
-    return
+    % return
 end
+
 
 %% Check Trigger_Time_exists_in_all_sensors
 % Do all sensors have Trigger Time, not just GPS sensors
@@ -473,6 +482,8 @@ if 0==flags.Trigger_Time_exists_in_all_sensors
     warning('Not all sensors have Trigger Time')
     return
 end
+
+
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

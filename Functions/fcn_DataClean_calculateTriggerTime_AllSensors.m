@@ -53,7 +53,7 @@ function fixed_dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dat
 
 
 % Set default fid (file ID) first:
-flag_do_debug = 1;  %#ok<NASGU> % Flag to show the results for debugging
+flag_do_debug = 1;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
 flag_check_inputs = 1; % Flag to perform input checking
 

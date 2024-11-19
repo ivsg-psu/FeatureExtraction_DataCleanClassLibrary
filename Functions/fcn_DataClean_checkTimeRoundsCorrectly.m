@@ -233,13 +233,14 @@ for i_data = 1:length(sensor_names)
     % Find multiplier that converts seconds into centiseconds. Usually,
     % this is 100. But if centiSeconds is a weird number, like 7, it can
     % introduce errors. In the case 
-    multiplier = round(100/sensor_data.centiSeconds)*sensor_data.centiSeconds;
+    multiplier = round(100/sensor_data.centiSeconds);
     
-    % Round ROS_Time    
-    Rounded_Field_Time_samples_centiSeconds   = round((sensor_data.(field_name)-sensor_data.(time_field)(1,1))*multiplier);
+    % Round ROS_Time   
+    RawTime = (sensor_data.(field_name)-sensor_data.(field_name)(1,1));
+    Rounded_Field_Time_samples_centiSeconds   = round(RawTime*multiplier)*sensor_data.centiSeconds;
        
     % Round the Trigger_Time
-    Rounded_Trigger_Time_samples_centiSeconds   = round((sensor_data.(time_field)-sensor_data.(time_field)(1,1))*multiplier);
+    Rounded_Trigger_Time_samples_centiSeconds   = round((sensor_data.(time_field)-sensor_data.(time_field)(1,1))*multiplier)*sensor_data.centiSeconds;
     
     % Check if they are the same
     if ~isequal(Rounded_Field_Time_samples_centiSeconds,Rounded_Trigger_Time_samples_centiSeconds)
@@ -256,7 +257,30 @@ for i_data = 1:length(sensor_names)
         else
             offending_sensor = cat(2,offending_sensor,' ',sensor_name); % Save the name of the sensor
         end
-        return_flag = 1; % Indicate that the return was forced        
+        return_flag = 1; % Indicate that the return was forced 
+
+        % Show what went wrong?
+        if 0~=fid
+            maxOff = max(abs(Rounded_Field_Time_samples_centiSeconds-Rounded_Trigger_Time_samples_centiSeconds));
+            all_bad = find(Rounded_Field_Time_samples_centiSeconds~=Rounded_Trigger_Time_samples_centiSeconds);
+            Nsamples = length(Rounded_Field_Time_samples_centiSeconds);
+            bad_index = all_bad(1);
+            start_print = max(bad_index-5,1);
+            end_print = min(bad_index+5,length(Rounded_Field_Time_samples_centiSeconds(:,1)));
+            temp = [RawTime Rounded_Field_Time_samples_centiSeconds Rounded_Trigger_Time_samples_centiSeconds];
+            fprintf(1,'\t\tFAILURES FOUND:  total failures --> %.0d of %.0d (%.0f percent)\n',length(all_bad),Nsamples,length(all_bad)/Nsamples*100);
+            fprintf(1,'\t\tExample of failure:\n')
+            fprintf(1,'\t\t\t (Raw) \t (Field) \t (Trigger)\n')
+            for ith_index = start_print:end_print
+                if ith_index~=bad_index
+                    fprintf(1,'\t\t\t %.4f \t %.0d \t %.0d\n',temp(ith_index,1),temp(ith_index,2),temp(ith_index,3))
+                else
+                    fcn_DebugTools_cprintf('Red','\t\t\t %.4f \t %.0d \t %.0d\n',temp(ith_index,1),temp(ith_index,2),temp(ith_index,3))
+                end
+            end
+            fprintf(1,'\t\tMaximum offset:  %.0d centiseconds\n',maxOff);
+            
+        end
     end    
    
 end
