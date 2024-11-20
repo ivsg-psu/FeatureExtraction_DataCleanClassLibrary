@@ -1,23 +1,23 @@
-function RawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(rawData)
-% fcn_DataClean_loadSigmaValuesFromRawData
+function dataStructureWithSigmas = fcn_DataClean_calculateSigmaValuesFromRawData(dataStructure, varargin)
+% fcn_DataClean_calculateSigmaValuesFromRawData
 % Calculates standard deviations on key variables if they are left empty
 % during the data loading process.
 %
 % FORMAT:
 %
-%      RawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(rawData)
+%      RawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(dataStructure, (fid))
 %
 % INPUTS:
 %
-%      rawData: a data structure with fields for each sensor input
+%      dataStructure: a data structure with fields for each sensor input
 % 
 %      (OPTIONAL INPUTS)
 %
-%      (none)
+%      fid: 
 %
 % OUTPUTS:
 %
-%      RawDataWithSigmas: the data structure with standard deviations added
+%      dataStructureWithSigmas: the data structure with standard deviations added
 %
 % DEPENDENCIES:
 %
@@ -43,6 +43,13 @@ function RawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(rawData)
 % -- Fixed nanmean and nanstd which is not supported in new MATLAB installs
 % -- Major reformat of function to IVSG style
 % -- Renamed internal function to clearly be an INTERNAL, not external call
+% 2024_11_20 - xfc5113@psu.edu
+% -- Rename the function from fcn_DataClean_loadSigmaValuesFromRawData to 
+%   fcn_DataClean_calculateSigmaValuesFromRawData, the original function
+%   was still in the Functions folder, need to be removed after review
+% -- Fixed a bug in line 152 to prevent calculated sigma field to overwrite
+%    by the copy
+
 
 % TO DO
 % 
@@ -72,7 +79,7 @@ end
 
 if flag_check_inputs
     % Are there the right number of inputs?
-    narginchk(1,1);
+    narginchk(1,2);
         
     % NOTE: data structure SHOULD be checked!
 
@@ -120,11 +127,13 @@ fields_to_calculate_sigmas_for = [...
     ];
 
 
-names = fieldnames(rawData); % Grab all the fields that are in rawData structure
+names = fieldnames(dataStructure); % Grab all the fields that are in rawData structure
+dataStructureWithSigmas = dataStructure;
 for i_data = 1:length(names)
     % Grab the data subfield name
     data_name = names{i_data};
-    d = eval(cat(2,'rawData.',data_name));
+    % d = eval(data_name);
+    d = eval(cat(2,'dataStructure.',data_name));
     
     if flag_do_debug
         fprintf(1,'\n Sensor %d of %d: ',i_data,length(names));
@@ -133,6 +142,7 @@ for i_data = 1:length(names)
     
     subfieldNames = fieldnames(d); % Grab all the subfields
     clear dout; % Initialize this structure
+    dout = d;
     for i_subField = 1:length(subfieldNames)
         % Grab the name of the ith subfield
         subFieldName = subfieldNames{i_subField};
@@ -141,16 +151,16 @@ for i_data = 1:length(names)
             fprintf(1,'\tProcessing subfield: %s ',subFieldName);
         end
         
-        % Copy over the field itself first
-        dout.(subFieldName) = d.(subFieldName);
+        % % Copy over the field itself first
+        % dout.(subFieldName) = d.(subFieldName);
         
         % Check to see if this subField is in the list
         if any(strcmp(subFieldName,fields_to_calculate_sigmas_for))
 
             % Check if Sigma field exists - if it does, do NOT overwrite it
             subFieldNameSigma = cat(2,subFieldName,'_Sigma');
-            if any(strcmp(subFieldNameSigma,subfieldNames))
-                % The Sigma field already exists, just copy it over then
+            if any(strcmp(subFieldNameSigma,subfieldNames))&&(all(~isnan(d.(subFieldNameSigma))))
+                % The Sigma field already exists and it is not NaN, just copy it over then
                 dout.(subFieldNameSigma) = d.(subFieldNameSigma);
                 if flag_do_debug
                     fprintf(1,' <-- skipped this sigma, already defined\n');
@@ -160,11 +170,16 @@ for i_data = 1:length(names)
                 % Some of the dat may have NaN values, so we need to
                 % consider this.
                 data = d.(subFieldName);
-                real_sigma = fcn_INTERNAL_calcSigmaNoOutliers(data);
+                if ~isnan(data)&&~isempty(data)
+                    real_sigma = fcn_INTERNAL_calcSigmaNoOutliers(data);
+                    dout.(subFieldNameSigma) = real_sigma;
+                else
+                   warning('Sigma cannot be calculated on field %s of %s since field %s is NaN or empty', subFieldName, data_name, subFieldName) 
+                end
                 if isnan(real_sigma)
                     error('Sigma calculation produced an NaN value on field %s of sensor %s. Exiting.',subFieldName,data_name);
                 end
-                dout.(subFieldNameSigma) = real_sigma;
+                
                 
                 if flag_do_debug
                     % fprintf(1,' <-- calculated a sigma, has length: %d\n',length(real_sigma(:,1)));
@@ -181,7 +196,7 @@ for i_data = 1:length(names)
         end % Ends the if statement to check if subfield is on list
     end % Ends for loop through the subfields
 
-    RawDataWithSigmas.(data_name) = dout; % Save results to main structure
+    dataStructureWithSigmas.(data_name) = dout; % Save results to main structure
     
      
     
