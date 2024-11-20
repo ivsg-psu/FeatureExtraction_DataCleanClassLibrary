@@ -694,8 +694,33 @@ while 1==flag_stay_in_main_loop
             save(fullExampleFilePath,'dataStructure');
         end
 
+        [flags, ~, ~, mean_fit, filtered_median_errors] =  fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
+    end
+
+
+    %% Calculate GPSfromROS_Time in GPS sensors --> GPSfromROS_Time_exists_in_all_GPS_sensors
+    % Fills in an estimate of GPS time from ROS time in GPS sensors
+    %    ### ISSUES with this:
+    %    * The ROS time might not match the GPS time. If there are errors
+    %    in the GPS sensors, the same errors are likely in other sensors.
+    %    ### DETECTION:
+    %    * Make sure the field exists
+    %    ### FIXES:
+    %    * Calculate GPS time from ROS time via function call
+
+    if (1==flag_keep_checking) && (0==time_flags.GPSfromROS_Time_exists_in_all_GPS_sensors)
+        % Used to create test data
+        if 1==0
+            % fullExampleFilePath = fullfile(cd,'Data','ExampleData_fitROSTime2GPSTime.mat');
+            % dataStructure = nextDataStructure;
+            % save(fullExampleFilePath,'dataStructure');
+        end
+
         [time_flags, fit_Parameters, fit_sensors] = fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
     end
+
+    %% 
+
 
     %% Fix errors in ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
@@ -712,9 +737,11 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Resample the sensor?
 
-    URHERE
-    
+   
     if (1==flag_keep_checking) && (0==time_flags.ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors)
+
+        URHERE
+
         % Used to create test data
         if 1==0
             fullExampleFilePath = fullfile(cd,'Data','ExampleData_fitROSTime2GPSTime.mat');
@@ -780,10 +807,10 @@ while 1==flag_stay_in_main_loop
 
 
     % Make sure trigger time in all
-    % make sure ROS time has no repeats
-    % make sure ROS time strictly ascends
-    % calculate trigger surrogate
-    % make sure sample modes match centiseconds
+    % make sure ROS time has no repeats in all
+    % make sure ROS time strictly ascends in all
+    % calculate GPS time from ROS
+    % calculate surrogate Trigger times
     % make sure ROS time has same length as Trigger time
     % make sure trigger time strictly ascends
     % make sure trigger time has no missing sample differences

@@ -616,6 +616,20 @@ if 0==flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
 end
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    _____      _ _ _               _           _____   ____   _____            _______ _                     _             _____ _____   _____            _______ _
+%   / ____|    | (_) |             | |         |  __ \ / __ \ / ____|          |__   __(_)                   | |           / ____|  __ \ / ____|          |__   __(_)
+%  | |     __ _| |_| |__  _ __ __ _| |_ ___    | |__) | |  | | (___               | |   _ _ __ ___   ___     | |_ ___     | |  __| |__) | (___               | |   _ _ __ ___   ___
+%  | |    / _` | | | '_ \| '__/ _` | __/ _ \   |  _  /| |  | |\___ \              | |  | | '_ ` _ \ / _ \    | __/ _ \    | | |_ |  ___/ \___ \              | |  | | '_ ` _ \ / _ \
+%  | |___| (_| | | | |_) | | | (_| | ||  __/   | | \ \| |__| |____) |             | |  | | | | | | |  __/    | || (_) |   | |__| | |     ____) |             | |  | | | | | | |  __/
+%   \_____\__,_|_|_|_.__/|_|  \__,_|\__\___|   |_|  \_\\____/|_____/              |_|  |_|_| |_| |_|\___|     \__\___/     \_____|_|    |_____/              |_|  |_|_| |_| |_|\___|
+%                                                                      ______                                                                     ______
+%                                                                     |______|                                                                   |______|
+% See http://patorjk.com/software/taag/#p=display&f=Big&t=Calibrate%20%20%20ROS%20_%20Time%20%20%20%20to%20%20%20GPS%20_%20Time
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Check if ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
 % Check that, for each trigger time, there's a ROS time
 %    ### ISSUES with this:
@@ -645,6 +659,21 @@ end
 %    * Perform regression fit
 flags.ROS_Time_calibrated_to_GPS_Time = 0;
 
+%% Check if GPSfromROS_Time_exists_in_all_GPS_sensors
+% Fills in an estimate of GPS time from ROS time in GPS sensors
+%    ### ISSUES with this:
+%    * The ROS time might not match the GPS time. If there are errors
+%    in the GPS sensors, the same errors are likely in other sensors.
+%    ### DETECTION:
+%    * Make sure the field exists
+%    ### FIXES:
+%    * Calculate GPS time from ROS time via function call
+
+
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'GPSfromROS_Time',flags,'all','GPS',fid);
+if 0==flags.GPSfromROS_Time_exists_in_all_GPS_sensors
+    return
+end
 
 %% Check if ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
 % Check that the ROS Time, when rounded to the nearest sampling interval,
