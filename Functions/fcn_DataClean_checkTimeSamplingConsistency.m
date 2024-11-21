@@ -349,10 +349,25 @@ for i_data = 1:Ndata
             fprintf(fid,'\t\t Mean interval: %.5f seconds.\n',meanInterval);
             fprintf(fid,'\t\t Max interval:  %.5f seconds.\n',maxInterval);
             fprintf(fid,'\t\t Min interval:  %.5f seconds.\n',minInterval);
-            fprintf(fid,'\t\t Mode interval: %.0 centiSeconds at a frequency of %.0f (out of %.0f intervals, or %.0f percent)\n',...
+            fprintf(fid,'\t\t Mode interval: %.0f centiSeconds at a frequency of %.0f (out of %.0f intervals, or %.0f percent)\n',...
                 modeInterval, modeCount, length(timeDifferences), modeCount/length(timeDifferences)*100);
+            fprintf(fid,'\t\t Expected interval:  %.0f centiseconds.\n',centiSeconds);
             fprintf(fid,'\t\t Expected number of samples:  %.0f.\n',expectedNsamples);
             fprintf(fid,'\t\t Actual number of samples:    %.0f.\n',length(timeData));
+
+            bad_index = indiciesOfBadIntervals(1);
+            start_print = max(bad_index-5,1);
+            end_print = min(bad_index+5,length(timeDifferences(:,1)));
+            temp = [sensor_data.Trigger_Time timeData  timeDifferences effectiveSamplingIntervals];
+            fprintf(1,'\t\tExample of failure:\n')
+            fprintf(1,'\t\t\t (Trigger_time) \t (timeData) \t (timeDifferences) \t (effectiveSamplingIntervals)\n')
+            for ith_index = start_print:end_print
+                if ith_index~=bad_index
+                    fprintf(1,'\t\t\t %.4f \t %.4f \t %.4f \t\t\t %.0f\n',temp(ith_index,1),temp(ith_index,2),temp(ith_index,3),temp(ith_index,4))
+                else
+                    fcn_DebugTools_cprintf('Red','\t\t\t %.4f \t %.4f \t %.4f \t\t\t %.0f\n',temp(ith_index,1), temp(ith_index,2),temp(ith_index,3),temp(ith_index,4))
+                end
+            end
         else
             % Throw warnings on catastrophic errors that are not fixable
             if 0==verificationTypeFlag
