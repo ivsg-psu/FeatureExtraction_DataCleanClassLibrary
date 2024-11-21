@@ -25,7 +25,7 @@ function dataStructureWithSigmas = fcn_DataClean_calculateSigmaValuesFromRawData
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_loadSigmaValuesFromRawData
+%     See the script: script_test_fcn_DataClean_calculateSigmaValuesFromRawData
 %     for a full test suite.
 %
 % This function was written on 2019_10_10 by S. Brennan
@@ -170,7 +170,7 @@ for i_data = 1:length(names)
                 % Some of the dat may have NaN values, so we need to
                 % consider this.
                 data = d.(subFieldName);
-                if ~isnan(data)&&~isempty(data)
+                if any(~isnan(data))&&~isempty(data)
                     real_sigma = fcn_INTERNAL_calcSigmaNoOutliers(data);
                     dout.(subFieldNameSigma) = real_sigma;
                 else

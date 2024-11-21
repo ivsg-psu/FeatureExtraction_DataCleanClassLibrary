@@ -332,7 +332,7 @@ flag_do_load_cameras = Flags.flag_do_load_cameras;
 flag_select_scan_duration = Flags.flag_select_scan_duration;
 flag_do_load_GST = Flags.flag_do_load_GST;
 flag_do_load_VTG = Flags.flag_do_load_VTG;
-
+flag_do_load_PVT = Flags.flag_do_load_PVT;
 % Grab the list of files in this directory
 file_list = dir(dataFolderString);
 num_files = length(file_list);
@@ -471,7 +471,7 @@ for file_idx = 1:num_files
             SparkFun_GPS_RearLeft_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_GST = SparkFun_GPS_RearLeft_GST;
 
-        elseif contains(topic_name, 'GPS_SparkFun_RearLeft_PVT')
+        elseif contains(topic_name, 'GPS_SparkFun_RearLeft_PVT') && flag_do_load_PVT
             SparkFun_GPS_RearLeft_PVT = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_LeftRear_PVT = SparkFun_GPS_RearLeft_PVT;
 
@@ -490,7 +490,7 @@ for file_idx = 1:num_files
             sparkfun_gps_rear_right_GST = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_GST = sparkfun_gps_rear_right_GST;
 
-        elseif contains(topic_name, 'GPS_SparkFun_RearRight_PVT')
+        elseif contains(topic_name, 'GPS_SparkFun_RearRight_PVT') && flag_do_load_PVT
             SparkFun_GPS_RearRight_PVT = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_RightRear_PVT = SparkFun_GPS_RearRight_PVT;
 
@@ -506,7 +506,7 @@ for file_idx = 1:num_files
             SparkFun_GPS_Front_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Front_GGA = SparkFun_GPS_Front_GGA;
 
-        elseif contains(topic_name, 'GPS_SparkFun_Front_PVT')
+        elseif contains(topic_name, 'GPS_SparkFun_Front_PVT') && flag_do_load_PVT
             SparkFun_GPS_Front_PVT = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Front_PVT = SparkFun_GPS_Front_PVT;
 
@@ -520,7 +520,7 @@ for file_idx = 1:num_files
             rawData.GPS_SparkFun_Front_GST = SparkFun_GPS_Front_GST;
 
 
-        elseif contains(topic_name, 'GPS_SparkFun_Temp_GGA')
+        elseif contains(topic_name, 'GPS_SparkFun_Temp_GGA') 
             SparkFun_GPS_Temp_GGA = fcn_DataClean_loadRawDataFromFile_Sparkfun_GPS(full_file_path,datatype,fid,topic_name);
             rawData.GPS_SparkFun_Temp_GGA = SparkFun_GPS_Temp_GGA;
 
