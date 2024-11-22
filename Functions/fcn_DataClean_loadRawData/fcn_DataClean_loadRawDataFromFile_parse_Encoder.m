@@ -25,7 +25,8 @@ function parseEncoder = fcn_DataClean_loadRawDataFromFile_parse_Encoder(file_pat
 % -- added fid to fprint to allow printing to file
 % -- added entry and exit debugging prints
 % -- removed variable clearing at end of function because this is automatic
-
+% 2024_11_21 xfc5113@psu.edu
+% -- change field "Mode" to "mode" to match Trigger_Box fields
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -42,16 +43,12 @@ if strcmp(datatype,'encoder')
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
     Npoints = height(datatable);
-    parseEncoder = fcn_DataClean_initializeDataByType(datatype,Npoints);
-    % secs = datatable.secs;
-    % nsecs = datatable.nsecs;
+    parseEncoder = fcn_DataClean_initializeDataByType(datatype);
     time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
-%     parseEncoder.GPS_Time         = secs + nsecs * 10^-9;  % This is the GPS time, UTC, as reported by the unit
-    % parseEncoder.Trigger_Time         = datatable.time;  % This is the Trigger time, UTC, as calculated by sample
-    % parseEncoder.ROS_Time           = secs + nsecs * 10^-9;  % This is the ROS time that the data arrived into the bag
+
     parseEncoder.ROS_Time           = time_stamp;  % This is the ROS time that the data arrived into the bag
     parseEncoder.centiSeconds       = 1;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    % parseEncoder.Npoints            = height(datatable);  % This is the number of data points in the array
+    parseEncoder.Npoints            = Npoints;  % This is the number of data points in the array
     % parseEncoder.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
     parseEncoder.C1Counts             = datatable.C1;  % A vector of the counts measured by the encoder, Npoints long
     parseEncoder.C2Counts             = datatable.C2;   % A vector of the counts measured by the encoder, Npoints long
@@ -59,7 +56,7 @@ if strcmp(datatype,'encoder')
     % parseEncoder.LastIndexCount     = default_value;  % Count at which last index pulse was detected, Npoints long
     % parseEncoder.AngularVelocity    = default_value;  % Angular velocity of the encoder
     % parseEncoder.AngularVelocity_Sigma    = default_value; 
-    parseEncoder.Mode = string(erase((datatable.mode),"""")); % A vector of the mode of the encoder box, T indicaes triggered.
+    parseEncoder.mode = string(erase((datatable.mode),"""")); % A vector of the mode of the encoder box, T indicaes triggered.
 
 else
     error('Wrong data type requested: %s',dataType)

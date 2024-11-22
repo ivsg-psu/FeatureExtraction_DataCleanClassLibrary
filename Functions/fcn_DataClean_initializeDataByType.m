@@ -55,6 +55,9 @@ function dataStructure = fcn_DataClean_initializeDataByType(dataType,varargin)
 % -- renamed event functions to sensor type, to disambiguate them, for
 %    example: TRIGGER_EventFunctions. Otherwise, searching for
 %    eventFunctions can cause different sensor types to become confused.
+% 2024_11_22: xfc5113@psu.edu
+% -- renamed "Mode" to "mode" for encoder box
+
 
 
 % TO DO
@@ -125,7 +128,7 @@ switch lower(dataType)
         dataStructure.adjone                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
         dataStructure.adjtwo                            = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
         dataStructure.adjthree                          = default_value;  % This is phase adjustment magnitude relative to the calculated period of the output pulse
-        % Data below are error monitoring messages, move to parseTrigger
+        % Data below are error monitoring messages, move to Diag_Trigger
         % topic later
         dataStructure.err_failed_mode_count             = default_value; 
         dataStructure.err_failed_checkInformation       = default_value;  
@@ -240,7 +243,7 @@ switch lower(dataType)
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
-        dataStructure.Mode = default_value; % This is the mode of the encoder box
+        dataStructure.mode = default_value; % This is the mode of the encoder box
         dataStructure.CountsPerRev       = default_value;  % How many counts are in each revolution of the encoder (with quadrature)
         dataStructure.C1Counts           = default_value;  % A vector of the counts measured by the encoder, Npoints long
         dataStructure.C2Counts           = default_value;  % A vector of the counts measured by the encoder, Npoints long

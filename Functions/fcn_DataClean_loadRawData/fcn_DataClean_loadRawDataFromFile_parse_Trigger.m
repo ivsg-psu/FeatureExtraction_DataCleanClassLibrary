@@ -31,7 +31,9 @@ function parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(file_pat
 % -- convert mode field from cell array to string array
 % 2024_11_18 xfc5113@psu.edu
 % -- fix the typo for mode field. (Mode -> mode)
-
+% 2024_11_21 xfc5113@psu.edu
+% -- There were two mode fields in the data structure, 'mode' and 'Mode',
+% delete the 'Mode' field
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -48,20 +50,18 @@ if strcmp(datatype,'trigger')
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
     Npoints = height(datatable);
-    parseTrigger = fcn_DataClean_initializeDataByType(datatype,Npoints);
+    parseTrigger = fcn_DataClean_initializeDataByType(datatype);
 
-    parseTrigger.mode = datatable.mode;
     time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
     % parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit
     % parseTrigger.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample
     % parseTrigger.ROS_Time                          = secs + nsecs*(10^-9);  % This is the ROS time that the data arrived into the bag
     parseTrigger.ROS_Time  = time_stamp;
     parseTrigger.centiSeconds                      = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    % parseTrigger.Npoints                           = height(datatable);  % This is the number of data points in the array
+    parseTrigger.Npoints                           = Npoints;  % This is the number of data points in the array
     mode_cell = datatable.mode;  
     mode_string = string(mode_cell);
-    mode_string_clean = erase(mode_string,"''");
-    mode_string_clean = erase(mode_string_clean,"""");
+    mode_string_clean = erase(mode_string,"""");
     parseTrigger.mode                              = mode_string_clean;     % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
     parseTrigger.modeCount                         = datatable.mode_counts; % This is the count of the Locked mode (empty for other mode)
     parseTrigger.adjone                            = datatable.adjone;   % This is phase adjustment magnitude relative to the calculated period of the output pulse
