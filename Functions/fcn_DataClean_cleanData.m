@@ -415,7 +415,10 @@ while 1==flag_stay_in_main_loop
     %    * Crop all data to same starting centi-second value
 
     if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_consistent_start_end_across_GPS_sensors)
-        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(nextDataStructure,fid);
+        field_name = 'GPS_Time';
+        sensors_to_check = 'GPS';
+        fill_type = 1;
+        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(nextDataStructure, (field_name), (sensors_to_check), (fill_type), (fid));
         flag_keep_checking = 0;
     end
 

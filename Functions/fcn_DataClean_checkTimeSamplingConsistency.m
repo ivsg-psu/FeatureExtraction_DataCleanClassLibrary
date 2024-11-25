@@ -221,10 +221,12 @@ end
 if 0==verificationTypeFlag
     flagNameFront = '_sample_modes_match_centiSeconds';
 elseif 1==verificationTypeFlag
-    flagNameFront = '_sample_intervals_match_centiSeconds';
+    flagNameFront = '_sampling_matches_centiSeconds';
 elseif 2==verificationTypeFlag
     flagNameFront = '_sample_counts_match_centiSeconds';
 else
+    warning('on','backtrace');
+    warning('An unexpected verification type encountered. Must throw error');
     error('Unknown verificationTypeFlag encountered: %.0f',verificationTypeFlag);
 end
 
@@ -356,11 +358,12 @@ for i_data = 1:Ndata
             fprintf(fid,'\t\t Actual number of samples:    %.0f.\n',length(timeData));
 
             bad_index = indiciesOfBadIntervals(1);
-            start_print = max(bad_index-5,1);
-            end_print = min(bad_index+5,length(timeDifferences(:,1)));
+            indexRange = 10;
+            start_print = max(bad_index-indexRange,1);
+            end_print = min(bad_index+indexRange,length(timeDifferences(:,1)));
             temp = [sensor_data.Trigger_Time timeData  timeDifferences effectiveSamplingIntervals];
             fprintf(1,'\t\tExample of failure:\n')
-            fprintf(1,'\t\t\t (Trigger_time) \t (timeData) \t (timeDifferences) \t (effectiveSamplingIntervals)\n')
+            fprintf(1,'\t\t\t (Trigger_time) \t (%s) \t (timeDifferences) \t (effectiveSamplingIntervals)\n',field_name)
             for ith_index = start_print:end_print
                 if ith_index~=bad_index
                     fprintf(1,'\t\t\t %.4f \t %.4f \t %.4f \t\t\t %.0f\n',temp(ith_index,1),temp(ith_index,2),temp(ith_index,3),temp(ith_index,4))

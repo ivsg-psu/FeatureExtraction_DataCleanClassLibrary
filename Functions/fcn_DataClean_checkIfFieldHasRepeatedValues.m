@@ -214,12 +214,22 @@ for i_data = 1:length(sensor_names)
     
     unique_values = unique(sensor_data.(field_name),'stable');
     
-    if ~isequal(unique_values,sensor_data.(field_name))
-        flag_no_repeats_detected = 0;
-    else
-        flag_no_repeats_detected = 1;
+    % For debugging
+    if 1==0
+        disp([unique_values == sensor_data.(field_name) sensor_data.(field_name)])
     end
-    
+    % Don't compare NaN values
+    if all(isnan(sensor_data.(field_name)))
+        flag_no_repeats_detected = 1;
+    else
+        indiciesToTest = find(~isnan(sensor_data.(field_name)));
+
+        if ~isequal(unique_values(indiciesToTest),sensor_data.(field_name)(indiciesToTest))
+            flag_no_repeats_detected = 0;
+        else
+            flag_no_repeats_detected = 1;
+        end
+    end
 
     flags.(flag_name) = flag_no_repeats_detected;
     

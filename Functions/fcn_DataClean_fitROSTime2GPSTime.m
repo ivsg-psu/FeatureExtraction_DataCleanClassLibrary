@@ -219,18 +219,29 @@ sensor_specific_unit_slope_intercepts = nan(length(cell_array_GPS_Time),1);
 for ith_array = 1:length(cell_array_GPS_Time)
     this_GPS_Time = cell_array_GPS_Time{ith_array} - cell_array_GPS_Time{ith_array}(1,1);
     this_ROS_Time = cell_array_ROS_Time{ith_array} - cell_array_GPS_Time{ith_array}(1,1);
-    Ndata = length(this_GPS_Time);
+    fullX = [this_ROS_Time ones(length(this_ROS_Time(:,1)),1)];  % Includes NaN values
+
+    % Remove NaN values to have "clean" regression data
+    good_y_indicies = ~isnan(this_GPS_Time);
+    good_x_indicies = ~isnan(this_ROS_Time);
+    good_indicies   = good_y_indicies & good_x_indicies;
+    assert(length(good_indicies)>=2); % Make sure there are good indicies for regression
+    regression_y = this_GPS_Time(good_indicies);
+    regression_x = this_ROS_Time(good_indicies);
+
+
 
     % Perform regression fit
     % y = [x 1]*m
     % X'*y = (X'*X)*m
-    % m = (X'*X)*(X'*y)
-    X = [this_ROS_Time ones(Ndata,1)];
-    y = this_GPS_Time;
+    % m = (X'*X)*(X'*y)    
+    Ndata = length(regression_x);
+    X = [regression_x ones(Ndata,1)];  % No NaN values
+    y = regression_y; % No NaN values
     m = (X'*X)\(X'*y);
     fitting_parameters{ith_array} = m;
 
-    this_GPS_Time_predicted = X*m;
+    this_GPS_Time_predicted = fullX*m;
     sensor_specific_fitting_errors{ith_array} = this_GPS_Time - this_GPS_Time_predicted;
 
     this_timeDifference = this_GPS_Time - this_ROS_Time;
@@ -240,9 +251,13 @@ end
 
 % Find the average fitting error and smooth it
 mean_sensor_specific_errors = mean([sensor_specific_fitting_errors{:}],2);
-median_sensor_specific_errors =  medfilt1(mean_sensor_specific_errors,7,'truncate');
+median_sensor_specific_errors =  medfilt1(mean_sensor_specific_errors,7,'truncate','omitnan');
 [b,a] = butter(2,0.1);
-filtered_median_sensor_specific_errors = filtfilt(b,a,median_sensor_specific_errors);
+try
+    filtered_median_sensor_specific_errors = filtfilt(b,a,median_sensor_specific_errors);
+catch
+    error('Stop here');
+end
 
 return_flag = 1;
 
@@ -274,9 +289,9 @@ fitting_errors  = cell(length(cell_array_GPS_Time),1); % Preallocate the data
 for ith_array = 1:length(cell_array_GPS_Time)
     this_GPS_Time = cell_array_GPS_Time{ith_array} - cell_array_GPS_Time{ith_array}(1,1);
     this_ROS_Time = cell_array_ROS_Time{ith_array} - cell_array_GPS_Time{ith_array}(1,1);
-    Ndata = length(this_GPS_Time);
-    X = [this_ROS_Time ones(Ndata,1)];
-    this_GPS_Time_predicted = X*mean_fit;
+    Ndata = length(this_ROS_Time(:,1));
+    fullX = [this_ROS_Time ones(Ndata,1)];  % Includes NaN values
+    this_GPS_Time_predicted = fullX*mean_fit;
     fitting_errors{ith_array} = this_GPS_Time - this_GPS_Time_predicted;
 end
 

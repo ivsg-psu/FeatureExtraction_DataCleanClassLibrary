@@ -297,7 +297,7 @@ while 1==flag_stay_in_main_loop
     % Trigger_Time_exists_in_all_GPS_sensors            	yes
     % ROS_Time_exists_in_all_GPS_sensors                	yes
     % ROS_Time_scaled_correctly_as_seconds              	yes
-    % ROS_Time_strictly_ascends_in_all_sensors          	yes
+    % ROS_Time_strictly_ascends_in_GPS_sensors          	yes
     % ROS_Time_sample_modes_match_centiSeconds_in_GPS_se	yes
     % ROS_Time_has_same_length_as_Trigger_Time_in_GPS_se	yes
     % ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_s	yes
@@ -453,7 +453,17 @@ while 1==flag_stay_in_main_loop
     %    * Crop all data to same starting centi-second value
 
     if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_consistent_start_end_across_GPS_sensors)
-        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(nextDataStructure,fid);
+        % Used to create test data
+        if 1==0
+            fullExampleFilePath = fullfile(cd,'Data','ExampleData_trimDataToCommonStartEndGPSTimes.mat');
+            dataStructure = nextDataStructure;
+            save(fullExampleFilePath,'dataStructure');
+        end
+
+        field_name = 'GPS_Time';
+        sensors_to_check = 'GPS';
+        fill_type = 1;
+        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(nextDataStructure, (field_name), (sensors_to_check), (fill_type), (fid));
         flag_keep_checking = 0;
     end
 
@@ -491,14 +501,13 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Interpolate time field if only a small segment is missing     
 
-    % Used to create test data
-    if 1==0
-        fullExampleFilePath = fullfile(cd,'Data','ExampleData_fillMissingsInGPSUnits.mat');
-        dataStructure = nextDataStructure;
-        save(fullExampleFilePath,'dataStructure');
-    end
-
     if (1==flag_keep_checking) && (0==time_flags.GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors)
+        % Used to create test data
+        if 1==0
+            fullExampleFilePath = fullfile(cd,'Data','ExampleData_fillMissingsInGPSUnits.mat');
+            dataStructure = nextDataStructure;
+            save(fullExampleFilePath,'dataStructure');
+        end
         nextDataStructure = fcn_DataClean_fillMissingsInGPSUnits(nextDataStructure, fid);
         flag_keep_checking = 0;
     end
@@ -621,7 +630,7 @@ while 1==flag_stay_in_main_loop
     end
     
 
-    %% Check if ROS_Time_strictly_ascends_in_all_sensors
+    %% Check if ROS_Time_strictly_ascends_in_GPS_sensors
     %    ### ISSUES with this:
     %    * This field is used to calibrate ROS to GPS time via interpolation, and must
     %    be STRICTLY increasing for the interpolation function to work
@@ -633,13 +642,44 @@ while 1==flag_stay_in_main_loop
     %    ### FIXES:
     %    * Remove and interpolate time field if not strictly increasing
     %    * Re-order data, if minor ordering error
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends_in_all_sensors)
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends_in_GPS_sensors)
         warning('on','backtrace');
         warning('Fundamental error on ROS_time: it is not counting up!?');
         error('ROS time is not strictly ascending.');
         flag_keep_checking = 0;
     end
     
+
+    %% Check if ROS_Time_has_consistent_start_end_across_GPS_sensors
+    %    ### ISSUES with this:
+    %    * The start times and end times of all data collection assumes all GPS
+    %    systems are operating simultaneously
+    %    * The calibration of ROS time to GPS time assumes that all start
+    %    times are the same, and all end times are the same
+    %    * If they are not the same, the count of data in one sensor may be
+    %    different than another, especially if each were referencing different
+    %    GPS sources.
+    %    ### DETECTION:
+    %    * Seach through the ROS time fields for all sensors, rounding them to
+    %    their appropriate centi-second values
+    %    * Check that they all agree
+    %    ### FIXES:
+    %    * Crop all data to same starting centi-second value
+
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_consistent_start_end_across_GPS_sensors)
+        % Used to create test data
+        if 1==1
+            fullExampleFilePath = fullfile(cd,'Data','ExampleData_trimDataToCommonStartEndGPSTimes3.mat');
+            dataStructure = nextDataStructure;
+            save(fullExampleFilePath,'dataStructure');
+        end
+
+        field_name = 'ROS_Time';
+        sensors_to_check = 'GPS';
+        fill_type = 1;
+        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(nextDataStructure, (field_name), (sensors_to_check), (fill_type), (fid));
+        flag_keep_checking = 0;
+    end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %    _____      _ _ _               _           _____   ____   _____            _______ _                     _             _____ _____   _____            _______ _
@@ -694,7 +734,8 @@ while 1==flag_stay_in_main_loop
             save(fullExampleFilePath,'dataStructure');
         end
 
-        [flags, ~, ~, mean_fit, filtered_median_errors] =  fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
+        [~, ~, ~, mean_fit, filtered_median_errors] =  fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
+        flag_keep_checking = 1;
     end
 
 
@@ -716,13 +757,44 @@ while 1==flag_stay_in_main_loop
             % save(fullExampleFilePath,'dataStructure');
         end
 
-        [time_flags, fit_Parameters, fit_sensors] = fcn_DataClean_fitROSTime2GPSTime(nextDataStructure, (time_flags), (fid), (plotFlags.fig_num_fitROSTime2GPSTime));
+        sensors_to_check = 'GPS';
+        fid = 1;
+        fig_num = [];
+
+        nextDataStructure = fcn_DataClean_fillGPSTimeFromROSTime(mean_fit, filtered_median_errors, nextDataStructure, (sensors_to_check), (fid), (fig_num));
+        flag_keep_checking = 0; % Force the flags to be recalculated
     end
 
-    %% 
+    %% Fix errors in GPSfromROS_Time_sample_counts_match_centiSeconds_in_GPS_sensors
+    %    ### ISSUES with this:
+    %    * This field is used to confirm GPSfromROS_Time length matches
+    %    expectations from centiSeconds, e.g. the "length" of the vector is
+    %    correct
+    %    * If the length is wrong, this means that there are missing data
+    %    at start end
+    %    ### DETECTION:
+    %    * calculate the the number of expected samples based on the
+    %    centiSeconds. If they are not the same, the start/end needs to be
+    %    fixed.
+    %    ### FIXES:
+    %    * Resample the sensor's start / end values
+
+   
+    if (1==flag_keep_checking) && (0==time_flags.GPSfromROS_Time_sample_counts_match_centiSeconds_in_GPS_sensors)
+
+        % Used to create test data
+        if 1==0
+            fullExampleFilePath = fullfile(cd,'Data','ExampleData_fitROSTime2GPSTime.mat');
+            dataStructure = nextDataStructure;
+            save(fullExampleFilePath,'dataStructure');
+        end
+        
+        error('This is not programmed yet');
+        % nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
+    end
 
 
-    %% Fix errors in ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors
+    %% Fix errors in GPSfromROS_Time_sampling_matches_centiSeconds_in_GPS_sensors
     %    ### ISSUES with this:
     %    * This field is used to confirm ROS sampling rates for all
     %    GPS-triggered sensors
@@ -735,12 +807,9 @@ while 1==flag_stay_in_main_loop
     %    intervals must round to 1, e.g. that they would have one, and only
     %    one, sample per each sample interval
     %    ### FIXES:
-    %    * Resample the sensor?
-
+    %    * no need to fix this is just an indicator
    
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors)
-
-        URHERE
+    if (1==flag_keep_checking) && (0==time_flags.GPSfromROS_Time_sampling_matches_centiSeconds_in_GPS_sensors)
 
         % Used to create test data
         if 1==0
@@ -749,29 +818,14 @@ while 1==flag_stay_in_main_loop
             save(fullExampleFilePath,'dataStructure');
         end
 
-        nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,'gps',fid);
+        % Swap data
+        badSensorNames = regexp(offending_sensor,' ','split');    
+        for ith_bad = 1:length(badSensorNames)
+            this_sensor = badSensorNames{ith_bad};
+            nextDataStructure.(this_sensor).GPSfromROS_Time = nextDataStructure.(this_sensor).Trigger_Time;
+        end
+        flag_keep_checking = 0; % Force the flags to be recalculated
     end
-    
-    % %% Check ROS_Time_rounds_correctly_to_Trigger_Time
-    % % Check that the ROS Time, when rounded to the nearest sampling interval,
-    % % matches the Trigger time.
-    % %    ### ISSUES with this:
-    % %    * The data on some sensors are triggered, inlcuding the GPS sensors
-    % %    which are self-triggered
-    % %    * If the rounding does not work, this indicates a problem in the ROS
-    % %    master
-    % %    ### DETECTION:
-    % %    * Round the ROS Time and compare to the Trigger_Times
-    % %    ### FIXES:
-    % %    * Remove and interpolate time field if not strictly increasing
-    % % Check that ROS_Time_rounds_correctly_to_Trigger_Time 
-    % 
-    % if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
-    % 
-    %     nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
-    %     flag_keep_checking = 0;
-    % 
-    % end
 
     %% ALL SENSORS STARTS HERE
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -805,27 +859,123 @@ while 1==flag_stay_in_main_loop
         error('Catastrophic data error detected: the following GPS sensor is missing centiSeconds: %s.',offending_sensor);
     end
 
+    %% Check if ROS_Time_has_no_repeats_in_all_sensors
+    %    ### ISSUES with this:
+    %    * If there are any repeated time values, the interpolation in
+    %    later steps will break
+    %    ### DETECTION:
+    %    * Examine if time values are unique
+    %    ### FIXES:
+    %    * Remove repeats
 
-    % Make sure trigger time in all
-    % make sure ROS time has no repeats in all
-    % make sure ROS time strictly ascends in all
-    % calculate GPS time from ROS
-    % calculate surrogate Trigger times
-    % make sure ROS time has same length as Trigger time
-    % make sure trigger time strictly ascends
-    % make sure trigger time has no missing sample differences
-    % trim start/ends based on trigger time
-
-    %% If not, calculate Trigger_Time to rest of sensors
-    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)
-        % warning('on','backtrace');
-        % warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
-        nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure);
-        URHERE
-        flag_all_trigger_time_calculated = 1;
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_no_repeats_in_all_sensors)
+        % Fix the data
+        warning('on','backtrace');
+        warning('This code section probably works, but has not been tested.');
+        field_name = 'ROS_Time';
+        sensors_to_check = [];
+        nextDataStructure = fcn_DataClean_trimRepeatsFromField(nextDataStructure,fid, field_name,sensors_to_check);
         flag_keep_checking = 0;
     end
+    
+    %% Check if ROS_Time_strictly_ascends_in_all_sensors
+    %    ### ISSUES with this:
+    %    * This field is used to calibrate ROS to GPS time via interpolation, and must
+    %    be STRICTLY increasing for the interpolation function to work
+    %    * If data packets arrive out-of-order with this sensor, times may not
+    %    be in an increasing sequence
+    %    * If the ROS topic is glitching, its time may be temporarily incorrect
+    %    ### DETECTION:
+    %    * Examine if time data from every sensor is STRICTLY increasing
+    %    ### FIXES:
+    %    * Remove and interpolate time field if not strictly increasing
+    %    * Re-order data, if minor ordering error
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends_in_all_sensors)
+        warning('on','backtrace');
+        warning('Fundamental error on ROS_time: it is not counting up!?');
+        error('ROS time is not strictly ascending.');
+        flag_keep_checking = 0;
+    end
+    
+    %% Calculate GPSfromROS_Time in all sensors --> GPSfromROS_Time_exists_in_all_sensors
+    % Fills in an estimate of GPS time from ROS time in all sensors
+    %    ### ISSUES with this:
+    %    * The ROS time might not match the GPS time. If there are errors
+    %    in the GPS sensors, the same errors are likely in other sensors.
+    %    ### DETECTION:
+    %    * Make sure the field exists
+    %    ### FIXES:
+    %    * Calculate GPS time from ROS time via function call
+    if (1==flag_keep_checking) && (0==time_flags.GPSfromROS_Time_exists_in_all_sensors)
+        % Used to create test data
+        if 1==0
+            % fullExampleFilePath = fullfile(cd,'Data','ExampleData_fitROSTime2GPSTime.mat');
+            % dataStructure = nextDataStructure;
+            % save(fullExampleFilePath,'dataStructure');
+        end
+
+        sensors_to_check = [];
+        fid = 1;
+        fig_num = [];
+
+        nextDataStructure = fcn_DataClean_fillGPSTimeFromROSTime(mean_fit, filtered_median_errors, nextDataStructure, (sensors_to_check), (fid), (fig_num));
+        flag_keep_checking = 0; % Force the flags to be recalculated
+    end
+    
+    %% Check if GPSfromROS_Time_has_consistent_start_end_across_all_sensors
+    %    ### ISSUES with this:
+    %    * The start times and end times of all data collection assumes all GPS
+    %    systems are operating simultaneously
+    %    * The calculation of Trigger_Time assumes that all start times are the
+    %    same, and all end times are the same
+    %    * If they are not the same, the count of data in one sensor may be
+    %    different than another, especially if each were referencing different
+    %    GPS sources.
+    %    ### DETECTION:
+    %    * Seach through the GPS time fields for all sensors, rounding them to
+    %    their appropriate centi-second values
+    %    * Check that they all agree
+    %    ### FIXES:
+    %    * Crop all data to same starting centi-second value
+
+    if (1==flag_keep_checking) && (0==time_flags.GPSfromROS_Time_has_consistent_start_end_across_all_sensors)
+        % Used to create test data
+        if 1==0
+            fullExampleFilePath = fullfile(cd,'Data','ExampleData_trimDataToCommonStartEndGPSTimes2.mat');
+            dataStructure = nextDataStructure;
+            save(fullExampleFilePath,'dataStructure');
+        end
+
+        field_name = 'GPSfromROS_Time';
+        sensors_to_check = [];
+        fill_type = 1;
+        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(nextDataStructure, (field_name), (sensors_to_check), (fill_type), (fid));
+        [startTimes,sensorsToTrim_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(nextDataStructure, 'GPSfromROS_Time', [],'first_row');
+        
+        flag_keep_checking = 0;
+    end
+
+
+
+    %% Check if Trigger_Time_exists_in_all_sensors
+    %    ### ISSUES with this:
+    %    * This field is used to assign data collection timings for all
+    %    non-GPS-triggered sensors, and to fill in GPS_Time data if there's a
+    %    short outage
+    %    * These sensors may be configured wrong
+    %    * These sensors may be faililng or operating incorrectly
+    %    ### DETECTION:
+    %    * Examine if Trigger_Time fields exist
+    %    ### FIXES:
+    %    * Recalculate Trigger_Time fields as needed, using centiSecond
+    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)
+        nextDataStructure = fcn_DataClean_recalculateTriggerTimes(nextDataStructure,[],fid);
+        flag_keep_checking = 0;
+    end
+
     %%
+
+
   
     % %% Start to work on other sensors, start with Velodyne LiDAR
     % if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)

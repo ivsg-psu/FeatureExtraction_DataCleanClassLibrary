@@ -1,5 +1,4 @@
 function fixed_dataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(dataStructure,sensors_without_Trigger_Time)
-
 % fcn_DataClean_calculateTriggerTime_AllSensors
 % Recalculates the Trigger_Time field for all sensors. This is done by
 % using the centiSeconds field and the effective start and end GPS_Times,

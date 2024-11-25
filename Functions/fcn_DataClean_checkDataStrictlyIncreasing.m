@@ -220,6 +220,29 @@ for i_data = 1:length(sensor_names)
 
     if ~issorted(sensor_value_noNaN,1,"strictascend")
         flags_data_strictly_ascends = 0;
+
+        if 0~=fid
+            fprintf(fid,'\t\t Sensor %s shows out-of-order data!\n',sensor_name);
+            fprintf(fid,'\t\t\t Example output at point of failure:\n');
+
+            Nchars = 30;
+            fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters('Data',Nchars),fcn_DebugTools_debugPrintStringToNCharacters('Jumps',Nchars));
+            temp = diff(sensor_value);
+            temp = [temp(1); temp]; %#ok<AGROW>
+
+            indexOfFailure = find(temp<=0,1);
+            NprintsNearby = 10;
+            beforeIndex = max(indexOfFailure-NprintsNearby,1);
+            afterIndex  = min(indexOfFailure+NprintsNearby,length(sensor_value));
+            for ith_index = beforeIndex:afterIndex
+                if ith_index~=indexOfFailure
+                    fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',sensor_value(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',temp(ith_index,1)),Nchars));
+                else
+                    fcn_DebugTools_cprintf('Red','\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',sensor_value(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',temp(ith_index,1)),Nchars));
+                end
+            end
+        end
+
     end
     
     if 0==return_flag && ~flags_data_strictly_ascends        
