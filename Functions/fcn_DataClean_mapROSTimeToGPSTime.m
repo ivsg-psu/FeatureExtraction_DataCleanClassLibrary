@@ -1,6 +1,6 @@
 function trimmed_dataStructure = fcn_DataClean_mapROSTimeToGPSTime(dataStructure,varargin)
 
-% fcn_DataClean_trimDataToCommonStartEndGPSTimes
+% fcn_DataClean_mapROSTimeToGPSTime
 % Trims all sensor data so that all start and end at the same GPS_Time
 % values.
 %
@@ -12,7 +12,7 @@ function trimmed_dataStructure = fcn_DataClean_mapROSTimeToGPSTime(dataStructure
 %
 % FORMAT:
 %
-%      trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure,(fid))
+%      trimmed_dataStructure = fcn_DataClean_mapROSTimeToGPSTime(dataStructure,(fid))
 %
 % INPUTS:
 %
@@ -35,7 +35,7 @@ function trimmed_dataStructure = fcn_DataClean_mapROSTimeToGPSTime(dataStructure
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_DataClean_trimDataToCommonStartEndGPSTimes
+%     See the script: script_test_fcn_DataClean_mapROSTimeToGPSTime
 %     for a full test suite.
 %
 % This function was written on 2023_06_19 by S. Brennan

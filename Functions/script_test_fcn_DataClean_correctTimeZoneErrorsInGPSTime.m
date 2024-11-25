@@ -36,15 +36,7 @@ assert(isequal(flags.GPS_Time_has_consistent_start_end_within_5_seconds,1));
 
 %% Fail conditions
 if 1==0
-    
-    %% ERROR for point-type, due to bad alignment
-    % Note that this is 5 seconds of data, and the Hemisphere is starting
-    % after all the other sensors ended
-    BadDataStructure = dataStructure;
-    BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time = BadDataStructure.GPS_Sparkfun_RearRight.GPS_Time - 1;
-    BadDataStructure.GPS_Hemisphere.GPS_Time = BadDataStructure.GPS_Hemisphere.GPS_Time + 5.1;
-    
-    fixed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(BadDataStructure,fid);
+
 
 
 end

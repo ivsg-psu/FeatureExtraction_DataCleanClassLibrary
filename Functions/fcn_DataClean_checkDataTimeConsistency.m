@@ -67,25 +67,27 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataS
 %
 % flagged tests include:
 %
-%                    GPS_Time_exists_in_at_least_one_GPS_sensor: 1
-%                            GPS_Time_exists_in_all_GPS_sensors: 1
-%                        centiSeconds_exists_in_all_GPS_sensors: 1
-%                        GPS_Time_has_no_repeats_in_GPS_sensors: 1
-%                      GPS_Time_strictly_ascends_in_GPS_sensors: 1
-%       GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
-%            GPS_Time_has_consistent_start_end_within_5_seconds: 1
-%          GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
-%             GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
-% GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
-%                        Trigger_Time_exists_in_all_GPS_sensors: 1
-%                            ROS_Time_exists_in_all_GPS_sensors: 1
-%                          ROS_Time_scaled_correctly_as_seconds: 1
-%                      ROS_Time_strictly_ascends_in_all_sensors: 1
-%       ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
-%       ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors: 1
-%                               ROS_Time_calibrated_to_GPS_Time: 0
-%      ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors: 0
-%   ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors: 0
+%                      GPS_Time_exists_in_at_least_one_GPS_sensor: 1
+%                              GPS_Time_exists_in_all_GPS_sensors: 1
+%                          centiSeconds_exists_in_all_GPS_sensors: 1
+%                          GPS_Time_has_no_repeats_in_GPS_sensors: 1
+%                        GPS_Time_strictly_ascends_in_GPS_sensors: 1
+%         GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
+%              GPS_Time_has_consistent_start_end_within_5_seconds: 1
+%            GPS_Time_has_consistent_start_end_across_GPS_sensors: 1
+%               GPS_Time_has_no_sampling_jumps_in_any_GPS_sensors: 1
+%   GPS_Time_has_no_missing_sample_differences_in_any_GPS_sensors: 1
+%                          Trigger_Time_exists_in_all_GPS_sensors: 1
+%                              ROS_Time_exists_in_all_GPS_sensors: 1
+%                            ROS_Time_scaled_correctly_as_seconds: 1
+%                        ROS_Time_strictly_ascends_in_GPS_sensors: 1
+%         ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors: 1
+%         ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors: 1
+%                                 ROS_Time_calibrated_to_GPS_Time: 1
+%                       GPSfromROS_Time_exists_in_all_GPS_sensors: 1
+%        ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors: 1
+% GPSfromROS_Time_sample_counts_match_centiSeconds_in_GPS_sensors: 1
+%    GPSfromROS_Time_sampling_matches_centiSeconds_in_GPS_sensors: 1
 %
 % The above issues are explained in more detail in the following
 % sub-sections of code.
@@ -128,7 +130,7 @@ function [flags,offending_sensor] = fcn_DataClean_checkDataTimeConsistency(dataS
 %    options
 % -- swapped order on some of the flags, as there's no way that flags can
 % "pass" on one and then "fail" on the other.
-% ROS_Time_strictly_ascends_in_all_sensors cannot be tested as that same
+% ROS_Time_strictly_ascends_in_GPS_sensors cannot be tested as that same
 % condition would fail in testing
 % ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors. So have to
 % test "strictly ascends" first, before "same rate" testing.
@@ -386,7 +388,7 @@ if 0==flags.GPS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     return
 end
 
-%% Check if GPS_Time_has_consistent_start_end_across_GPS_sensors_within_5_seconds
+%% Check if GPS_Time_has_consistent_start_end_within_5_seconds
 %    ### ISSUES with this:
 %    * The start times and end times of all data collection assumes all GPS
 %    systems are operating simultaneously
@@ -403,7 +405,7 @@ end
 %    * Crop all data to same starting centi-second value
 
 
-% Check GPS_Time_has_consistent_start_end_across_GPS_sensors
+% Check GPS_Time_has_consistent_start_end_within_5_seconds
 [flags, offending_sensor, ~] = fcn_DataClean_checkConsistencyOfStartEnd(dataStructure, 'GPS_Time', (flags), ('GPS'), ('_within_5_seconds'), (5.0), (fid), ([]));
 if 0==flags.GPS_Time_has_consistent_start_end_within_5_seconds
     return
@@ -575,24 +577,6 @@ if 0==flags.ROS_Time_scaled_correctly_as_seconds
     return
 end
 
-%% Check if ROS_Time_strictly_ascends
-%    ### ISSUES with this:
-%    * This field is used to calibrate ROS to GPS time via interpolation, and must
-%    be STRICTLY increasing for the interpolation function to work
-%    * If data packets arrive out-of-order with this sensor, times may not
-%    be in an increasing sequence
-%    * If the ROS topic is glitching, its time may be temporarily incorrect
-%    ### DETECTION:
-%    * Examine if time data from sensor is STRICTLY increasing
-%    ### FIXES:
-%    * Remove and interpolate time field if not strictkly increasing
-%    * Re-order data, if minor ordering error
-
-% [flags,offending_sensor,~] = fcn_INTERNAL_checkD ataStrictlyIncreasing(fid, dataStructure, flags, 'ROS_Time');
-[flags,offending_sensor,~] = fcn_DataClean_checkDataStrictlyIncreasing(dataStructure, 'ROS_Time', (flags), ([]), (fid), ([]));
-if 0==flags.ROS_Time_strictly_ascends_in_all_sensors
-    return
-end
 
 %% Check if ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
 %    ### ISSUES with this:
@@ -614,6 +598,45 @@ verificationTypeFlag = 0;
 if 0==flags.ROS_Time_sample_modes_match_centiSeconds_in_GPS_sensors
     return
 end
+
+%% Check if ROS_Time_strictly_ascends_in_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to calibrate ROS to GPS time via interpolation, and must
+%    be STRICTLY increasing for the interpolation function to work
+%    * If data packets arrive out-of-order with this sensor, times may not
+%    be in an increasing sequence
+%    * If the ROS topic is glitching, its time may be temporarily incorrect
+%    ### DETECTION:
+%    * Examine if time data from sensor is STRICTLY increasing
+%    ### FIXES:
+%    * Remove and interpolate time field if not strictkly increasing
+%    * Re-order data, if minor ordering error
+
+% [flags,offending_sensor,~] = fcn_INTERNAL_checkD ataStrictlyIncreasing(fid, dataStructure, flags, 'ROS_Time');
+[flags,offending_sensor,~] = fcn_DataClean_checkDataStrictlyIncreasing(dataStructure, 'ROS_Time', (flags), ('GPS'), (fid), ([]));
+if 0==flags.ROS_Time_strictly_ascends_in_GPS_sensors
+    return
+end
+
+%% Check if ROS_Time_has_consistent_start_end_across_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to calibrate ROS to GPS time via interpolation, and must
+%    be STRICTLY increasing for the interpolation function to work
+%    * If data packets arrive out-of-order with this sensor, times may not
+%    be in an increasing sequence
+%    * If the ROS topic is glitching, its time may be temporarily incorrect
+%    ### DETECTION:
+%    * Examine if time data from every sensor is STRICTLY increasing
+%    ### FIXES:
+%    * Remove and interpolate time field if not strictly increasing
+%    * Re-order data, if minor ordering error
+
+% Check ROS_Time_has_consistent_start_end_across_GPS_sensors
+[flags, offending_sensor, ~] = fcn_DataClean_checkConsistencyOfStartEnd(dataStructure, 'ROS_Time', (flags), ('GPS'), ('_across_GPS_sensors'), (.025), (fid), ([]));
+if 0==flags.ROS_Time_has_consistent_start_end_across_GPS_sensors
+    return
+end
+
 
 
 
@@ -673,6 +696,8 @@ flags.ROS_Time_calibrated_to_GPS_Time = 0;
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'GPSfromROS_Time',flags,'all','GPS',fid);
 if 0==flags.GPSfromROS_Time_exists_in_all_GPS_sensors
     return
+else
+    flags.ROS_Time_calibrated_to_GPS_Time = 1; % no need to calibrate GPSfromROS_Time if all sensors already have GPSfromROS_Time
 end
 
 %% Check if ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
@@ -695,7 +720,29 @@ if 0==flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors
     % return
 end
 
-%% Check if ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors
+%% Fix errors in GPSfromROS_Time_sample_counts_match_centiSeconds_in_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to confirm GPSfromROS_Time length matches
+%    expectations from centiSeconds, e.g. the "length" of the vector is
+%    correct
+%    * If the length is wrong, this means that there are missing data
+%    at start end
+%    ### DETECTION:
+%    * calculate the the number of expected samples based on the
+%    centiSeconds. If they are not the same, the start/end needs to be
+%    fixed.
+%    ### FIXES:
+%    * Resample the sensor's start / end values
+
+verificationTypeFlag = 2;  % Check length of GPSfromROS_Time against centiSeconds
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPSfromROS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
+if 0==flags.GPSfromROS_Time_sample_counts_match_centiSeconds_in_GPS_sensors
+    return
+end
+
+
+
+%% Check if GPSfromROS_Time_sampling_matches_centiSeconds_in_GPS_sensors
 %    ### ISSUES with this:
 %    * This field is used to confirm ROS sampling rates for all
 %    GPS-triggered sensors
@@ -711,9 +758,32 @@ end
 %    * Resample the sensor?
 
 verificationTypeFlag = 1; 
-[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'ROS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
-if 0==flags.ROS_Time_sample_intervals_match_centiSeconds_in_GPS_sensors
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPSfromROS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
+if 0==flags.GPSfromROS_Time_sampling_matches_centiSeconds_in_GPS_sensors
     return
+end
+
+%% Check if GPSfromROS_Time_sampling_matches_centiSeconds_in_GPS_sensors
+%    ### ISSUES with this:
+%    * This field is used to confirm ROS sampling rates for all
+%    GPS-triggered sensors
+%    * If the ROS sampling interval is wrong, this means that there are
+%    significant amounts of missing data
+%    ### DETECTION:
+%    * calculate the sampling intervals and divide every result by the
+%    expected sampling interval calculated from the intended centiSeconds.
+%    Round this to the nearest integer. To pass, all observed sampling
+%    intervals must round to 1, e.g. that they would have one, and only
+%    one, sample per each sample interval
+%    ### FIXES:
+%    * Resample the sensor?
+
+verificationTypeFlag = 1; 
+[flags,offending_sensor] = fcn_DataClean_checkTimeSamplingConsistency(dataStructure,'GPSfromROS_Time', verificationTypeFlag, flags, 'GPS',fid, plotFlags.fig_num_checkTimeSamplingConsistency_GPSTime);
+if 0==flags.GPSfromROS_Time_sampling_matches_centiSeconds_in_GPS_sensors
+    return
+else
+    flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors = 1; % No need to round ROS time if GPSfromROS_Time is already working
 end
 
 %% All Sensor Tests
@@ -743,6 +813,105 @@ end
 if 0==flags.centiSeconds_exists_in_all_sensors
     return
 end
+
+
+%% Check if ROS_Time_has_no_repeats_in_all_sensors
+%    ### ISSUES with this:
+%    * If there are many repeated time values, the calculation of sampling
+%    time in the next step produces grossly incorrect results
+%    ### DETECTION:
+%    * Examine if time values are unique
+%    ### FIXES:
+%    * Remove repeats
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldHasRepeatedValues(dataStructure,'ROS_Time',flags, [], (fid),(-1));
+if 0==flags.ROS_Time_has_no_repeats_in_all_sensors
+    return
+end
+
+
+%% Check if ROS_Time_strictly_ascends_in_all_sensors
+%    ### ISSUES with this:
+%    * This field is used to interpolate GPS time via interpolation, and must
+%    be STRICTLY increasing
+%    * If data packets arrive out-of-order with this sensor, times may not
+%    be in an increasing sequence
+%    * If a ROS time is glitching, its time may be temporarily incorrect
+%    ### DETECTION:
+%    * Examine if time data from sensor is STRICTLY increasing
+%    ### FIXES:
+%    * Remove and interpolate time field if not strictkly increasing
+%    * Re-order data, if minor ordering error
+
+[flags,offending_sensor,~] = fcn_DataClean_checkDataStrictlyIncreasing(dataStructure, 'ROS_Time', (flags), ([]), (fid), ([]));
+if 0==flags.ROS_Time_strictly_ascends_in_all_sensors
+    return
+end
+
+%% Check if GPSfromROS_Time_exists_in_all_sensors
+% Fills in an estimate of GPS time from ROS time in all sensors
+%    ### ISSUES with this:
+%    * The ROS time might not match the GPS time. If there are errors
+%    in the GPS sensors, the same errors are likely in other sensors.
+%    ### DETECTION:
+%    * Make sure the field exists
+%    ### FIXES:
+%    * Calculate GPS time from ROS time via function call
+[flags,offending_sensor] = fcn_DataClean_checkIfFieldInSensors(dataStructure,'GPSfromROS_Time',flags,'all',[],fid);
+if 0==flags.GPSfromROS_Time_exists_in_all_sensors
+    return
+end
+
+%% Check if GPSfromROS_Time_has_consistent_start_end_across_all_sensors
+%    ### ISSUES with this:
+%    * The start times and end times of all data collection assumes all GPS
+%    systems are operating simultaneously
+%    * The calculation of Trigger_Time assumes that all start times are the
+%    same, and all end times are the same
+%    * If they are not the same, the count of data in one sensor may be
+%    different than another, especially if each were referencing different
+%    GPS sources.
+%    ### DETECTION:
+%    * Seach through the GPS time fields for all sensors, making sure all
+%    would round to their appropriate centi-second values (at 20 Hz, this
+%    is rounding to 0.05 seconds, so all should be within 0.025 seconds)
+%    * Check that they all agree
+%    ### FIXES:
+%    * Crop all data to same starting centi-second value
+
+
+% Check GPS_Time_has_consistent_start_end_across_GPS_sensors
+[flags, offending_sensor, ~] = fcn_DataClean_checkConsistencyOfStartEnd(dataStructure, 'GPSfromROS_Time', (flags), ('GPS'), ('_across_all_sensors'), (.005), (fid), ([]));
+if 0==flags.GPSfromROS_Time_has_consistent_start_end_across_all_sensors
+    return
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 %% Check Trigger_Time_exists_in_all_sensors

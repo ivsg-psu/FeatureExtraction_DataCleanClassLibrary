@@ -1,5 +1,4 @@
 function fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructure,varargin)
-
 % fcn_DataClean_recalculateTriggerTimes
 % Recalculates the Trigger_Time field for all sensors. This is done by
 % using the centiSeconds field and the effective start and end GPS_Times,
@@ -12,14 +11,14 @@ function fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructu
 %
 % INPUTS:
 %
-%      dataStructure: a data structure to be analyzed that includes the following
-%      fields:
+%      dataStructure: a data structure to be analyzed that has sensors as
+%      fields.
 %
 %      (OPTIONAL INPUTS)
 %
 %      sensor_type: a string to indicate the type of sensor to query, for
 %      example 'gps' will query all sensors whose name contains 'gps'
-%      somewhere in the name
+%      somewhere in the name. Default is to use all sensors.
 %
 %      fid: a file ID to print results of analysis. If not entered, the
 %      console (FID = 1) is used.
@@ -51,7 +50,8 @@ function fixed_dataStructure = fcn_DataClean_recalculateTriggerTimes(dataStructu
 % -- updated the debug flags area
 % -- fixed bug where offending sensor is set wrong
 % -- fixed fid bug where it is used in debugging
-
+% 2024_11_21 - S. Brennan
+% -- added warnings to pre-error areas to allow tracebacks
 
 % Check if flag_max_speed set. This occurs if the fig_num variable input
 % argument (varargin) is given a number of -1, which is not a valid figure
@@ -167,7 +167,7 @@ array_centiSeconds = cell2mat(cell_array_centiSeconds)';
 max_sampling_period_centiSeconds = max(array_centiSeconds);
 
 if 0~=fid
-    fprintf(fid,'\nCalculating Trigger_Time by checking start and end times across GPS sensors:\n');
+    fprintf(fid,'\nCalculating Trigger_Time by checking start and end times across sensors:\n');
 end
 
 
@@ -177,6 +177,8 @@ end
 
 % Confirm that both results are identical
 if ~isequal(sensor_names_GPS_Time,sensor_names_centiSeconds)
+    warning('on','backtrace');
+    warning('Sensors were found that were missing either GPS_Time or centiSeconds.');
     error('Sensors were found that were missing either GPS_Time or centiSeconds. Unable to calculate Trigger_Times.');
 end
 
@@ -188,7 +190,9 @@ all_start_times_centiSeconds = ceil(100*array_GPS_Time_start/max_sampling_period
 
 % Warn if max/min are WAY off (like more than 1 second)
 if (max(all_start_times_centiSeconds)-min(all_start_times_centiSeconds))>100
-    error('The start times on different GPS sensors appear to be untrimmed to same value. The Trigger_Time calculations will give incorrect results if the data are not trimmed first.');
+    warning('on','backtrace');
+    warning('The start times on different sensors appear to be untrimmed to same value.');
+    error('The start times on different sensors appear to be untrimmed to same value. The Trigger_Time calculations will give incorrect results if the data are not trimmed first.');
 end
 centitime_all_sensors_have_started_GPS_Time = max(all_start_times_centiSeconds);
 
@@ -222,6 +226,8 @@ end
 
 % Confirm that both results are identical
 if ~isequal(sensor_names_GPS_Time,sensor_names_centiSeconds)
+    warning('on','backtrace');
+    warning('Sensors are missing GPS_Time or centiSeconds.');
     error('Sensors were found that were missing either GPS_Time or centiSeconds. Unable to calculate Trigger_Times.');
 end
 
@@ -234,7 +240,9 @@ all_end_times_centiSeconds = floor(100*array_GPS_Time_end/max_sampling_period_ce
 
 % Warn if max/min are WAY off (like more than 1 second)
 if (max(all_end_times_centiSeconds)-min(all_end_times_centiSeconds))>100
-    error('The end times on different GPS sensors appear to be untrimmed to same value. The Trigger_Time calculations will give incorrect results if the data are not trimmed first.');
+    warning('on','backtrace');
+    warning('The end times appear to be different.');
+    error('The end times on different sensors appear to be untrimmed to same value. The Trigger_Time calculations will give incorrect results if the data are not trimmed first.');
 end
 centitime_all_sensors_have_ended_GPS_Time = min(all_end_times_centiSeconds);
 
@@ -286,6 +294,7 @@ for ith_sensor = 1:length(sensor_names_GPS_Time)
     new_Trigger_Time = (centitime_all_sensors_have_started_GPS_Time:centiSeconds:centitime_all_sensors_have_ended_GPS_Time)'/100;
     fixed_dataStructure.(sensor_name).Trigger_Time = new_Trigger_Time;
 
+    
     % Calculate new GPS_Time
     GPS_Time_original = cell_array_GPS_Time{ith_sensor};
     original_vector_size = size(GPS_Time_original);
@@ -294,18 +303,24 @@ for ith_sensor = 1:length(sensor_names_GPS_Time)
     rounded_centiSecond_GPS_Time = round(100*GPS_Time_original/centiSeconds)*centiSeconds;
     start_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_started_GPS_Time,1,'first');
     if isempty(start_index)
+        warning('on','backtrace');
+        warning('Unmatched start time detected.');
         error('Unable to match GPS_Time to Trigger_Time for start time calculation');
     end
 
     % Find the end index
     end_index = find(rounded_centiSecond_GPS_Time==centitime_all_sensors_have_ended_GPS_Time,1,'last');
     if isempty(end_index)
+        warning('on','backtrace');
+        warning('Unmatched end time detected.');
         error('Unable to match GPS_Time to Trigger_Time for end time calculation');
     end
     GPS_Time_in_Trigger = GPS_Time_original(start_index:end_index,:);
     fixed_dataStructure.(sensor_name).GPS_Time = GPS_Time_in_Trigger;
 
     if length(GPS_Time_in_Trigger)~=length(new_Trigger_Time)
+        warning('on','backtrace');
+        warning('GPS time does not match Trigger time.');
         error('The GPS time calculated to match the Trigger_Time duration does not have same length. This is typically caused by GPS rounding errors, but it must be resolved to continue.\n');
     end
 

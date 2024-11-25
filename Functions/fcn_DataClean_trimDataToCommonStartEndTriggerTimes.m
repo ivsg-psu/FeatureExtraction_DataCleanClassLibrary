@@ -50,6 +50,7 @@ function trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTi
 % -- fixed bug where offending sensor is set wrong
 % -- fixed fid bug where it is used in debugging
 
+error('This function should not be used - used trimDataToCommonStartEndGPSTime instead');
 
 % Check if flag_max_speed set. This occurs if the fig_num variable input
 % argument (varargin) is given a number of -1, which is not a valid figure

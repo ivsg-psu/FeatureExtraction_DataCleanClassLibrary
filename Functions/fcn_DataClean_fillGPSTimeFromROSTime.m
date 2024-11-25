@@ -156,6 +156,7 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+newDataStructure = dataStructure;
 
 if isempty(sensors_to_check)
     flag_check_all_sensors = 1;    
@@ -182,15 +183,13 @@ else
     [~,sensor_names] = fcn_DataClean_pullDataFromFieldAcrossAllSensors(dataStructure, 'ROS_Time',sensors_to_check);
 end
 
-URHERE
-
 
 if 0~=fid
-    fprintf(fid,'Checking that %s data is strictly ascending',field_name);
+    fprintf(fid,'Filling GPSfromROS_Time');
     if flag_check_all_sensors
-        fprintf(fid,': ---> %s\n', flag_name);
+        fprintf(fid,' in all sensors: \n');
     else
-        fprintf(fid,' in all %s sensors:  ---> %s\n', sensors_to_check, flag_name);
+        fprintf(fid,' in all %s sensors:\n', sensors_to_check);
     end
 end
 
@@ -200,42 +199,14 @@ for i_data = 1:length(sensor_names)
     sensor_data = dataStructure.(sensor_name);
     
     if 0~=fid
-        fprintf(fid,'\t Checking sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
+        fprintf(fid,'\t Filling sensor %d of %d: %s\n',i_data,length(sensor_names),sensor_name);
     end
-    flags_data_strictly_ascends= 1;
-    % time_diff = diff(sensor_data.(field_name));
-    sensor_value = sensor_data.(field_name);
-    sensor_value_noNaN = sensor_value(~isnan(sensor_value));
 
-    if ~issorted(sensor_value_noNaN,1,"strictascend")
-        flags_data_strictly_ascends = 0;
-    end
+    ROS_Time = sensor_data.ROS_Time;
+    GPSfromROS_Time = fcn_DataClean_predictGPSTimeFromROSTime(mean_fit, filtered_median_errors, ROS_Time);
     
-    if 0==return_flag && ~flags_data_strictly_ascends        
-        return_flag = 1; % Indicate that the return was forced
-    end
+    newDataStructure.(sensor_name).GPSfromROS_Time = GPSfromROS_Time;
 
-    if 0==flags_data_strictly_ascends
-        if isempty(offending_sensor)
-            offending_sensor = sensor_name;
-        else
-            offending_sensor = cat(2,offending_sensor,' ',sensor_name); % Save the name of the sensor
-        end
-        if 0~=fid
-            fprintf(fid,'\t\t The following sensor is not strictly ascending %s\n',sensor_name);
-        end
-    end
-end
-
-if 0==return_flag
-    flags.(flag_name) = 1;
-else
-    flags.(flag_name) = 0;
-end
-
-% Tell the user what is happening?
-if 0~=fid
-    fprintf(fid,'\n\t Flag %s set to: %.0f\n\n',flag_name, flags.(flag_name));
 end
 
 

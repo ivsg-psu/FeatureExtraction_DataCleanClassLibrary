@@ -294,7 +294,6 @@ end
 %    * Examine if time values are unique
 %    ### FIXES:
 %    * Remove repeats
-
 [flags,offending_sensor] = fcn_DataClean_checkIfFieldHasRepeatedValues(dataStructure,'GPS_Time',flags, 'GPS', (fid),(-1));
 if 0==flags.GPS_Time_has_no_repeats_in_GPS_sensors
     return

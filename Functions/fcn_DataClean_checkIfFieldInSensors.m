@@ -14,7 +14,7 @@ function [flags,offending_sensor,return_flag] = fcn_DataClean_checkIfFieldInSens
 %
 %      dataStructure: a data structure to be analyzed
 %
-%      field_name: the field to be checked
+%      field_name: the field to be checked, as a string
 %
 %      (OPTIONAL INPUTS)
 %
@@ -268,7 +268,7 @@ for i_data = 1:length(sensor_names)
     elseif isempty(sensor_data.(field_name))
         % if field is empty, then fails
         any_sensor_exists_results(i_data) = 0;
-    elseif any(isnan(sensor_data.(field_name)))        
+    elseif all(isnan(sensor_data.(field_name)))        
         % if field only filled with nan, it fails
         any_sensor_exists_results(i_data) = 0;
     end   
@@ -333,8 +333,6 @@ if 0==flags.(flag_name)
         fprintf(fid,'\n');
         
     end
-    
-    return; % Exit the function immediately to avoid more processing
 end
 
 % Tell the user what is happening?
