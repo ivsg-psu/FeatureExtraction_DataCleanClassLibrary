@@ -236,6 +236,8 @@ GPS_Time_data = cell(N_referenceSensors,1);
 GPS_centiSeconds = cell(N_referenceSensors,1);
 GPS_Time_start = cell(N_referenceSensors,1);
 GPS_Time_end = cell(N_referenceSensors,1);
+SENSOR_Time_data = cell(N_referenceSensors,1);
+SENSOR_Time_start = cell(N_referenceSensors,1);
 
 for ith_sensor = 1:N_referenceSensors
     GPS_Time_data{ith_sensor}    = GPS_Time_data_raw{ith_sensor}    - debuggingOffset;
@@ -304,7 +306,11 @@ if 0~=fid
     fprintf(fid,'\t Calculating index mapping for %s across these sensors: \n',field_name);
 end
 
+% Initialize the structures and arrays
+trimmed_dataStructure = dataStructure;
 indiciesLocalUsed_InReference = cell(N_referenceSensors,1);
+replacement_reference         = cell(N_referenceSensors,1);
+
 for ith_sensor = 1:N_referenceSensors
     % Grab the sensor subfield name
     sensor_name            = GPS_Time_sensorNames{ith_sensor};
@@ -313,111 +319,32 @@ for ith_sensor = 1:N_referenceSensors
 
     fprintf(fid,'\t Sensor: %s \n',sensor_name);
     fprintf(fid,'\t\t Sorted?: %.0f\n',~any(diff(sensor_time)<=0));
-    fprintf(fid,'\t\t Indicies present?: %.0f of %.0f\n',length(sensor_time), allsensor_time_duration*100/sensor_centiSeconds+1);
+    fprintf(fid,'\t\t Indicies present?: %.0f of %.0f\n',length(sensor_time), length(allsensor_time_duration);
 
 
     indiciesLocalUsed_InReference{ith_sensor} = fcn_INTERNAL_findIndexMapping(allsensor_time_duration, sensor_centiSeconds, sensor_time, fid);
+    replacement_reference{ith_sensor} = fcn_INTERNAL_mapSensorIndicies(sensor_time, sensor_centiSeconds, indiciesLocalUsed_InReference{ith_sensor}, allsensor_time_duration, fill_type, debuggingOffset, fid);
+    trimmed_dataStructure.(sensor_name).(field_name) = replacement_reference{ith_sensor};
 
 end
 
 
-%% Loop through the sensors, trimming each
-% Initialize the result:
-trimmed_dataStructure = dataStructure;
-for ith_sensor = 1:N_referenceSensors
+%% Step 5: Loop through the sensors, trimming each
 
+for ith_sensor = 1:N_referenceSensors
     % Grab this sensor's data
-    sensor_data = dataStructure.(sensor_name);
+    sensor_name                          = GPS_Time_sensorNames{ith_sensor};
+    sensor_centiSeconds                  = GPS_centiSeconds{ith_sensor};
+    sensor_data                          = dataStructure.(sensor_name);
     sensor_indiciesLocalUsed_InReference = indiciesLocalUsed_InReference{ith_sensor};
 
-
-    % URHERE - you just added the above variable and need to implement it in the fcn_INTERNAL_mapSensorIndicies referenced below, which need to be written using the code around it. Need to recode GPS surrogate time in lines ~200 above
-    
-    lengthReference = NlocalTimes;
-
+    % Tell user what we are doing
     if 0~=fid
-        fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end %s values: %s\n',ith_sensor,length(sensorsToTrim_names),field_name, sensor_name);
+        fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end %s values: %s\n',ith_sensor,length(GPS_Time_sensorNames),field_name, sensor_name);
     end
-
-    indiciesToFill = find(~isnan(indiciesLocalUsed_InReference));
-
-    % Loop through all subfields
-    subfieldNames = fieldnames(sensor_data);
-    for i_subField = 1:length(subfieldNames)
-        % Grab the name of the ith subfield
-        thisFieldName = subfieldNames{i_subField};
-        dataToFix = dataStructure.(sensor_name).(thisFieldName);
-        [Nrows,Ncols] = size(dataToFix);
-        
-        if ~iscell(dataToFix) % Is it a cell? If yes, skip it
-            if Nrows ~= 1 % Is it a scalar? If yes, skip it
-                % It's an array, make sure it has right length
-                if lengthReference~= length(dataToFix)
-                    if strcmp(sensor_name,'SickLiDAR') && strcmp(thisFieldName,'Sick_Time')
-                        warning('on','backtrace');
-                        warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
-                    elseif strcmp(sensor_name,'TRIGGER_TrigBox_RearTop') && strcmp(thisFieldName,'Mode')
-                        warning('on','backtrace');
-                        warning('Trigger box ''Mode'' skipped - it will not match other data.');
-                    elseif strcmp(sensor_name,'ENCODER_USDigital_RearAxle') && strcmp(thisFieldName,'Mode')
-                        warning('on','backtrace');
-                        warning('Encoder box ''Mode'' skipped - it will not match other data.');
-                    else
-                        warning('on','backtrace');
-                        warning('Sensor %s contains a datafield %s that has an amount of data not equal to the %s. This is usually because data is missing.',sensor_name,thisFieldName, field_name);
-                    end
-                else
-                    % Replace the values
-                    replacementData = fcn_INTERNAL_mapSensorIndicies(NreferenceTimes, dataToFix,indiciesLocalUsed_InReference)
-
-                    replacementData = nan(NreferenceTimes,Ncols);
-                    replacementData(indiciesToFill,:) = dataToFix(indiciesLocalUsed_InReference(indiciesToFill),:);
-                    trimmed_dataStructure.(sensor_name).(thisFieldName) = replacementData;
-                end
-            end
-        end
+    
+    trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allsensor_time_duration, debuggingOffset, fid);
        
-        % Fix any NaN values
-        if 0==fill_type
-            % Keep the NaN
-        elseif (1==fill_type) && ~isempty(field_name) && (strcmp(thisFieldName,field_name))
-            trueTime     = offsetSensorRelativeToGPS + reference_centisecond_sequence*0.01;
-            differences  = replacementData - trueTime;
-
-            % For debugging
-            old_replacementData = replacementData;
-            % old_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
-            if 1==1
-                fprintf(1,'\n\n\nBefore: \n');
-                for ith_data = 1:min(50,NreferenceTimes)
-                    fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data) - trueTime(1), old_replacementData(ith_data)- trueTime(1), differences(ith_data));
-                end
-            end
-
-            % Insert reference times
-            badIndicies  = find(isnan(replacementData(:,1)));
-            % averageOffset = mean(differences,"omitmissing");
-
-            replacementData(badIndicies,:) = trueTime(badIndicies,:); 
-            trimmed_dataStructure.(sensor_name).(thisFieldName) = replacementData;
-
-
-            % For debugging
-            % new_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
-            if 1==0
-                differences  = replacementData - trueTime;
-                fprintf(1,'\n\n\nAfter: \n');
-                for ith_data = 1:50
-                    fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data) - trueTime(1), replacementData(ith_data)- trueTime(1), differences(ith_data));
-                end
-            end
-            differences = diff(replacementData);
-            assert(~any(differences<0));
-
-        end
-    end % Ends for loop through the subfields
-    
-    
 end
 
 %% Plot the results (for debugging)?
@@ -643,13 +570,13 @@ end
 end
 
 %% fcn_INTERNAL_findIndexMapping
-function indiciesLocalUsedInReference = fcn_INTERNAL_findIndexMapping(master_time_duration, sensor_centiSeconds, sensor_time, fid) 
+function indiciesLocalUsedInReference = fcn_INTERNAL_findIndexMapping(allsensor_time_duration, sensor_centiSeconds, sensor_time, fid) 
 
 flag_doDebug = 1;
 DEBUG_Nprints = 20;
 
 % Determine the reference time sequence to check
-reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(master_time_duration, sensor_centiSeconds);
+reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds);
 
 % Shift all the data
 sensor_centiTime_unrounded = (sensor_time)*100;
@@ -809,7 +736,7 @@ end
 end % Ends fcn_INTERNAL_findIndexMapping
 
 %% fcn_INTERNAL_calculateReferenceTimeSequences
-function reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(master_time_duration, sensor_centiSeconds)
+function reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds)
 
 % Calculate reference time sequences, one for each sampling rate
 % 1 Hz, 5 Hz, 10 Hz, 20 Hz, 25 Hz, 100 Hz
@@ -819,7 +746,7 @@ NdifferentSamples = length(sampleRatesCentiseconds);
 referenceCentiSecondTimes = cell(NdifferentSamples,1);
 for ith_rate = 1:NdifferentSamples
     this_sample_interval = sampleRatesCentiseconds(ith_rate);
-    referenceCentiSecondTimes{ith_rate,1} = (0:this_sample_interval:(master_time_duration)*100)';
+    referenceCentiSecondTimes{ith_rate,1} = (0:this_sample_interval:(allsensor_time_duration)*100)';
 end
 
 
@@ -836,3 +763,120 @@ reference_centisecond_sequence   = referenceCentiSecondTimes{reference_time_inde
 
 
 end % Ends fcn_INTERNAL_calculateReferenceTimeSequences
+
+
+%% fcn_INTERNAL_mapSensorIndicies
+function replacementData = fcn_INTERNAL_mapSensorIndicies(dataToFix, sensor_centiSeconds, sensor_indiciesLocalUsed_InReference, allsensor_time_duration, fill_type, debuggingOffset, fid) %#ok<INUSD>
+% Creates a new data set by moving the values from a
+% sensor
+% data set that needs to be fixed, using a reference vector that
+% describes which indicies in the sensor should be
+% mapped back into the replacement data
+
+
+
+flag_doDebug = 1;
+debugPrintLength = 30; % How many rows to print for debugging
+ 
+[~,Ncols] = size(dataToFix);
+NreferenceTimes = length(sensor_indiciesLocalUsed_InReference (:,1));
+replacementData = nan(NreferenceTimes,Ncols);
+indiciesToFill = find(~isnan(sensor_indiciesLocalUsed_InReference));
+replacementData(indiciesToFill,:) = dataToFix(sensor_indiciesLocalUsed_InReference(indiciesToFill),:);
+
+% Fix any NaN values
+if 0==fill_type
+    % Keep the NaN
+elseif 1==fill_type
+    
+    if 0~=fid
+        fprintf(fid,'\t\t Removing NaN values.\n');
+    end
+
+    % Make sure the data are strictly increasing
+    replacementData_noNan = replacementData(~isnan(replacementData(:,1)),:);
+    differences = diff(replacementData_noNan);
+    assert(all(differences>0));
+
+    % Determine the reference time sequence to use as a filler
+    reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds);
+
+    trueTime     = reference_centisecond_sequence*0.01;
+    differences  = replacementData - trueTime;
+
+    % For debugging
+    old_replacementData = replacementData;
+    % old_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
+    if 1==flag_doDebug
+        fprintf(1,'\n\n\nBefore: \n');
+        for ith_data = 1:min(debugPrintLength,NreferenceTimes)
+            fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data), old_replacementData(ith_data), differences(ith_data));
+        end
+    end
+
+    % Insert reference times
+    badIndicies  = find(isnan(replacementData(:,1)));
+    % averageOffset = mean(differences,"omitmissing");
+
+    replacementData(badIndicies,:) = trueTime(badIndicies,:);
+
+    % For debugging
+    % new_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
+    if 1==flag_doDebug
+        differences  = replacementData - trueTime;
+        fprintf(1,'\n\n\nAfter: \n');
+        for ith_data = 1:min(debugPrintLength,NreferenceTimes)
+            fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data) - trueTime(1), replacementData(ith_data)- trueTime(1), differences(ith_data));
+        end
+    end
+
+    % Make sure the data is sorted
+    differences = diff(replacementData);
+    assert(~any(differences<0));
+
+end
+
+end % fcn_INTERNAL_mapSensorIndicies
+
+%% fcn_INTERNAL_mapAllFieldsInSensor
+function trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allsensor_time_duration, debuggingOffset, fid)
+lengthReference = length(sensor_data.(field_name)(:,1));
+
+% Loop through all subfields
+subfieldNames = fieldnames(sensor_data);
+for i_subField = 1:length(subfieldNames)
+    % Grab the name of the ith subfield
+    thisFieldName = subfieldNames{i_subField};
+    if ~strcmp(thisFieldName,field_name)
+
+        dataToFix = dataStructure.(sensor_name).(thisFieldName);
+        [Nrows,~] = size(dataToFix);
+
+        if ~iscell(dataToFix) % Is it a cell? If yes, skip it
+            if Nrows ~= 1 % Is it a scalar? If yes, skip it
+                % It's an array, make sure it has right length
+                if lengthReference~= length(dataToFix)
+                    if strcmp(sensor_name,'SickLiDAR') && strcmp(thisFieldName,'Sick_Time')
+                        warning('on','backtrace');
+                        warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
+                    elseif strcmp(sensor_name,'TRIGGER_TrigBox_RearTop') && strcmp(thisFieldName,'Mode')
+                        warning('on','backtrace');
+                        warning('Trigger box ''Mode'' skipped - it will not match other data.');
+                    elseif strcmp(sensor_name,'ENCODER_USDigital_RearAxle') && strcmp(thisFieldName,'Mode')
+                        warning('on','backtrace');
+                        warning('Encoder box ''Mode'' skipped - it will not match other data.');
+                    else
+                        warning('on','backtrace');
+                        warning('Sensor %s contains a datafield %s that has an amount of data not equal to the %s. This is usually because data is missing.',sensor_name,thisFieldName, field_name);
+                    end
+                else
+                    % Replace the values
+                    data_fill_type = 0; % For data, never want to fill in the missing data with any values
+                    replacementData = fcn_INTERNAL_mapSensorIndicies(dataToFix, sensor_centiSeconds, sensor_indiciesLocalUsed_InReference, allsensor_time_duration, data_fill_type, debuggingOffset, fid);
+                    trimmed_dataStructure.(sensor_name).(thisFieldName) = replacementData;
+                end
+            end
+        end
+    end
+end
+end % fcn_INTERNAL_mapAllFieldsInSensor
