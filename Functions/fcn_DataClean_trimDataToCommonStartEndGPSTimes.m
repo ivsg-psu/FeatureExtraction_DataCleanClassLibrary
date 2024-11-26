@@ -225,7 +225,7 @@ N_referenceSensors = length(GPS_Time_sensorNames);
 % we subtract off a common value from all the time data, called the
 % debuggingOffset. This is usually arbitrary - the first time point in the
 % first GPS sensor's GPS_Time data
-if 1==1
+if 1==0
     debuggingOffset = GPS_Time_data_raw{1}(1);
 else
     debuggingOffset = 0;
@@ -236,6 +236,7 @@ GPS_Time_data = cell(N_referenceSensors,1);
 GPS_centiSeconds = cell(N_referenceSensors,1);
 GPS_Time_start = cell(N_referenceSensors,1);
 GPS_Time_end = cell(N_referenceSensors,1);
+GPS_Time_referenceLength = nan(N_referenceSensors,1);
 SENSOR_Time_data = cell(N_referenceSensors,1);
 SENSOR_Time_start = cell(N_referenceSensors,1);
 
@@ -246,6 +247,7 @@ for ith_sensor = 1:N_referenceSensors
     GPS_Time_end{ith_sensor}     = GPS_Time_end_raw{ith_sensor}     - debuggingOffset;
     SENSOR_Time_data{ith_sensor} = SENSOR_Time_data_raw{ith_sensor} - debuggingOffset;
     SENSOR_Time_start{ith_sensor} = SENSOR_Time_start_raw{ith_sensor} - debuggingOffset;
+    GPS_Time_referenceLength(ith_sensor,1) = length(GPS_Time_data_raw{ith_sensor});
 end
 
 % Convert cell arrays to matricies
@@ -257,7 +259,7 @@ GPS_Time_endVector   = [GPS_Time_end{:}]';
 % global start and end times.
 [allSensor_startTime_Seconds, allSensor_endTime_Seconds] = fcn_INTERNAL_extractStartStopTimes(GPS_Time_sensorNames, GPS_centiSeconds, GPS_Time_startVector, GPS_Time_endVector, fid);
 allsensor_time_duration = allSensor_endTime_Seconds-allSensor_startTime_Seconds;
-fprintf(fid,'\t The GPS_Time that overlaps all sensors has the following range: \n');
+fprintf(fid,'\t The GPS_Time that contains all reference sensors has the following range: \n');
 fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',allSensor_startTime_Seconds);
 fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',allSensor_endTime_Seconds);
 
@@ -319,10 +321,10 @@ for ith_sensor = 1:N_referenceSensors
 
     fprintf(fid,'\t Sensor: %s \n',sensor_name);
     fprintf(fid,'\t\t Sorted?: %.0f\n',~any(diff(sensor_time)<=0));
-    fprintf(fid,'\t\t Indicies present?: %.0f of %.0f\n',length(sensor_time), length(allsensor_time_duration);
+    fprintf(fid,'\t\t Indicies present?: %.0f of %.0f\n',length(sensor_time), length(allsensor_time_duration));
 
 
-    indiciesLocalUsed_InReference{ith_sensor} = fcn_INTERNAL_findIndexMapping(allsensor_time_duration, sensor_centiSeconds, sensor_time, fid);
+    indiciesLocalUsed_InReference{ith_sensor} = fcn_INTERNAL_findIndexMapping(allSensor_startTime_Seconds, allsensor_time_duration, sensor_centiSeconds, sensor_time, fid);
     replacement_reference{ith_sensor} = fcn_INTERNAL_mapSensorIndicies(sensor_time, sensor_centiSeconds, indiciesLocalUsed_InReference{ith_sensor}, allsensor_time_duration, fill_type, debuggingOffset, fid);
     trimmed_dataStructure.(sensor_name).(field_name) = replacement_reference{ith_sensor};
 
@@ -330,20 +332,20 @@ end
 
 
 %% Step 5: Loop through the sensors, trimming each
-
 for ith_sensor = 1:N_referenceSensors
     % Grab this sensor's data
     sensor_name                          = GPS_Time_sensorNames{ith_sensor};
     sensor_centiSeconds                  = GPS_centiSeconds{ith_sensor};
-    sensor_data                          = dataStructure.(sensor_name);
+    sensor_data                          = trimmed_dataStructure.(sensor_name);
     sensor_indiciesLocalUsed_InReference = indiciesLocalUsed_InReference{ith_sensor};
+    lengthReference                      = GPS_Time_referenceLength(ith_sensor,1);
 
     % Tell user what we are doing
     if 0~=fid
         fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end %s values: %s\n',ith_sensor,length(GPS_Time_sensorNames),field_name, sensor_name);
     end
     
-    trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allsensor_time_duration, debuggingOffset, fid);
+    trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(lengthReference, trimmed_dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allsensor_time_duration, debuggingOffset, fid);
        
 end
 
@@ -570,13 +572,13 @@ end
 end
 
 %% fcn_INTERNAL_findIndexMapping
-function indiciesLocalUsedInReference = fcn_INTERNAL_findIndexMapping(allsensor_time_duration, sensor_centiSeconds, sensor_time, fid) 
+function indiciesLocalUsedInReference = fcn_INTERNAL_findIndexMapping(allSensor_startTime_Seconds, allsensor_time_duration, sensor_centiSeconds, sensor_time, fid) 
 
 flag_doDebug = 1;
 DEBUG_Nprints = 20;
 
 % Determine the reference time sequence to check
-reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds);
+reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds) + allSensor_startTime_Seconds*100;
 
 % Shift all the data
 sensor_centiTime_unrounded = (sensor_time)*100;
@@ -669,7 +671,7 @@ for ith_time = 1:NreferenceTimes
         indiciesLocalUsedInReferenceWithOverlaps(ith_time,1) = indexFound(1);
         % Are any data overlapping?
         if Nfound>1
-            overlaps{ith_time} = indexFound+indiciesLocalShift;
+            overlaps{ith_time} = indexFound;
         end
     end
 end
@@ -809,6 +811,7 @@ elseif 1==fill_type
     % old_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
     if 1==flag_doDebug
         fprintf(1,'\n\n\nBefore: \n');
+        fprintf(1,'(trueTime) \t (old replacement) \t (differences)\n');
         for ith_data = 1:min(debugPrintLength,NreferenceTimes)
             fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data), old_replacementData(ith_data), differences(ith_data));
         end
@@ -825,6 +828,7 @@ elseif 1==fill_type
     if 1==flag_doDebug
         differences  = replacementData - trueTime;
         fprintf(1,'\n\n\nAfter: \n');
+        fprintf(1,'(trueTime) \t (new replacement) \t (differences)\n');
         for ith_data = 1:min(debugPrintLength,NreferenceTimes)
             fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data) - trueTime(1), replacementData(ith_data)- trueTime(1), differences(ith_data));
         end
@@ -839,8 +843,9 @@ end
 end % fcn_INTERNAL_mapSensorIndicies
 
 %% fcn_INTERNAL_mapAllFieldsInSensor
-function trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allsensor_time_duration, debuggingOffset, fid)
-lengthReference = length(sensor_data.(field_name)(:,1));
+function trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(lengthReference, dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allsensor_time_duration, debuggingOffset, fid)
+
+trimmed_dataStructure = dataStructure;
 
 % Loop through all subfields
 subfieldNames = fieldnames(sensor_data);

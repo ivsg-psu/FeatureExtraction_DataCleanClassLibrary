@@ -152,18 +152,18 @@ assert(isequal(trimmed_dataStructure.GPS_cow1.GPS_Time(end,1),roundedDownEndTime
 assert(isequal(trimmed_dataStructure.GPS_cow2.GPS_Time(end,1),roundedDownEndTime));
 assert(isequal(trimmed_dataStructure.GPS_cow3.GPS_Time(end,1),roundedDownEndTime));
 
-% Show non GPS data are changed
-assert(~isequal(initial_test_structure.pig1,trimmed_dataStructure.pig1));
-assert(~isequal(initial_test_structure.pig2,trimmed_dataStructure.pig2));
-assert(~isequal(initial_test_structure.pig3,trimmed_dataStructure.pig3));
+% Show non GPS data are unchanged
+assert(isequal(initial_test_structure.pig1,trimmed_dataStructure.pig1));
+assert(isequal(initial_test_structure.pig2,trimmed_dataStructure.pig2));
+assert(isequal(initial_test_structure.pig3,trimmed_dataStructure.pig3));
 
-assert(isequal(trimmed_dataStructure.pig1.GPS_Time(1,1),roundedUpStartTime));
-assert(isequal(trimmed_dataStructure.pig2.GPS_Time(1,1),roundedUpStartTime));
-assert(isequal(trimmed_dataStructure.pig3.GPS_Time(1,1),roundedUpStartTime));
+assert(~isequal(trimmed_dataStructure.pig1.GPS_Time(1,1),roundedUpStartTime));
+assert(~isequal(trimmed_dataStructure.pig2.GPS_Time(1,1),roundedUpStartTime));
+assert(~isequal(trimmed_dataStructure.pig3.GPS_Time(1,1),roundedUpStartTime));
 
-assert(isequal(trimmed_dataStructure.pig1.GPS_Time(end,1),roundedDownEndTime));
-assert(isequal(trimmed_dataStructure.pig2.GPS_Time(end,1),roundedDownEndTime));
-assert(isequal(trimmed_dataStructure.pig3.GPS_Time(end,1),roundedDownEndTime));
+assert(~isequal(trimmed_dataStructure.pig1.GPS_Time(end,1),roundedDownEndTime));
+assert(~isequal(trimmed_dataStructure.pig2.GPS_Time(end,1),roundedDownEndTime));
+assert(~isequal(trimmed_dataStructure.pig3.GPS_Time(end,1),roundedDownEndTime));
 
 %% CASE 3: simple test, forward data overlap on one sensor
 fig_num = 3;
@@ -565,7 +565,7 @@ assert(isequal(initial_test_structure.pig3,trimmed_dataStructure.pig3));
 
 
 
-%% CASE 8: simple test, GPS data missing and is swapped with reference time
+%% CASE 8: simple test, GPS data has gaps
 fig_num = 8;
 if ~isempty(findobj('Number',fig_num))
     figure(fig_num);
