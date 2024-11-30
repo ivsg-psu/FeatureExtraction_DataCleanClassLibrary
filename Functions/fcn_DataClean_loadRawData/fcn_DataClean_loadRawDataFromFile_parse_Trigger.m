@@ -34,6 +34,9 @@ function parseTrigger = fcn_DataClean_loadRawDataFromFile_parse_Trigger(file_pat
 % 2024_11_21 xfc5113@psu.edu
 % -- There were two mode fields in the data structure, 'mode' and 'Mode',
 % delete the 'Mode' field
+% 2024-11-29 by X. Cao
+% -- renamed 'ROS_Time' to 'Bag_Time' and the 'Header_Time' was
+% renamed to 'ROS_Time'
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -56,8 +59,12 @@ if strcmp(datatype,'trigger')
     % parseTrigger.GPS_Time                          = secs + nsecs*(10^-9);  % This is the GPS time, UTC, as reported by the unit
     % parseTrigger.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample
     % parseTrigger.ROS_Time                          = secs + nsecs*(10^-9);  % This is the ROS time that the data arrived into the bag
-    parseTrigger.ROS_Time  = time_stamp;
+    parseTrigger.Bag_Time  = time_stamp;
     parseTrigger.centiSeconds                      = 100;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    header_time_secs = datatable.secs;
+    header_time_nsecs = datatable.nsecs;
+    header_time = header_time_secs + header_time_nsecs*(1E-9);
+    parseTrigger.ROS_Time = header_time;
     parseTrigger.Npoints                           = Npoints;  % This is the number of data points in the array
     mode_cell = datatable.mode;  
     mode_string = string(mode_cell);

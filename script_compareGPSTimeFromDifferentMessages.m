@@ -20,7 +20,7 @@ Identifiers.SourceBagFileName =''; % This is filled in automatically for each fi
 %% Load static LiDAR scan
 fid = 1;
 clear rawDataCellArray
-rootdirs{1} = fullfile(cd,'LargeData','2024-11-15','Lane 3');
+rootdirs{1} = fullfile(cd,'LargeData','2024-11-15','Lane 2');
 bagQueryString = 'mapping_van_2024-11-15*';
 rawDataCellArrayLaneOne = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers,bagQueryString, fid,Flags);
 %%
@@ -45,8 +45,11 @@ for idx_cell = 1:N_cells
     plot_colors_CellArray{idx_cell,1} = plot_colors;
 end
 %%
-cell_index_to_plot = 7;
-
+encoder_ros_diff = diff(rawDataCellArrayLaneOne{8, 1}.Encoder_Raw.ROS_Time);
+encoder_untriggered_indices = find(encoder_ros_diff>0.1);
+%%
+cell_index_to_plot = 3;
+dataStructure = rawDataCellArrayLaneOne{cell_index_to_plot};
 ROS_Time_Trigger_Box = ROS_Time_Trigger_Box_CellArray{cell_index_to_plot};
 Trigger_Mode = Trigger_Mode_CellArray{cell_index_to_plot};
 Triggered_indices = find((Trigger_Mode=='L'));
@@ -54,11 +57,23 @@ UnTriggered_indices = find(~(Trigger_Mode=='L'));
 N_times = length(ROS_Time_Trigger_Box);
 % plot_colors = plot_colors_CellArray{cell_index_to_plot};
 ROS_Time_Trigger_Box_ZeroStart = ROS_Time_Trigger_Box - ROS_Time_Trigger_Box(1);
+
+Encoder_ROS_Time = dataStructure.Encoder_Raw.ROS_Time;
+Encoder_Trigger_Mode = dataStructure.Encoder_Raw.Mode;
+Encoder_Triggered_indices = find((Encoder_Trigger_Mode=='T'));
+Encoder_UnTriggered_indices = find(~(Encoder_Trigger_Mode=='T'));
+Encoder_ROS_Time_ZeroStart = Encoder_ROS_Time - Encoder_ROS_Time(1);
 figure(870)
 clf
-scatter(Triggered_indices, ROS_Time_Trigger_Box_ZeroStart(Triggered_indices,:), 10, 'blue','filled')
+% scatter(Triggered_indices, ROS_Time_Trigger_Box_ZeroStart(Triggered_indices,:), 10, 'blue','filled')
+% hold on
+% scatter(UnTriggered_indices, ROS_Time_Trigger_Box_ZeroStart(UnTriggered_indices,:), 10, 'red','filled')
+% scatter(ROS_Time_Trigger_Box_ZeroStart(Triggered_indices,:), ROS_Time_Trigger_Box_ZeroStart(Triggered_indices,:), 10, 'blue','filled')
+% hold on
+% scatter(ROS_Time_Trigger_Box_ZeroStart(UnTriggered_indices,:), ROS_Time_Trigger_Box_ZeroStart(UnTriggered_indices,:), 10, 'red','filled')
+scatter(Encoder_Triggered_indices, Encoder_ROS_Time_ZeroStart(Encoder_Triggered_indices,:), 10, 'green','filled')
 hold on
-scatter(UnTriggered_indices, ROS_Time_Trigger_Box_ZeroStart(UnTriggered_indices,:), 10, 'red','filled')
+scatter(Encoder_UnTriggered_indices, Encoder_ROS_Time_ZeroStart(Encoder_UnTriggered_indices,:), 10, 'magenta','filled')
 % plot(1:N_times, ROS_Time_Trigger_Box - ROS_Time_Trigger_Box(1),'k-','LineWidth',2)
 legend('Triggered Data', 'Untriggered Data')
 xlabel('Time Index')
@@ -113,3 +128,8 @@ array_GPS_Time_GGA_Front_match = array_GPS_Time_GGA_Front(closest_idx,:);
 GPS_Time_diff_GGA_to_PVT = array_GPS_Time_GGA_Front_match - array_GPS_Time_PVT_Front;
 GPS_Time_diff_GGA_to_PVT_ms = GPS_Time_diff_GGA_to_PVT*1E6;
 
+%%
+calculated_dataStructure = fcn_DataClean_calculateGPSVelocity(filled_dataStructure);
+
+%%
+dataStructureWithSigmas = fcn_DataClean_calculateSigmaValuesFromRawData(calculated_dataStructure);

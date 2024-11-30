@@ -1,5 +1,89 @@
-function medianFilteredRawDataWithSigmas = fcn_DataClean_medianFilterFromRawAndSigmaData(rawDataWithSigmas)
+function medianFilteredDataStructureWithSigmas = fcn_DataClean_medianFilterFromRawAndSigmaData(dataStructureWithSigmas, varargin)
+% fcn_DataClean_medianFilterFromRawAndSigmaData
+% Removes outliers via median filter
+%
+% FORMAT:
+%
+%      medianFilteredRawDataWithSigmas = fcn_DataClean_loadSigmaValuesFromRawData(dataStructureWithSigmas, (fid))
+%
+% INPUTS:
+%
+%      dataStructureWithSigmas: a data structure with standard deviations added
+% 
+%      (OPTIONAL INPUTS)
+%
+%      fid: 
+%
+% OUTPUTS:
+%
+%      medianFilteredDataStructureWithSigmas: the data structure with
+%      outliers removed
+%
+% DEPENDENCIES:
+%
+%      (none)
+%
+% EXAMPLES:
+%
+%     See the script: script_test_fcn_DataClean_calculateSigmaValuesFromRawData
+%     for a full test suite.
+%
+% This function was written on 2019_10_10 by S. Brennan
+% Questions or comments? sbrennan@psu.edu 
 
+
+% Revision history:
+% 2019_10_10 
+% -- first write of function by sbrennan@psu.edu
+% 2024_11_22 - xfc5113@psu.edu
+% -- Add Inputs, Main and Debug sections
+% -- Add comments
+
+% TO DO
+% 
+
+flag_do_debug = 1; % Flag to show the results for debugging
+flag_do_plots = 0; % % Flag to plot the final results
+flag_check_inputs = 1; % Flag to perform input checking
+
+if flag_do_debug
+    st = dbstack; %#ok<*UNRCH>
+    fprintf(1,'STARTING function: %s, in file: %s\n',st(1).name,st(1).file);
+end
+
+
+%% check input arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   _____                   _
+%  |_   _|                 | |
+%    | |  _ __  _ __  _   _| |_ ___
+%    | | | '_ \| '_ \| | | | __/ __|
+%   _| |_| | | | |_) | |_| | |_\__ \
+%  |_____|_| |_| .__/ \__,_|\__|___/
+%              | |
+%              |_|
+% See: http://patorjk.com/software/taag/#p=display&f=Big&t=Inputs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if flag_check_inputs
+    % Are there the right number of inputs?
+    narginchk(1,2);
+        
+    % NOTE: data structure SHOULD be checked!
+
+end
+
+
+%% Main code starts here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   __  __       _
+%  |  \/  |     (_)
+%  | \  / | __ _ _ _ __
+%  | |\/| |/ _` | | '_ \
+%  | |  | | (_| | | | | |
+%  |_|  |_|\__,_|_|_| |_|
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 flag_do_debug = 1;
 
 if flag_do_debug
@@ -19,21 +103,23 @@ fields_to_calculate_median_filters_for = [...
     {'velMagnitude'},...
     {'Roll_deg'},...
     {'Pitch_deg'},...
-    {'Yaw_deg'}...  % Confirmed
-    {'Yaw_deg_from_position'}... % Confirmed
-    {'Yaw_deg_from_velocity'}... % Confirmed
+    {'Yaw_deg'},...
+    {'Yaw_deg_from_position'},... % Confirmed
+    {'Yaw_deg_from_velocity'},... % Confirmed
     {'xy_increments'}... % Confirmed
-    {'XAccel'}...
-    {'YAccel'}...
-    {'ZAccel'}...
-    {'XGyro'}...
-    {'YGyro'}...
-    {'ZGyro'}...
-    {'xEast_increments'}...
-    {'yNorth_increments'}...
-    {'xEast'}...
-    {'yNorth'}...
+    {'XAccel'},...
+    {'YAccel'},...
+    {'ZAccel'},...
+    {'XGyro'},...
+    {'YGyro'},...
+    {'ZGyro'},...
+    {'xEast_increments'},...
+    {'yNorth_increments'},...
+    {'xEast'},...
+    {'yNorth'},...
+    {'zUp'},...
     ];
+
 
 fields_to_unwrap_angles = [...
     {'Yaw_deg'}...  % Confirmed
@@ -45,11 +131,11 @@ fields_to_check_diff_not_zero = [...
     {'yNorth_increments'}...
     ];
 
-names = fieldnames(rawDataWithSigmas); % Grab all the fields that are in rawData structure
+names = fieldnames(dataStructureWithSigmas); % Grab all the fields that are in rawData structure
 for i_data = 1:length(names)
     % Grab the data subfield name
     data_name = names{i_data};
-    d = eval(cat(2,'rawDataWithSigmas.',data_name));
+    d = eval(cat(2,'dataStructureWithSigmas.',data_name));
     
     if flag_do_debug
         fprintf(1,'\n Sensor %d of %d: ',i_data,length(names));
@@ -58,6 +144,7 @@ for i_data = 1:length(names)
     
     subfieldNames = fieldnames(d); % Grab all the subfields
     clear dout; % Initialize this structure
+    dout = d;
     for i_subField = 1:length(subfieldNames)
         % Grab the name of the ith subfield
         subFieldName = subfieldNames{i_subField};
@@ -145,7 +232,7 @@ for i_data = 1:length(names)
         end % Ends the if statement to check if subfield is on list
     end % Ends for loop through the subfields
 
-    medianFilteredRawDataWithSigmas.(data_name) = dout; % Save results to main structure
+    medianFilteredDataStructureWithSigmas.(data_name) = dout; % Save results to main structure
     
 end  % Ends for loop through all sensor names in rawData
 
@@ -163,12 +250,12 @@ return % Ends the function
 %% Subfunctions start here
 %% Sigma calculation function
 function real_sigma = fcn_DataClean_calcSigmaNoOutliers(data)
-differences = diff(data);
-deviations = differences - mean(differences);
-outlier_sigma = std(deviations);
-% Reject outliers
-deviations_with_no_outliers = deviations(abs(deviations)<(3*outlier_sigma));
-real_sigma = std(deviations_with_no_outliers);
+    differences = diff(data);
+    deviations = differences - mean(differences);
+    outlier_sigma = std(deviations);
+    % Reject outliers
+    deviations_with_no_outliers = deviations(abs(deviations)<(3*outlier_sigma));
+    real_sigma = std(deviations_with_no_outliers);
 return
 
 %% Median filtering function  
@@ -182,7 +269,7 @@ sigma_median = medfilt1(sigmas,7,'truncate');
 % For debugging:
 % figure; plot(data,'b'); hold on; plot(data_median,'c'); plot(highest_expected_data,'r'); plot(lowest_expected_data,'r'); 
  
-if 1==0  % This keeps the data, but removes only outliers that are beyond 2-sigma range
+if 1==1  % This keeps the data, but removes only outliers that are beyond 2-sigma range
     % Calculate bounds
     highest_expected_data = data_median + sigma_median;
     lowest_expected_data = data_median - sigma_median;

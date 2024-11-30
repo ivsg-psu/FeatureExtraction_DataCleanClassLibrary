@@ -49,7 +49,7 @@ if strcmp(datatype,'gps')
         time_stamp = (datatable.rosbagTimestamp)*10^-9; % This is rosbag timestamp
         
 
-
+        
         SparkFun_GPS_data_structure.GPS_Time     = GPSsecs + GPSmicrosecs*10^-6;  % This is the GPS time, UTC, as reported by the unit
 
         
@@ -57,10 +57,15 @@ if strcmp(datatype,'gps')
         % fprintf(1,'GPS microseconds:\n');
         % format long
         % disp(GPSmicrosecs(1:20,1));
-   
-        SparkFun_GPS_data_structure.ROS_Time           = time_stamp;  % This is the ROS time that the data arrived into the bag
+        
+        SparkFun_GPS_data_structure.Bag_Time           = time_stamp;  % This is the ROS time that the data arrived into the bag
         SparkFun_GPS_data_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         % SparkFun_GPS_data_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+        header_time_secs = datatable.secs;
+        header_time_nsecs = datatable.nsecs;
+        header_time = header_time_secs + header_time_nsecs*(1E-9);
+        SparkFun_GPS_data_structure.ROS_Time       = header_time; % This is the ROS_Time when the message generated
+        
         SparkFun_GPS_data_structure.Latitude           = datatable.Latitude;  % The latitude [deg]
         SparkFun_GPS_data_structure.Longitude          = datatable.Longitude;  % The longitude [deg]
         SparkFun_GPS_data_structure.Altitude           = datatable.Altitude;  % The altitude above sea level [m]

@@ -69,7 +69,34 @@ end
 %                                                    
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Assertions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Load static LiDAR scan
+fid = 1;
+clear rawDataCellArray
+rootdirs{1} = fullfile(cd,'LargeData','2024-11-08');
+bagQueryString = 'mapping_van_2024-11-08*';
+rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers,bagQueryString, fid,Flags);
+%%
+GGA_GPS_Time = rawDataCellArray{1}.GPS_SparkFun_Front_GGA.GPS_Time;
+GGA_ROS_Time = rawDataCellArray{1}.GPS_SparkFun_Front_GGA.ROS_Time;
+PVT_GPS_Time = rawDataCellArray{1}.GPS_SparkFun_Front_PVT.GPS_Time;
+PVT_ROS_Time = rawDataCellArray{1}.GPS_SparkFun_Front_PVT.ROS_Time;
+figure(1234)
+plot(GGA_GPS_Time)
+hold on
+plot(PVT_GPS_Time)
+plot(GGA_ROS_Time)
+plot(PVT_ROS_Time)
+PVT_GPS_Time(1:20) - GGA_GPS_Time(1:20)
+% rawDataCellArray{1}.GPS_SparkFun_Front_PVT.GPS_Time - rawDataCellArray{1}.GPS_SparkFun_Front_GGA.GPS_Time
+%%
+format long
+index_to_check = 1;
 
+temp1 = rawDataCellArray{index_to_check}.GPS_SparkFun_RightRear_GGA.GPS_Time(1:20,:) - rawDataCellArray{index_to_check}.GPS_SparkFun_RightRear_GGA.GPS_Time(1,1);
+temp2 = rawDataCellArray{index_to_check}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1:20,:)  - rawDataCellArray{index_to_check}.GPS_SparkFun_LeftRear_GGA.GPS_Time(1,1);
+temp3 = rawDataCellArray{index_to_check}.GPS_SparkFun_Front_GGA.GPS_Time(1:20,:) - rawDataCellArray{index_to_check}.GPS_SparkFun_Front_GGA.GPS_Time(1,1);
+fprintf(1,'GPS_SparkFun_RightRear_GGA   GPS_SparkFun_LeftRear_GGA    GPS_SparkFun_Front_GGA\n')
 %% Choose data folder and bag name
 
 % Data from "mapping_van_2023-06-05-1Lap.bag" is set as the default value

@@ -29,6 +29,19 @@ function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLI
 % -- add commetns
 % 2024-10-28 by X. Cao
 % -- replace Host_Time with ROS_Time
+% 2024-11-28 by X. Cao
+% -- from time checking, noticed the transmit time for LiDAR packet is
+% about 0.1 second, which is much larger than we expected, thus the time
+% when the packet is generated/published also need to be recorded, which is
+% the Header_Time. However, due to LiDAR configuration and GPS issue, 
+% some header time are not correct, thus a step need to be added here to 
+% check the transmission time.
+% If the transmission time is larger than 0.5 seconds (5 times of the regular
+% transmission time), Header_Time field won't be filled
+% 2024-11-29 by X. Cao
+% -- renamed 'ROS_Time' to 'Bag_Time' and the 'Header_Time' was
+%   renamed to 'ROS_Time'
+% -- removed transmit time check process
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -61,17 +74,22 @@ if strcmp(datatype,'lidar3d')
     Nscans = height(velodyne_lidar_table);
     scan_filenames_array = string(velodyne_lidar_table.scan_filename);
     Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
-    ROS_Time = velodyne_lidar_table.ros_time;
+    bag_time = velodyne_lidar_table.ros_time;
     host_time = velodyne_lidar_table.host_time;
     device_time = velodyne_lidar_table.device_time;
+    header_time = velodyne_lidar_table.header_time;
     % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
     Velodyne_Lidar_structure.Seq                = velodyne_lidar_table.seq;
-    Velodyne_Lidar_structure.ROS_Time           = ROS_Time;  % This is the ROS time that the data arrived into the bag
+    Velodyne_Lidar_structure.Bag_Time           = bag_time;  % This is the ROS time that the data arrived into the bag
     Velodyne_Lidar_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     Velodyne_Lidar_structure.Npoints            = Nscans;  % This is the number of data points in the array
     Velodyne_Lidar_structure.Host_Time        = host_time;
     Velodyne_Lidar_structure.Device_Time        = device_time;
+    Velodyne_Lidar_structure.ROS_Time = header_time;
+
+
+
     
     % Save the data structure and layout information first, these data will
     % be used to process the actual point cloud data later

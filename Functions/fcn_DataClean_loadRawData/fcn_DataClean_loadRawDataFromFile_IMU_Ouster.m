@@ -1,4 +1,4 @@
-function IMU_Novatel_structure = fcn_DataClean_loadRawDataFromFile_IMU_Ouster(file_path,datatype,fid)
+function IMU_Ouster_structure = fcn_DataClean_loadRawDataFromFile_IMU_Ouster(file_path,datatype,fid)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
 % This is the GPS_Novatel data
@@ -29,6 +29,9 @@ function IMU_Novatel_structure = fcn_DataClean_loadRawDataFromFile_IMU_Ouster(fi
 % -- add feature that load sigmas from the datatable
 % 2024-11-21 by X. Cao
 % -- replace for loop with cellfun() to improve speed
+% 2024-11-29 by X. Cao
+% -- renamed 'ROS_Time' to 'Bag_Time' and the 'Header_Time' was
+%   renamed to 'ROS_Time'
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -43,21 +46,27 @@ if strcmp(datatype,'imu')
     opts = detectImportOptions(file_path);
     opts.PreserveVariableNames = true;
     datatable = readtable(file_path,opts);
-    IMU_Novatel_structure = fcn_DataClean_initializeDataByType(datatype);
+    IMU_Ouster_structure = fcn_DataClean_initializeDataByType(datatype);
     
     % IMU_Novatel_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % IMU_Novatel_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-    IMU_Novatel_structure.ROS_Time           = datatable.rosbagTimestamp*10^-9;  % This is the ROS time that the data arrived into the bag
-    IMU_Novatel_structure.centiSeconds       = 1;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    IMU_Novatel_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+    IMU_Ouster_structure.Bag_Time           = datatable.rosbagTimestamp*10^-9;  % This is the ROS time that the data arrived into the bag
+    IMU_Ouster_structure.centiSeconds       = 1;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    header_time_secs = datatable.secs;
+    header_time_nsecs = datatable.nsecs;
+    header_time = header_time_secs + header_time_nsecs*(1E-9);
+    IMU_Ouster_structure.ROS_Time       = header_time; % This is the ROS_Time when the message generated
+    
+    IMU_Ouster_structure.Npoints            = height(datatable);  % This is the number of data points in the array
+    
     % IMU_Novatel_structure.IMUStatus          = default_value;
    
-    IMU_Novatel_structure.XAccel             = datatable.x_2;
-    IMU_Novatel_structure.YAccel             = datatable.y_2;
-    IMU_Novatel_structure.ZAccel             = datatable.z_2;
-    IMU_Novatel_structure.XGyro              = datatable.x_1;
-    IMU_Novatel_structure.YGyro              = datatable.y_1;
-    IMU_Novatel_structure.ZGyro              = datatable.z_1;
+    IMU_Ouster_structure.XAccel             = datatable.x_2;
+    IMU_Ouster_structure.YAccel             = datatable.y_2;
+    IMU_Ouster_structure.ZAccel             = datatable.z_2;
+    IMU_Ouster_structure.XGyro              = datatable.x_1;
+    IMU_Ouster_structure.YGyro              = datatable.y_1;
+    IMU_Ouster_structure.ZGyro              = datatable.z_1;
 
     % Grab linear acceleration convariance and angular acceleration
     % convariance from the datatable, and calculate the sigma with
@@ -88,14 +97,14 @@ if strcmp(datatype,'imu')
     %     ZGyro_Sigma(idx_data_point,1) = sqrt(Angular_Velocity_Covariance_Matrix(3,3));
     % end
     % Fill the sigmas field
-    IMU_Novatel_structure.XAccel_Sigma       = XAccel_Sigma;
-    IMU_Novatel_structure.YAccel_Sigma       = YAccel_Sigma;
-    IMU_Novatel_structure.ZAccel_Sigma       = ZAccel_Sigma;
-    IMU_Novatel_structure.XGyro_Sigma        = XGyro_Sigma;
-    IMU_Novatel_structure.YGyro_Sigma       = YGyro_Sigma;
-    IMU_Novatel_structure.ZGyro_Sigma       = ZGyro_Sigma;
+    IMU_Ouster_structure.XAccel_Sigma       = XAccel_Sigma;
+    IMU_Ouster_structure.YAccel_Sigma       = YAccel_Sigma;
+    IMU_Ouster_structure.ZAccel_Sigma       = ZAccel_Sigma;
+    IMU_Ouster_structure.XGyro_Sigma        = XGyro_Sigma;
+    IMU_Ouster_structure.YGyro_Sigma       = YGyro_Sigma;
+    IMU_Ouster_structure.ZGyro_Sigma       = ZGyro_Sigma;
     % Event functions
-    IMU_Novatel_structure.EventFunctions = {}; % These are the functions to determine if something went wrong
+    IMU_Ouster_structure.EventFunctions = {}; % These are the functions to determine if something went wrong
 
 else
     error('Wrong data type requested: %s',dataType)

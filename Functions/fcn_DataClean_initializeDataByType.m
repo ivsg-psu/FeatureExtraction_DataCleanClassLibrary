@@ -57,7 +57,9 @@ function dataStructure = fcn_DataClean_initializeDataByType(dataType,varargin)
 %    eventFunctions can cause different sensor types to become confused.
 % 2024_11_22: xfc5113@psu.edu
 % -- renamed "Mode" to "mode" for encoder box
-
+% 2024_11_28: xfc5113@psu.edu
+% -- add 'Header_Time' field for all topics and sensors, which is the  
+%    ROS time that the data generated in the ros node      
 
 
 % TO DO
@@ -120,7 +122,8 @@ switch lower(dataType)
     case 'trigger'
         dataStructure.GPS_Time                          = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time                      = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time                          = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time                          = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time                          = default_value;  % This is the ROS time that the data arrived into the bag      
         dataStructure.centiSeconds                      = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints                           = default_value;  % This is the number of data points in the array
         dataStructure.mode                              = default_value;  % This is the mode of the trigger box (I: Startup, X: Freewheeling, S: Syncing, L: Locked)
@@ -146,7 +149,8 @@ switch lower(dataType)
     case 'gps'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time           = default_value;  % This is the ROS time that the data arrived into the bag      
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         dataStructure.MessageID          = default_value;  % This is the type of the NMEA sentence
@@ -192,7 +196,8 @@ switch lower(dataType)
     case 'imu'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time           = default_value;  % This is the ROS time that the data arrived into the bag      
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         dataStructure.IMUStatus          = default_value;
@@ -240,7 +245,8 @@ switch lower(dataType)
     case 'encoder'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time           = default_value;  % This is the ROS time that the data arrived into the bag      
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         dataStructure.mode = default_value; % This is the mode of the encoder box
@@ -258,7 +264,8 @@ switch lower(dataType)
     case 'diagnostic'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time           = default_value;  % This is the ROS time that the data arrived into the bag      
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         % Data related to trigger box and encoder box
@@ -294,7 +301,8 @@ switch lower(dataType)
     case 'ntrip'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time           = default_value;  % This is the ROS time that the data arrived into the bag      
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         dataStructure.RTCM_Type          = default_value;  % This is the type of the RTCM correction data that was used.
@@ -306,6 +314,7 @@ switch lower(dataType)
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
         dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.Header_Time        = default_value;  % This is the ROS time that the data generated in the ros node      
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
         dataStructure.Seq                = default_value;  % This is the sequence of the message
@@ -321,7 +330,8 @@ switch lower(dataType)
     case 'transform'
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time           = default_value;  % This is the ROS time that the data arrived into the bag      
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array
      
@@ -357,11 +367,13 @@ switch lower(dataType)
         dataStructure.LIDAR2D_EventFunctions = {}; % These are the functions to determine if something went wrong
         
     case 'lidar3d'
-        % Xinyu - fill this in
+  
         dataStructure.Seq                = default_value;  % This is the sequence of the data, start with 0
         dataStructure.GPS_Time           = default_value;  % This is the GPS time, UTC, as reported by the unit
         dataStructure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data arrived into the bag
+        dataStructure.ROS_Time           = default_value;  % This is the ROS time that the data generated in the ros node   
+        dataStructure.Bag_Time           = default_value;  % This is the ROS time that the data arrived into the bag      
+        dataStructure.Host_Time          = default_value;
         dataStructure.Device_Time        = default_value;
         dataStructure.centiSeconds       = default_value;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
         dataStructure.Npoints            = default_value;  % This is the number of data points in the array

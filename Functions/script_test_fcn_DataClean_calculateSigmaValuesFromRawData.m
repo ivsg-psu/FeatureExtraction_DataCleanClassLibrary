@@ -21,10 +21,19 @@ Identifiers.SourceBagFileName =''; % This is filled in automatically for each fi
 %% Load test data sets
 fid = 1;
 clear rawDataCellArray
-rootdirs{1} = fullfile(cd,'LargeData','2024-11-15','Lane 1');
-bagQueryString = 'mapping_van_2024-11-15*';
+rootdirs{1} = fullfile(cd,'LargeData','TestOnly');
+bagQueryString = 'mapping_van_2024-11-25*';
 rawDataCellArrayLaneOne = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers,bagQueryString, fid,Flags);
-
+%%
+dataStructure = rawDataCellArrayLaneOne{1};
+%%
+Front_GPS_ROS_Time = rawDataCellArrayLaneOne{1, 1}.GPS_SparkFun_Front_GGA.ROS_Time;
+LiDAR_Bag_Time = rawDataCellArrayLaneOne{1, 1}.Lidar_Velodyne_Rear.Bag_Time;
+LiDAR_ROS_Time = rawDataCellArrayLaneOne{1, 1}.Lidar_Velodyne_Rear.ROS_Time;
+LiDAR_Host_Time = rawDataCellArrayLaneOne{1, 1}.Lidar_Velodyne_Rear.Host_Time;
+transmit_Time = LiDAR_Bag_Time - LiDAR_ROS_Time;
+time_diff_ROS = diff(LiDAR_ROS_Time);
+time_diff_Host = diff(LiDAR_Host_Time);
 %% Convert LLA to ENU and filled the XYZ fields
 
 N_cell = length(rawDataCellArrayLaneOne);
@@ -52,3 +61,16 @@ for idx_cell = 1:N_cell
     rawDataWithSigmasCellArray{idx_cell,1} = rawDataStructureWithSigmas;
 end
 
+%%
+medianFilteredDataStructureWithSigmas = fcn_DataClean_medianFilterFromRawAndSigmaData(rawDataStructureWithSigmas);
+
+figure(1234)
+plot(rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.GPS_Time, rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.xEast,'r','linewidth',2)
+hold on
+CI_Range = fcn_DataClean_calculateConfidenceInterval(rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.xEast,1.96);
+plot(rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.GPS_Time, rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.xEast,'r','linewidth',2)
+plot(rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.GPS_Time, rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.xEast,'r','linewidth',2)
+%%
+hold on
+plot(rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.GPS_Time, rawDataStructureWithSigmas.GPS_SparkFun_Front_GGA.xEast,'r','linewidth',2)
+plot(medianFilteredDataStructureWithSigmas.GPS_SparkFun_Front_GGA.GPS_Time, medianFilteredDataStructureWithSigmas.GPS_SparkFun_Front_GGA.xEast,'b--','linewidth',2)

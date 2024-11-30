@@ -71,7 +71,9 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 % the while loop and fill it back later
 % 2024_11_05 - S. Brennan
 % -- removed name cleaning code and moved to a different function
-
+% 2024_11_30 - X. Cao
+% -- added a ROS_Time checking section for Velodyne LiDAR after time
+% checked for GPS units, recalculate ROS_Time for Velodyne LiDAR if needed.
 
 
 %% Debugging and Input checks
@@ -680,9 +682,19 @@ while 1==flag_stay_in_main_loop
         % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time,'k','LineWidth',2)
     end
     
-    %%
-    
+    %% Check that whether Velodyne LiDAR has correct ROS_Time
+    if (1==flag_keep_checking) 
+        flag_recalculate_ROS_Time = fcn_DataClean_checkDataTimeConsistency_LiDARVelodyne(nextDataStructure,fid);
+    end
+
+    %% Recalculate the ROS_Time for Velodyne LiDAR according to ros bag timestamps
+    if (1==flag_keep_checking)&&(1==flag_recalculate_ROS_Time)
+        nextDataStructure = fcn_DataClean_calculateROSTimeforVelodyneLiDAR(nextDataStructure, fid);
+        flag_keep_checking = 0;
+    end
     %% Entering this section indicates all time in GPS units have been checked and fixed
+    
+    
     %% First, check whether all sensors have Trigger_Time 
     % Moved into fcn_DataClean_checkDataTimeConsistency
 %     if (1==flag_keep_checking)         
