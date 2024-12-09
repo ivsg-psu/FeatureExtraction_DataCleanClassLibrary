@@ -214,6 +214,8 @@ Flags.flag_do_load_cameras = 0;
 Flags.flag_select_scan_duration = 0;
 Flags.flag_do_load_GST = 0;
 Flags.flag_do_load_VTG = 0;
+Flags.flag_do_load_PVT = 0;
+Flags.flag_do_load_Ouster = 0;
 
 if 5 <= nargin
     temp = varargin{3};
@@ -333,6 +335,7 @@ flag_select_scan_duration = Flags.flag_select_scan_duration;
 flag_do_load_GST = Flags.flag_do_load_GST;
 flag_do_load_VTG = Flags.flag_do_load_VTG;
 flag_do_load_PVT = Flags.flag_do_load_PVT;
+flag_do_load_Ouster = Flags.flag_do_load_Ouster;
 % Grab the list of files in this directory
 file_list = dir(dataFolderString);
 num_files = length(file_list);
@@ -560,6 +563,16 @@ for file_idx = 1:num_files
         elseif (contains(topic_name,'ousterO1/imu'))
             ousterOS1_imu_struct = fcn_DataClean_loadRawDataFromFile_IMU_Ouster(full_file_path,datatype,fid);
             rawData.IMU_Ouster_Front = ousterOS1_imu_struct;
+
+        elseif (contains(topic_name,'ousterO1/lidar_packets')) && (flag_do_load_Ouster)
+            if flag_select_scan_duration
+                Ouster_lidar_struct = fcn_DataClean_loadRawDataFromFile_OusterLiDAR(full_file_path,datatype,fid,flag_select_scan_duration);
+            else
+                Ouster_lidar_struct = fcn_DataClean_loadRawDataFromFile_OusterLiDAR(full_file_path,datatype,fid);
+            end
+            
+
+            rawData.Lidar_Ouster_Front = Ouster_lidar_struct;
 
         % 
         % 

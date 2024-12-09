@@ -1,12 +1,10 @@
 function [ROS_Time_Trigger_Box, ROS_Time_diff,flag_trigger_box_data_loss] = fcn_DataClean_checkDataTimeConsistency_TriggerBox(dataStructure, varargin)
 
 
-% fcn_Transform_findVehiclePoseinENU
+% fcn_DataClean_checkDataTimeConsistency_TriggerBox
 %
-% This function takes two GPS Antenna centers, GPSLeft_ENU and 
-% GPSRight_ENU, in ENU coordinates as a (1 x 3) vector representing 
-% [x, y, z] in meters, PITCH_vehicle_ENU in degrees and the sensor 
-% mount's offset relative to the vehicle's origin as
+% This function takes data structure as input, check the time consistency
+% of the trigger box
 % 
 % FORMAT:
 %

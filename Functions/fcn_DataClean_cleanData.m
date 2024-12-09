@@ -275,7 +275,7 @@ while 1==flag_stay_in_main_loop
     end
 
     if (1==flag_keep_checking)
-        [time_flags, offending_sensor,sensors_without_Trigger_Time] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
+        [time_flags, offending_sensor] = fcn_DataClean_checkDataTimeConsistency(nextDataStructure,fid);
     end
     
     fcn_INTERNAL_reportFlagStatus(time_flags,'TIMING FLAGS');

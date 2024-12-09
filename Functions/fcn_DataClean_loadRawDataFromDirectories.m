@@ -208,6 +208,7 @@ Flags.flag_do_load_cameras = 0;
 Flags.flag_select_scan_duration = 0;
 Flags.flag_do_load_GST = 0;
 Flags.flag_do_load_VTG = 0;
+Flags.flag_do_load_Ouster = 0;
 
 if 5 <= nargin
     temp = varargin{3};

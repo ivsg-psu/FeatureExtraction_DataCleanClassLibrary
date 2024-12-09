@@ -102,7 +102,7 @@ elseif contains(topic_name_lower,'encoder')&&(~contains(topic_name_lower,'diag')
     datatype = 'encoder';
 elseif any([contains(topic_name,'sick_lms500/scan') contains(topic_name,'sick_lms_5xx/scan')])
     datatype = 'lidar2d';
-elseif contains(topic_name_lower,'velodyne')
+elseif contains(topic_name_lower,'velodyne')||contains(topic_name_lower,'lidar_packets')
     datatype = 'lidar3d';
 elseif contains(topic_name_lower,'diag')
     datatype = 'diagnostic';

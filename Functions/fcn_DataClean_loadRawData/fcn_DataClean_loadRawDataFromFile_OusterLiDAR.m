@@ -1,15 +1,15 @@
-function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLIDAR(file_path,datatype,fid,varargin)
+function Ouster_Lidar_structure = fcn_DataClean_loadRawDataFromFile_OusterLiDAR(file_path,datatype,fid,varargin)
 
 % This function is used to load the raw data collected with the Penn State Mapping Van.
-% This is the Velodyne Lidar data, whose data type is lidar3d
+% This is the Ouster Lidar data, whose data type is lidar3d
 % Input Variables:
 %      file_path = file path of the Velodyne Lidar data (format txt)
 %      datatype  = the datatype should be lidar3d
 % Returned Results:
-%      Velodyne_Lidar_structure
+%      Ouster_Lidar_structure
 
 % Author: Xinyu Cao
-% Created Date: 2023_07_18
+% Created Date: 2024_12_06
 % To do: 
 % - Merge X, Y, Z and Intensity into a matrix
 % 
@@ -18,30 +18,11 @@ function Velodyne_Lidar_structure = fcn_DataClean_loadRawDataFromFile_velodyneLI
 % Reference:
 % Document/Velodyne LiDAR Point Cloud Message Info.txt
 %% Revision history:
-% 2023_07_18 by X. Cao
-% -- start writing function
-% 2024-02-09 by X. Cao
-% -- fix a small bug, remove one useless input
-% 2024-07-02 by X. Cao
-% -- added varagin to select the duration of scan that will be loaded
-% 2024-10-10 by X. Cao
-% -- update loading directories based on the new parsing functions
-% -- add commetns
-% 2024-10-28 by X. Cao
-% -- replace Host_Time with ROS_Time
-% 2024-11-28 by X. Cao
-% -- from time checking, noticed the transmit time for LiDAR packet is
-% about 0.1 second, which is much larger than we expected, thus the time
-% when the packet is generated/published also need to be recorded, which is
-% the Header_Time. However, due to LiDAR configuration and GPS issue, 
-% some header time are not correct, thus a step need to be added here to 
-% check the transmission time.
-% If the transmission time is larger than 0.5 seconds (5 times of the regular
-% transmission time), Header_Time field won't be filled
-% 2024-11-29 by X. Cao
-% -- renamed 'ROS_Time' to 'Bag_Time' and the 'Header_Time' was
-%   renamed to 'ROS_Time'
-% -- removed transmit time check process
+% 2024_12_06 by X. Cao
+% -- write the function based on the
+% fcn_DataClean_loadRawDataFromFile_VelodyneLiDAR
+
+
 
 flag_do_debug = 0;  % Flag to show the results for debugging
 flag_do_plots = 0;  % % Flag to plot the final results
@@ -68,25 +49,24 @@ end
 
 if strcmp(datatype,'lidar3d')
     opts = detectImportOptions(file_path);
-    velodyne_lidar_table = readtable(file_path, opts);
-    velodyne_lidar_table.Properties.VariableNames = {'seq','ros_time','header_time','host_time','device_time','scan_filename'};
+    ouster_lidar_table = readtable(file_path, opts);
+    ouster_lidar_table.Properties.VariableNames = {'seq','Packet_Time_First','Packet_Time_Last','scan_filename'};
     % The number of rows in the file, also the number of scans
-    Nscans = height(velodyne_lidar_table);
-    scan_filenames_array = string(velodyne_lidar_table.scan_filename);
-    Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
-    bag_time = velodyne_lidar_table.ros_time;
-    host_time = velodyne_lidar_table.host_time;
-    device_time = velodyne_lidar_table.device_time;
-    header_time = velodyne_lidar_table.header_time;
+    Nscans = height(ouster_lidar_table);
+    scan_filenames_array = string(ouster_lidar_table.scan_filename);
+    Ouster_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
+    Packet_Time_First = ouster_lidar_table.Packet_Time_First;
+    Packet_Time_Last = ouster_lidar_table.Packet_Time_Last;
+
     % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
-    Velodyne_Lidar_structure.Seq                = velodyne_lidar_table.seq;
-    Velodyne_Lidar_structure.Bag_Time           = bag_time;  % This is the ROS time that the data arrived into the bag
-    Velodyne_Lidar_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
-    Velodyne_Lidar_structure.Npoints            = Nscans;  % This is the number of data points in the array
-    Velodyne_Lidar_structure.Host_Time        = host_time;
-    Velodyne_Lidar_structure.Device_Time        = device_time;
-    Velodyne_Lidar_structure.ROS_Time = header_time*10^(-9);
+    Ouster_Lidar_structure.Seq                = ouster_lidar_table.seq;
+    % Ouster_Lidar_structure.Bag_Time           = bag_time;  % This is the ROS time that the data arrived into the bag
+    Ouster_Lidar_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
+    Ouster_Lidar_structure.Npoints            = Nscans;  % This is the number of data points in the array
+    Ouster_Lidar_structure.Packet_Time_First       = Packet_Time_First;
+    Ouster_Lidar_structure.Packet_Time_Last        = Packet_Time_Last;
+    Ouster_Lidar_structure.ROS_Time = Packet_Time_Last*10^(-9);
 
 
 
@@ -101,13 +81,13 @@ if strcmp(datatype,'lidar3d')
     % Velodyne_Lidar_structure.point_step    = velodyne_lidar_table.point_step;  % This is the length of a point in bytes
     % Velodyne_Lidar_structure.row_step        = velodyne_lidar_table.row_step;  % This is the length of a row in bytes
     % Velodyne_Lidar_structure.is_dense         = velodyne_lidar_table.is_dense;  %  True if there are no invalid points
-    Velodyne_Lidar_structure.scan_filename        = scan_filenames_array;
+    Ouster_Lidar_structure.scan_filename        = scan_filenames_array;
     points_cell = {};
     [bagFolderPath,~,~] = fileparts(file_path);
     [mainFolderPath,~,~] = fileparts(bagFolderPath);
     % Hash tree may have different names, but 'hashVelodyne' always exists, 
     % the function will look for the folder start with 'hashVelodyne' 
-    pointcloud_folder = "hashVelodyne*";
+    pointcloud_folder = "hashOuster*";
     % Let user choose the scan range
     if flag_select_scan_duration == 1
         user_input_txt = sprintf('There are %d scans, please enter the scan duration you want to load. [idx_start:idx_end]', Nscans);
@@ -118,12 +98,14 @@ if strcmp(datatype,'lidar3d')
     end
 
     % Use hash tags to load pointCloud data for each scan
-    file_ext = ".ply";
     for idx_scan = scan_duration
         scan_filename = scan_filenames_array(idx_scan);
         scan_filename_char = char(scan_filename);
+
         points_file_fullPath = fullfile(mainFolderPath,pointcloud_folder,scan_filename_char(1:2),scan_filename_char(3:4),scan_filename+'.ply');
         points_file_struct = dir(points_file_fullPath);
+        % If the struct is empty, no .ply files found, load .txt files
+        % instead
         if ~isempty(points_file_struct)
             points_file = fullfile(points_file_struct.folder,points_file_struct.name);
             ply_file = fopen(points_file, 'r');
@@ -131,7 +113,7 @@ if strcmp(datatype,'lidar3d')
             while ~contains(line, 'end_header')
                 line = fgetl(ply_file);
             end
-            pointcloud = fscanf(ply_file, '%f %f %f %f %f %d %d %d', [8 Inf])';
+            pointcloud = fscanf(ply_file, '%f %f %f %f %d', [5 Inf])';
             fclose(ply_file);
         else
             points_file_fullPath = fullfile(mainFolderPath,pointcloud_folder,scan_filename_char(1:2),scan_filename_char(3:4),scan_filename+'.txt');
@@ -140,12 +122,11 @@ if strcmp(datatype,'lidar3d')
             opts_scan = detectImportOptions(points_file);
             pointcloud = readmatrix(points_file,opts_scan);
         end
-
         points_cell{idx_scan,1} = pointcloud;
         clear pointcloud
 
     end
-    Velodyne_Lidar_structure.PointCloud = points_cell;
+    Ouster_Lidar_structure.PointCloud = points_cell;
     % Velodyne_Lidar_structure.LiDAR_Time = LiDAR_Time;
     % Loading completed
  
