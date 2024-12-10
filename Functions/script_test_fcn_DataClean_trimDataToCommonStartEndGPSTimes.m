@@ -29,7 +29,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 std_dev = 0; % Small changes in time?
 good_time_data = good_time_data + std_dev * randn(length(good_time_data(:,1)),1);
 bad_data = flipud(good_time_data);
@@ -102,7 +102,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 std_dev = 0; % Small changes in time?
 good_time_data = good_time_data + std_dev * randn(length(good_time_data(:,1)),1);
 bad_data = flipud(good_time_data);
@@ -183,7 +183,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 
 std_dev = 0; % Small changes in time?
 bad_time_data = good_time_data + std_dev * randn(length(good_time_data(:,1)),1);
@@ -261,7 +261,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 
 std_dev = 0; % Small changes in time?
 bad_time_data = good_time_data + std_dev * randn(length(good_time_data(:,1)),1);
@@ -339,7 +339,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 
 std_dev = 0; % Small changes in time?
 bad_time_data = good_time_data + std_dev * randn(length(good_time_data(:,1)),1);
@@ -420,7 +420,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 
 std_dev = 0; % Small changes in time?
 bad_time_data = good_time_data + std_dev * randn(length(good_time_data(:,1)),1);
@@ -484,7 +484,7 @@ assert(isequal(initial_test_structure.pig2,trimmed_dataStructure.pig2));
 assert(isequal(initial_test_structure.pig3,trimmed_dataStructure.pig3));
 
 
-%% CASE 7: simple test, GPS data missing and is kept as NaN values
+%% CASE 7: simple test, some GPS data missing and kept as NaN values
 fig_num = 7;
 if ~isempty(findobj('Number',fig_num))
     figure(fig_num);
@@ -502,7 +502,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 good_data = flipud(good_time_data);
 
 std_dev = 0; % Small changes in time?
@@ -583,7 +583,7 @@ roundedUpStartTime = ceil(startTime);
 roundedDownEndTime = floor(endTime);
 
 initial_test_structure = struct;
-good_time_data = (startTime:(GPScentiSeconds*0.01):2.4)';
+good_time_data = (startTime:(GPScentiSeconds*0.01):endTime)';
 good_data = flipud(good_time_data);
 
 std_dev = 0; % Small changes in time?
@@ -638,6 +638,109 @@ assert(isequal(trimmed_dataStructure.GPS_cow3.GPS_Time(end,1),roundedDownEndTime
 assert(~any(isnan(trimmed_dataStructure.GPS_cow1.GPS_Time)));
 assert(~any(isnan(trimmed_dataStructure.GPS_cow2.GPS_Time)));
 assert(~any(isnan(trimmed_dataStructure.GPS_cow3.GPS_Time)));
+
+% Show non GPS data are unchanged
+assert(isequal(initial_test_structure.pig1,trimmed_dataStructure.pig1));
+assert(isequal(initial_test_structure.pig2,trimmed_dataStructure.pig2));
+assert(isequal(initial_test_structure.pig3,trimmed_dataStructure.pig3));
+
+%% CASE 9: simple test, GPS_Time is god, ROS_Time is bad (gaps and offset)
+fig_num = 9;
+if ~isempty(findobj('Number',fig_num))
+    figure(fig_num);
+    clf;
+end
+
+
+GPScentiSeconds = 10;
+SensorCentiSeconds = 10;
+
+HUGE_offset = 100;  % seconds
+startTime = 0.7 + HUGE_offset;
+endTime = 2.4 + HUGE_offset;
+
+roundedUpStartTime = ceil(startTime);
+roundedDownEndTime = floor(endTime);
+
+initial_test_structure = struct;
+good_GPS_Time = (startTime:(GPScentiSeconds*0.01):endTime)';
+ROS_Time_offset = 5.4321;
+good_ROS_Time = good_GPS_Time + ROS_Time_offset;
+good_data = flipud(good_GPS_Time);
+
+std_dev = 0; % Small changes in time?
+bad_time_data = good_ROS_Time + std_dev * randn(length(good_ROS_Time(:,1)),1);
+
+% Add 2 gaps into the data, at 7 and 10
+bad_indicies = [7; 10];
+bad_time_data(bad_indicies)  = nan;
+bad_data = good_data;
+bad_data(bad_indicies) = nan;
+
+% Fill in the "GPS" sensors
+initial_test_structure.GPS_cow1.GPS_Time= good_GPS_Time;
+initial_test_structure.GPS_cow2.GPS_Time= good_GPS_Time;
+initial_test_structure.GPS_cow3.GPS_Time= good_GPS_Time;
+initial_test_structure.GPS_cow1.ROS_Time= bad_time_data;
+initial_test_structure.GPS_cow2.ROS_Time= bad_time_data;
+initial_test_structure.GPS_cow3.ROS_Time= bad_time_data;
+initial_test_structure.GPS_cow1.centiSeconds = GPScentiSeconds;
+initial_test_structure.GPS_cow2.centiSeconds = GPScentiSeconds;
+initial_test_structure.GPS_cow3.centiSeconds = GPScentiSeconds;
+initial_test_structure.GPS_cow1.measurements = bad_data;
+initial_test_structure.GPS_cow2.measurements = bad_data;
+initial_test_structure.GPS_cow3.measurements = bad_data;
+initial_test_structure.GPS_cow1.values = bad_data;
+initial_test_structure.GPS_cow2.values = bad_data;
+initial_test_structure.GPS_cow3.values = bad_data;
+
+% Fill in the non GPS sensors
+initial_test_structure.pig1.GPS_Time= good_GPS_Time;
+initial_test_structure.pig2.GPS_Time= good_GPS_Time;
+initial_test_structure.pig3.GPS_Time= good_GPS_Time;
+initial_test_structure.pig1.centiSeconds = SensorCentiSeconds;
+initial_test_structure.pig2.centiSeconds = SensorCentiSeconds;
+initial_test_structure.pig3.centiSeconds = SensorCentiSeconds;
+initial_test_structure.pig1.measurements = good_data;
+initial_test_structure.pig2.measurements = good_data;
+initial_test_structure.pig3.measurements = good_data;
+
+dataStructure = initial_test_structure;
+
+fill_type = 1; % <--- This says to swap with reference time
+fid = 1;
+% Fix the GPS_Time
+trimmed_dataStructure1 = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure, ('GPS_Time'), ('GPS'), (fill_type), (fid));
+
+% Show GPS are all trimmed
+assert(isequal(trimmed_dataStructure1.GPS_cow1.GPS_Time(1,1),roundedUpStartTime));
+assert(isequal(trimmed_dataStructure1.GPS_cow2.GPS_Time(1,1),roundedUpStartTime));
+assert(isequal(trimmed_dataStructure1.GPS_cow3.GPS_Time(1,1),roundedUpStartTime));
+
+assert(isequal(trimmed_dataStructure1.GPS_cow1.GPS_Time(end,1),roundedDownEndTime));
+assert(isequal(trimmed_dataStructure1.GPS_cow2.GPS_Time(end,1),roundedDownEndTime));
+assert(isequal(trimmed_dataStructure1.GPS_cow3.GPS_Time(end,1),roundedDownEndTime));
+
+% Show that GPS_cow1, which had missing ROS_Time data, sill contains no NaN
+% values in ROS_Time
+assert(any(isnan(trimmed_dataStructure1.GPS_cow1.ROS_Time)));
+assert(any(isnan(trimmed_dataStructure1.GPS_cow2.ROS_Time)));
+assert(any(isnan(trimmed_dataStructure1.GPS_cow3.ROS_Time)));
+
+% Fix the ROS_Time
+trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(trimmed_dataStructure1, ('ROS_Time'), ('GPS'), (fill_type), (fid));
+
+% Show that GPS_cow1, which had missing ROS_Time data, now contains no NaN
+% values in GPS_Time
+assert(~any(isnan(trimmed_dataStructure.GPS_cow1.GPS_Time)));
+assert(~any(isnan(trimmed_dataStructure.GPS_cow2.GPS_Time)));
+assert(~any(isnan(trimmed_dataStructure.GPS_cow3.GPS_Time)));
+
+% Show that GPS_cow1, which had missing ROS_Time data, now contains no NaN
+% values in ROS_Time
+assert(~any(isnan(trimmed_dataStructure.GPS_cow1.ROS_Time)));
+assert(~any(isnan(trimmed_dataStructure.GPS_cow2.ROS_Time)));
+assert(~any(isnan(trimmed_dataStructure.GPS_cow3.ROS_Time)));
 
 % Show non GPS data are unchanged
 assert(isequal(initial_test_structure.pig1,trimmed_dataStructure.pig1));
