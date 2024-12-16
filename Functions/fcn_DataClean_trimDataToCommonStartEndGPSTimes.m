@@ -2,7 +2,10 @@ function trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(
 
 % fcn_DataClean_trimDataToCommonStartEndGPSTimes
 % Trims all sensor data so that all start and end at the same GPS_Time
-% values.
+% values, and fills in missing values that do not align with the time
+% sequence. If the field_name is 'GPS_Time', all the data in the structure
+% is re-sorted to match. Otherwise, for any other "time" type field names,
+% the data is unchanged.
 %
 % The method this is done is to:
 % 1. Pull out the GPS_Time field from all GPS-tagged sensors
@@ -329,22 +332,24 @@ for ith_sensor = 1:N_referenceSensors
 end
 
 
-%% Step 5: Loop through the sensors, trimming each
-for ith_sensor = 1:N_referenceSensors
-    % Grab this sensor's data
-    sensor_name                          = GPS_Time_sensorNames{ith_sensor};
-    sensor_centiSeconds                  = GPS_centiSeconds{ith_sensor};
-    sensor_data                          = trimmed_dataStructure.(sensor_name);
-    sensor_indiciesLocalUsed_InReference = indiciesLocalUsed_InReference{ith_sensor};
-    lengthReference                      = GPS_Time_referenceLength(ith_sensor,1);
+%% Step 5: If this is GPS_Time, loop through the sensors, creating blanks for each
+if strcmp(field_name,'GPS_Time')
+    for ith_sensor = 1:N_referenceSensors
+        % Grab this sensor's data
+        sensor_name                          = GPS_Time_sensorNames{ith_sensor};
+        sensor_centiSeconds                  = GPS_centiSeconds{ith_sensor};
+        sensor_data                          = trimmed_dataStructure.(sensor_name);
+        sensor_indiciesLocalUsed_InReference = indiciesLocalUsed_InReference{ith_sensor};
+        lengthReference                      = GPS_Time_referenceLength(ith_sensor,1);
 
-    % Tell user what we are doing
-    if 0~=fid
-        fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end %s values: %s\n',ith_sensor,length(GPS_Time_sensorNames),field_name, sensor_name);
+        % Tell user what we are doing
+        if 0~=fid
+            fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end %s values: %s\n',ith_sensor,length(GPS_Time_sensorNames),field_name, sensor_name);
+        end
+
+        trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(allGPSSensor_GPS_startTime_Seconds, lengthReference, trimmed_dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allGPSsensor_GPS_time_duration, debuggingOffset, fid);
+
     end
-
-    trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(allGPSSensor_GPS_startTime_Seconds, lengthReference, trimmed_dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allGPSsensor_GPS_time_duration, debuggingOffset, fid);
-
 end
 
 %% Plot the results (for debugging)?
@@ -477,6 +482,12 @@ end
 
 %%
 function indiciesLocalUsedInReference = fcn_INTERNAL_removeOverlaps(indiciesLocalUsedInReference, count_of_data_in_reference_time, indiciesOverlap, overlaps, zeroIndicies, local_sensor_centiTime_unrounded, reference_centisecond_sequence, fid)
+% This function looks for indicies where there are overlaps, and finds
+% "nearby" holes where these indicies can be filled. It then shifts the
+% data so that the overlap is removed, causing the data to shift into the
+% holes.
+
+flag_do_debug = 0;
 
 Npoints = length(count_of_data_in_reference_time);
 
@@ -489,7 +500,7 @@ for ith_overlap = 1:length(indiciesOverlap)
 
     % Tell user what is happening
 
-    if 0~=fid
+    if  1==flag_do_debug
         NprintsNearby = 10;
         beforeIndex = max(thisOverlapIndex-NprintsNearby,1);
 
@@ -504,8 +515,9 @@ for ith_overlap = 1:length(indiciesOverlap)
         formatter_strings = [{'%.0d'},{'%.0f'},{'%.0f'},{'%.5f'},{'%.5f'}];
         N_chars = 40; % All columns have same number of characters
 
+        table_data = fullTable;
+        % table_data = fullTable(beforeIndex:afterIndex,:);
 
-        table_data = fullTable(beforeIndex:afterIndex,:);
         fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
     end
 
@@ -536,7 +548,19 @@ for ith_overlap = 1:length(indiciesOverlap)
             allIndicies = [thisOverlapIndex; zerosToFill];
             indexMinimum = min(allIndicies);
             indexMaximum = max(allIndicies);
-            indiciesLocalUsedInReference(indexMinimum:indexMaximum) = (indexMinimum:indexMaximum)';
+            index_range_to_fill = (indexMinimum:indexMaximum)';
+
+            % Figure out what goes into the fill spots
+            old_values = indiciesLocalUsedInReference(index_range_to_fill);
+            good_old_values = old_values(~isnan(old_values));
+            values_to_fill = union(good_old_values,overlappingIndicies);
+
+            % Make sure length of values to fill equals the indicies length
+            assert(length(values_to_fill)==length(index_range_to_fill));
+
+            % Update the indicies to finish the smoothing, and update the
+            % count
+            indiciesLocalUsedInReference(index_range_to_fill) = values_to_fill;
             count_of_data_in_reference_time(indexMinimum:indexMaximum) = 1;
 
             % Keep only the zero indicies that were NOT filled
@@ -586,7 +610,7 @@ for ith_overlap = 1:length(indiciesOverlap)
 
     end
 
-    if 0~=fid
+    if 1==flag_do_debug
         % fullTable = [(1:length(count_of_data_in_reference_time))' indiciesLocalUsedInReference count_of_data_in_reference_time reference_centisecond_sequence local_sensor_centiTime_unrounded];
         % fprintf(fid,'\n\t\t Sensor results after fix at index: %.0d', thisOverlapIndex);
         % 
@@ -616,7 +640,8 @@ for ith_overlap = 1:length(indiciesOverlap)
         N_chars = 40; % All columns have same number of characters
 
 
-        table_data = fullTable(beforeIndex:afterIndex,:);
+        % table_data = fullTable(beforeIndex:afterIndex,:);
+        table_data = fullTable;
         fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
 
     end
@@ -760,9 +785,9 @@ end
 % For debugging
 if 1==flag_doDebug
     fprintf('\n\n\t\t\tMatching results, after overlaps removed:\n');
-    NprintsNearby = min([DEBUG_Nprints length(reference_centisecond_sequence) length(count_of_data_in_reference_time) length(sensor_centiTime_to_check) length(sensor_centiTime_unrounded) length(indiciesLocalUsedInReferenceWithOverlaps)]);
+    NprintsNearby = min([DEBUG_Nprints length(reference_centisecond_sequence) length(count_of_data_in_reference_time) length(sensor_centiTime_to_check) length(sensor_centiTime_unrounded) length(indiciesLocalUsedInReference)]);
     indicies_to_print = (1:NprintsNearby);
-    fullTable = [indicies_to_print' reference_centisecond_sequence(indicies_to_print,:) count_of_data_in_reference_time(indicies_to_print,:) sensor_centiTime_to_check(indicies_to_print,:) sensor_centiTime_unrounded(indicies_to_print,:) indiciesLocalUsedInReferenceWithOverlaps(indicies_to_print,:) ];
+    fullTable = [indicies_to_print' reference_centisecond_sequence(indicies_to_print,:) count_of_data_in_reference_time(indicies_to_print,:) sensor_centiTime_to_check(indicies_to_print,:) sensor_centiTime_unrounded(indicies_to_print,:) indiciesLocalUsedInReference(indicies_to_print,:) ];
 
     header_strings = [{'Index'}, {'ref_centis'}, {'ref_count'},{'sensor_centis'},{'sensor_unrounded'},{'match'}];
     formatter_strings = [{'%.0d'},{'%.0f'},{'%.0f'},{'%.0f'},{'%.2f'},{'%.0f'}];
@@ -805,11 +830,9 @@ end % Ends fcn_INTERNAL_calculateReferenceTimeSequences
 
 %% fcn_INTERNAL_mapSensorIndicies
 function replacementData = fcn_INTERNAL_mapSensorIndicies(allSensor_startTime_Seconds, dataToFix, sensor_centiSeconds, sensor_indiciesLocalUsed_InReference, allsensor_time_duration, fill_type, debuggingOffset, fid) %#ok<INUSD>
-% Creates a new data set by moving the values from a
-% sensor
-% data set that needs to be fixed, using a reference vector that
-% describes which indicies in the sensor should be
-% mapped back into the replacement data
+% Creates a new data set by moving the values from a sensor data set that
+% needs to be fixed, using a reference vector that describes which indicies
+% in the sensor should be mapped back into the replacement data
 
 
 

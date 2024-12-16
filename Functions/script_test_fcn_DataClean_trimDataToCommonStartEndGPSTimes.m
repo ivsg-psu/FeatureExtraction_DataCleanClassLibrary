@@ -826,26 +826,26 @@ temp = [last_times{:}]' - last_times{1};
 assert(all(abs(temp)<0.1));
 
 %% CASE 903: Real world data
-% fig_num = 903;
-% if ~isempty(findobj('Number',fig_num))
-%     figure(fig_num);
-%     clf;
-% end
-% 
-% fullExampleFilePath = fullfile(cd,'Data','ExampleData_trimDataToCommonStartEndGPSTimes3.mat');
-% load(fullExampleFilePath,'dataStructure');
-% 
-% field_name = 'ROS_Time';
-% sensors_to_check = 'GPS';
-% fill_type = 1;
-% trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure, (field_name), (sensors_to_check), (fill_type), (fid));
-% 
-% % Show it worked
-% assert(any(isnan(dataStructure.GPS_SparkFun_Front.ROS_Time)));
-% assert(any(isnan(dataStructure.GPS_SparkFun_RightRear.ROS_Time)));
-% 
-% assert(~any(isnan(trimmed_dataStructure.GPS_SparkFun_Front.ROS_Time)));
-% assert(~any(isnan(trimmed_dataStructure.GPS_SparkFun_RightRear.ROS_Time)));
+fig_num = 903;
+if ~isempty(findobj('Number',fig_num))
+    figure(fig_num);
+    clf;
+end
+
+fullExampleFilePath = fullfile(cd,'Data','ExampleData_trimDataToCommonStartEndGPSTimes3.mat');
+load(fullExampleFilePath,'dataStructure');
+
+field_name = 'ROS_Time';
+sensors_to_check = 'GPS';
+fill_type = 1;
+trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(dataStructure, (field_name), (sensors_to_check), (fill_type), (fid));
+
+% Show it worked
+assert(any(isnan(dataStructure.GPS_SparkFun_Front.ROS_Time)));
+assert(any(isnan(dataStructure.GPS_SparkFun_RightRear.ROS_Time)));
+
+assert(~any(isnan(trimmed_dataStructure.GPS_SparkFun_Front.ROS_Time)));
+assert(~any(isnan(trimmed_dataStructure.GPS_SparkFun_RightRear.ROS_Time)));
 
 %% Fail conditions
 if 1==0
