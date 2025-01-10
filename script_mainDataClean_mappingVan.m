@@ -107,6 +107,8 @@
 % -- moved INTERNAL functions inside checkDataTimeConsistency_GPS to stand-alone functions 
 % 2024_11_07 - S. Brennan, sbrennan@psu.edu
 % -- updated PlotRoad to fix plotting bugs
+% 2024_12_16 - S. Brennan, sbrennan@psu.edu
+% -- updated debug library
 
 %
 % Known issues:
@@ -223,9 +225,9 @@ close all
 clear library_name library_folders library_url
 
 ith_library = 1;
-library_name{ith_library}    = 'DebugTools_v2024_10_25';
+library_name{ith_library}    = 'DebugTools_v2024_12_16';
 library_folders{ith_library} = {'Functions','Data'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2024_10_25.zip';
+library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2024_12_16.zip';
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'PathClass_v2024_03_14';
