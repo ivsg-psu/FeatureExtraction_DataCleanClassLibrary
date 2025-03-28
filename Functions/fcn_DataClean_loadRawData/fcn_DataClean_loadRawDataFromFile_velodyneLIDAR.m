@@ -69,24 +69,25 @@ end
 if strcmp(datatype,'lidar3d')
     opts = detectImportOptions(file_path);
     velodyne_lidar_table = readtable(file_path, opts);
-    velodyne_lidar_table.Properties.VariableNames = {'seq','ros_time','header_time','host_time','device_time','scan_filename'};
+    velodyne_lidar_table.Properties.VariableNames = {'seq','bag_time','header_time','host_time','device_time','scan_filename'};
     % The number of rows in the file, also the number of scans
     Nscans = height(velodyne_lidar_table);
     scan_filenames_array = string(velodyne_lidar_table.scan_filename);
     Velodyne_Lidar_structure = fcn_DataClean_initializeDataByType(datatype);
-    bag_time = velodyne_lidar_table.ros_time;
+    bag_time = velodyne_lidar_table.bag_time;
     host_time = velodyne_lidar_table.host_time;
     device_time = velodyne_lidar_table.device_time;
     header_time = velodyne_lidar_table.header_time;
     % Sick_Lidar_structure.GPS_Time           = secs + nsecs*10^-9;  % This is the GPS time, UTC, as reported by the unit
     % data_structure.Trigger_Time       = default_value;  % This is the Trigger time, UTC, as calculated by sample
     Velodyne_Lidar_structure.Seq                = velodyne_lidar_table.seq;
-    Velodyne_Lidar_structure.Bag_Time           = bag_time;  % This is the ROS time that the data arrived into the bag
+    Velodyne_Lidar_structure.Bag_Time           = bag_time*(1E-9);  % This is the ROS time that the data arrived into the bag
     Velodyne_Lidar_structure.centiSeconds       = 10;  % This is the hundreth of a second measurement of sample period (for example, 20 Hz = 5 centiseconds)
     Velodyne_Lidar_structure.Npoints            = Nscans;  % This is the number of data points in the array
     Velodyne_Lidar_structure.Host_Time        = host_time;
     Velodyne_Lidar_structure.Device_Time        = device_time;
-    Velodyne_Lidar_structure.ROS_Time = header_time*10^(-9);
+  
+    Velodyne_Lidar_structure.ROS_Time = header_time*(1E-9);
 
 
 
