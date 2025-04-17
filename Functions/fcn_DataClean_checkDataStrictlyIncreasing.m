@@ -225,22 +225,31 @@ for i_data = 1:length(sensor_names)
             fprintf(fid,'\t\t Sensor %s shows out-of-order data!\n',sensor_name);
             fprintf(fid,'\t\t\t Example output at point of failure:\n');
 
-            Nchars = 30;
-            fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters('Data',Nchars),fcn_DebugTools_debugPrintStringToNCharacters('Jumps',Nchars));
+            header_strings = [{'Index'}, {'Data'},{'Jumps'}];
+            formatter_strings = [{'%.0d'},{'%.5f'},{'%.5f'}];
+            N_chars = 30; % All columns have same number of characters
+            
             temp = diff(sensor_value);
             temp = [temp(1); temp]; %#ok<AGROW>
-
             indexOfFailure = find(temp<=0,1);
             NprintsNearby = 10;
             beforeIndex = max(indexOfFailure-NprintsNearby,1);
             afterIndex  = min(indexOfFailure+NprintsNearby,length(sensor_value));
-            for ith_index = beforeIndex:afterIndex
-                if ith_index~=indexOfFailure
-                    fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',sensor_value(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',temp(ith_index,1)),Nchars));
-                else
-                    fcn_DebugTools_cprintf('Red','\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',sensor_value(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',temp(ith_index,1)),Nchars));
-                end
-            end
+
+            fullTable = [(1:length(sensor_value))' sensor_value temp];
+            table_data = fullTable(beforeIndex:afterIndex,:);
+            fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
+
+
+
+            % 
+            % for ith_index = beforeIndex:afterIndex
+            %     if ith_index~=indexOfFailure
+            %         fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',sensor_value(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',temp(ith_index,1)),Nchars));
+            %     else
+            %         fcn_DebugTools_cprintf('Red','\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',sensor_value(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',temp(ith_index,1)),Nchars));
+            %     end
+            % end
         end
 
     end

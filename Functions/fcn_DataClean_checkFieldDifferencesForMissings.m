@@ -310,22 +310,32 @@ for ith_sensor = 1:length(sensor_names)
     else
         testData = sensor_data.(field_name);
         differences_in_field_data = diff(testData);
+        differences_in_field_data = [differences_in_field_data(1); differences_in_field_data]; %#ok<AGROW>
         jumps = abs(differences_in_field_data-expectedJump);
         if any(jumps>threshold_for_agreement)
             flag_this_sensor_passes_test = 0;
             if 0~=fid
+                indexOfFailure = find(abs(differences_in_field_data-expectedJump)>threshold_for_agreement,1);
+
                 fprintf(fid,'\t\t Sensor %s fails difference test!\n',sensor_name);
                 fprintf(fid,'\t\t\t Expected jump: %.5f +/- %.5f\n',expectedJump, threshold_for_agreement);                
-                fprintf(fid,'\t\t\t Example output at point of failure:\n');                
+                fprintf(fid,'\t\t\t Example output at point of failure (index = %.0d):\n',indexOfFailure);
 
-                Nchars = 30;
-                fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters('Data',Nchars),fcn_DebugTools_debugPrintStringToNCharacters('Jumps',Nchars));
-                indexOfFailure = find(abs(differences_in_field_data-expectedJump)>threshold_for_agreement,1);
-                beforeIndex = max(indexOfFailure-5,1);
-                afterIndex  = min(indexOfFailure+5,length(testData));
-                for ith_index = beforeIndex:afterIndex
-                    fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',testData(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',differences_in_field_data(ith_index,1)),Nchars));
-                end
+                header_strings = [{'Index'}, {'Data'},{'Jumps'}];
+                formatter_strings = [{'%.0d'},{'%.5f'},{'%.5f'}];
+                N_chars = 30; % All columns have same number of characters
+
+                NprintsNearby = 10;
+                beforeIndex = max(indexOfFailure-NprintsNearby,1);
+                afterIndex  = min(indexOfFailure+NprintsNearby,length(testData));
+
+                fullTable = [(1:length(testData))' testData differences_in_field_data];
+                table_data = fullTable(beforeIndex:afterIndex,:);
+                fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
+                %
+                % for ith_index = beforeIndex:afterIndex
+                %     fprintf(fid,'\t\t\t %s \t %s \n',fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',testData(ith_index,1)),Nchars),fcn_DebugTools_debugPrintStringToNCharacters(sprintf('%.5f',differences_in_field_data(ith_index,1)),Nchars));
+                % end
             end
         end
     end

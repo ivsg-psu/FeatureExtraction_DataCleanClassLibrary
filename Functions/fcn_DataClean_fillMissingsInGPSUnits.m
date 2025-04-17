@@ -52,6 +52,8 @@ function fixed_dataStructure = fcn_DataClean_fillMissingsInGPSUnits(dataStructur
 % -- add another condition to the if statement in line 278, currently
 %    eventFunctions field is an empty cell, no interpolation process is
 %    needed
+% 2024_12_07 - S. Brennan
+% -- fixed bug where interpolation fails if NaN is present
 
 %% Debugging and Input checks
 
@@ -229,44 +231,50 @@ for idx_gps_unit = 1:N_GPS_Units
     % Grab the original_GPS_Time, and create an index
     original_GPS_Time = cell_array_GPS_Time{idx_gps_unit};
     NpointsOriginalTime = length(original_GPS_Time);
-    indexOriginalTime = (1:NpointsOriginalTime)';
 
     % Fix GPS time
     originalGPS_timeData = GPSdataStructure.GPS_Time;
     GPSdataStructure.GPS_Time = fixed_GPSTime;    
     NpointsCorrectedTime = length(fixed_GPSTime(:,1));
-    indiciesInRange = ((originalGPS_timeData>=start_GPSTime).*(originalGPS_timeData<=end_GPSTime))==1;
-    originalGPS_timeDataInRange = originalGPS_timeData(find(indiciesInRange)); %#ok<FNDSB>
-    NpointsOriginalTimeInRange = length(originalGPS_timeDataInRange);
+    % indiciesInRange = ((originalGPS_timeData>=start_GPSTime).*(originalGPS_timeData<=end_GPSTime))==1;
+    % originalGPS_timeDataInRange = originalGPS_timeData(find(indiciesInRange)); %#ok<FNDSB>
+    % NpointsOriginalTimeInRange = length(originalGPS_timeDataInRange);
     % indexOriginalTimeInRange = (1:NpointsOriginalTimeInRange)';
 
     % Save the before/after
     beforeData{idx_gps_unit} = originalGPS_timeData;
     afterData{idx_gps_unit}  = fixed_GPSTime;
-
-    % Check which indicies changed
-    changedIndicies = interp1(originalGPS_timeData, indexOriginalTime, fixed_GPSTime,'linear',"extrap");
+    differences = abs(originalGPS_timeData - fixed_GPSTime);
     timeThreshold = 1E-6; % Times must agree to within a microsecond to be same
-    indiciesUnchangedFlagsInterpCheck = abs(round(changedIndicies)-changedIndicies)<=timeThreshold;
-    changedIndicies(indiciesUnchangedFlagsInterpCheck==0) = 0;
-    changedIndiciesRounded = round(changedIndicies(changedIndicies~=0));
+    badIndicies = [find(differences>timeThreshold); find(isnan(differences))];
 
-    % Make sure that the number of indicies to change is not larger than
-    % expected. This should never happen as the interp1 function should
-    % always push out a data length equal to fixed_GPSTime
-    assert(length(changedIndicies)<=length(fixed_GPSTime),...
-        sprintf('The number of points to be saved: %.0d, is greater than the number of GPS time points: %.0d.',length(changedIndicies), length(fixed_GPSTime)));    
 
-    % Make sure we are not querying data outside of the data range
-    assert(max(changedIndicies)<=NpointsOriginalTime,...
-        sprintf('The highest index to query: %.0d, is greater than the number of points in a data set: %.0d.',max(changedIndicies), NpointsOriginalTime));
-
-    % Make sure the indicies, when applied to time, produce exactly the
-    % same results
-    originalTimes = original_GPS_Time(changedIndiciesRounded);
-    fixedTimes = fixed_GPSTime(indiciesUnchangedFlagsInterpCheck);
-    assert(isequal(round(originalTimes,6),round(fixedTimes,6)),...
-        sprintf('The rounded times, using change indicies, does not match the intended GPS times. Unable to continue.'));
+    % % Check which indicies changed. The reason for this is that we need to
+    % % know which indicies were bad in the GPS data. The data with these
+    % % indicies is also bad and needs to be fixed.
+    % nonNanIndicies = ~isnan(originalGPS_timeData);
+    % changedIndicies = interp1(originalGPS_timeData(nonNanIndicies), indexOriginalTime(nonNanIndicies), fixed_GPSTime,'linear',"extrap");
+    % indiciesUnchangedFlagsInterpCheck = abs(round(changedIndicies)-changedIndicies)<=timeThreshold;
+    % changedIndicies(indiciesUnchangedFlagsInterpCheck==0) = 0;
+    % changedIndiciesRounded = round(changedIndicies(changedIndicies~=0));
+    % 
+    % % Make sure that the number of indicies to change is not larger than
+    % % expected. This should never happen as the interp1 function should
+    % % always push out a data length equal to fixed_GPSTime
+    % assert(length(changedIndicies)<=length(fixed_GPSTime),...
+    %     sprintf('The number of points to be saved: %.0d, is greater than the number of GPS time points: %.0d.',length(changedIndicies), length(fixed_GPSTime)));    
+    % 
+    % % Make sure we are not querying data outside of the data range
+    % assert(max(changedIndicies)<=NpointsOriginalTime,...
+    %     sprintf('The highest index to query: %.0d, is greater than the number of points in a data set: %.0d.',max(changedIndicies), NpointsOriginalTime));
+    % 
+    % % Make sure the indicies, when applied to time, produce exactly the
+    % % same results
+    % originalTimes = original_GPS_Time(changedIndiciesRounded);
+    % fixedTimes = fixed_GPSTime(indiciesUnchangedFlagsInterpCheck);
+    % differences = originalTimes - fixedTimes;
+    % assert(all(abs(differences)<1E6),...
+    %     sprintf('The rounded times, using change indicies, does not match the intended GPS times. Unable to continue.'));
 
 
     % Loop through all the fields. If they contain any time fields,
@@ -276,6 +284,7 @@ for idx_gps_unit = 1:N_GPS_Units
         current_fieldData = GPSdataStructure.(sub_field);
         
         % Is the field NOT GPS_Time (which was already fixed)
+        % AND
         % Is the field NOT empty (EventFunction field)
         if ~strcmp(sub_field,'GPS_Time') && ~isempty(current_fieldData)
 
@@ -287,16 +296,17 @@ for idx_gps_unit = 1:N_GPS_Units
                 % interp_method = fcn_DataClean_determineInterpolateMethod(sub_field);
 
                 % Perform interpolation
-                current_field_interp = interp1(original_GPS_Time,current_fieldData,fixed_GPSTime,'linear',"extrap");
+                nonNanIndicies = ~isnan(original_GPS_Time);
+                current_field_interp = interp1(original_GPS_Time(nonNanIndicies),current_fieldData(nonNanIndicies),fixed_GPSTime,'linear',"extrap");
                 GPSdataStructure.(sub_field) = current_field_interp;
             elseif length(current_fieldData(:,1))==NpointsOriginalTime
                 % Fill with Nan by default. Note: data may have many columns so
                 % use size to find how many
-                sizeOfData = size(current_fieldData);
-                current_fieldDataNanInserted = nan(NpointsCorrectedTime,sizeOfData(2));
-
-                % Fill in the points where there are data
-                current_fieldDataNanInserted(indiciesUnchangedFlagsInterpCheck,:) = current_fieldData(changedIndiciesRounded);
+                % sizeOfData = size(current_fieldData);
+                
+                current_fieldDataNanInserted = current_fieldData;
+                current_fieldDataNanInserted(badIndicies,:) = nan;
+                
                 GPSdataStructure.(sub_field) = current_fieldDataNanInserted;
             elseif isscalar(current_fieldData(:,1))
                 % Save it

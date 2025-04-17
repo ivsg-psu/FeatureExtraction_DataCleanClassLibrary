@@ -2,7 +2,10 @@ function trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(
 
 % fcn_DataClean_trimDataToCommonStartEndGPSTimes
 % Trims all sensor data so that all start and end at the same GPS_Time
-% values.
+% values, and fills in missing values that do not align with the time
+% sequence. If the field_name is 'GPS_Time', all the data in the structure
+% is re-sorted to match. Otherwise, for any other "time" type field names,
+% the data is unchanged.
 %
 % The method this is done is to:
 % 1. Pull out the GPS_Time field from all GPS-tagged sensors
@@ -42,7 +45,7 @@ function trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(
 %
 %      trimmed_dataStructure: a data structure to be analyzed that includes the following
 %      fields:
-% 
+%
 % DEPENDENCIES:
 %
 %      fcn_DebugTools_checkInputsToFunctions
@@ -53,12 +56,12 @@ function trimmed_dataStructure = fcn_DataClean_trimDataToCommonStartEndGPSTimes(
 %     for a full test suite.
 %
 % This function was written on 2023_06_19 by S. Brennan
-% Questions or comments? sbrennan@psu.edu 
+% Questions or comments? sbrennan@psu.edu
 
 % Revision history:
-%     
+%
 % 2023_06_12: sbrennan@psu.edu
-% -- wrote the code originally 
+% -- wrote the code originally
 % 2023_06_24 - sbrennan@psu.edu
 % -- added fcn_INTERNAL_checkIfFieldInAnySensor and test case in script
 % 2024_09_28 - S. Brennan
@@ -192,7 +195,7 @@ if 0~=fid
     else
         summary_name = sensors_to_check;
     end
-    fprintf(fid,'Checking consistency of start and end times across %s sensors:\n', summary_name);
+    fprintf(fid,'Checking consistency of start and end %s across %s sensors:\n', field_name, summary_name);
 end
 
 
@@ -226,7 +229,7 @@ N_referenceSensors = length(GPS_Time_sensorNames);
 % debuggingOffset. This is usually arbitrary - the first time point in the
 % first GPS sensor's GPS_Time data
 if 1==1
-    debuggingOffset = GPS_Time_data_raw{1}(1);
+    debuggingOffset = ceil(GPS_Time_data_raw{1}(1));
 else
     debuggingOffset = 0;
 end
@@ -236,6 +239,9 @@ GPS_Time_data = cell(N_referenceSensors,1);
 GPS_centiSeconds = cell(N_referenceSensors,1);
 GPS_Time_start = cell(N_referenceSensors,1);
 GPS_Time_end = cell(N_referenceSensors,1);
+GPS_Time_referenceLength = nan(N_referenceSensors,1);
+SENSOR_Time_data = cell(N_referenceSensors,1);
+SENSOR_Time_start = cell(N_referenceSensors,1);
 
 for ith_sensor = 1:N_referenceSensors
     GPS_Time_data{ith_sensor}    = GPS_Time_data_raw{ith_sensor}    - debuggingOffset;
@@ -244,6 +250,7 @@ for ith_sensor = 1:N_referenceSensors
     GPS_Time_end{ith_sensor}     = GPS_Time_end_raw{ith_sensor}     - debuggingOffset;
     SENSOR_Time_data{ith_sensor} = SENSOR_Time_data_raw{ith_sensor} - debuggingOffset;
     SENSOR_Time_start{ith_sensor} = SENSOR_Time_start_raw{ith_sensor} - debuggingOffset;
+    GPS_Time_referenceLength(ith_sensor,1) = length(GPS_Time_data_raw{ith_sensor});
 end
 
 % Convert cell arrays to matricies
@@ -253,16 +260,16 @@ GPS_Time_endVector   = [GPS_Time_end{:}]';
 %% Step 2. Find the start/end values for GPS data in all GPS sensors
 % Take the maximum start time and minimum end time and assign these to the
 % global start and end times.
-[allSensor_startTime_Seconds, allSensor_endTime_Seconds] = fcn_INTERNAL_extractStartStopTimes(GPS_Time_sensorNames, GPS_centiSeconds, GPS_Time_startVector, GPS_Time_endVector, fid);
-allsensor_time_duration = allSensor_endTime_Seconds-allSensor_startTime_Seconds;
-fprintf(fid,'\t The GPS_Time that overlaps all sensors has the following range: \n');
-fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',allSensor_startTime_Seconds);
-fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',allSensor_endTime_Seconds);
+[allGPSSensor_GPS_startTime_Seconds, allGPSSensor_GPS_endTime_Seconds] = fcn_INTERNAL_extractStartStopTimes(GPS_Time_sensorNames, GPS_centiSeconds, GPS_Time_startVector, GPS_Time_endVector, fid);
+allGPSsensor_GPS_time_duration = allGPSSensor_GPS_endTime_Seconds-allGPSSensor_GPS_startTime_Seconds;
+fprintf(fid,'\t The GPS_Time that contains all reference sensors has the following range (with offset: %.0f seconds): \n',debuggingOffset);
+fprintf(fid,'\t\t Start Time (UTC seconds): %.3f\n',allGPSSensor_GPS_startTime_Seconds);
+fprintf(fid,'\t\t End Time   (UTC seconds): %.3f\n',allGPSSensor_GPS_endTime_Seconds);
 
 
 %% Step 3: determine the offset of the user-requested time field relative to GPS_Time
-% The ROS time does not have the same origin as the GPS time, so if the
-% user is correcting ROS time, we need to keep track of that offset.
+% Any non-GPS time does not have the same origin as the GPS time, so if the
+% user is correcting something other than GPS time, we need to keep track of that offset.
 if strcmp(field_name,'GPS_Time')
     offsetSensorRelativeToGPS = 0;
 else
@@ -304,120 +311,45 @@ if 0~=fid
     fprintf(fid,'\t Calculating index mapping for %s across these sensors: \n',field_name);
 end
 
+% Initialize the structures and arrays
+trimmed_dataStructure = dataStructure;
 indiciesLocalUsed_InReference = cell(N_referenceSensors,1);
+replacement_reference         = cell(N_referenceSensors,1);
+
 for ith_sensor = 1:N_referenceSensors
     % Grab the sensor subfield name
-    sensor_name            = GPS_Time_sensorNames{ith_sensor};
-    sensor_centiSeconds    = GPS_centiSeconds{ith_sensor};
-    sensor_time            = SENSOR_Time_data{ith_sensor} - offsetSensorRelativeToGPS;
+    sensor_name             = GPS_Time_sensorNames{ith_sensor};
+    sensor_centiSeconds     = GPS_centiSeconds{ith_sensor};
+    sensor_time_in_GPS_time = SENSOR_Time_data{ith_sensor} - offsetSensorRelativeToGPS;
 
     fprintf(fid,'\t Sensor: %s \n',sensor_name);
-    fprintf(fid,'\t\t Sorted?: %.0f\n',~any(diff(sensor_time)<=0));
-    fprintf(fid,'\t\t Indicies present?: %.0f of %.0f\n',length(sensor_time), allsensor_time_duration*100/sensor_centiSeconds+1);
+    fprintf(fid,'\t\t Sorted?: %.0f\n',~any(diff(sensor_time_in_GPS_time)<=0));
 
-
-    indiciesLocalUsed_InReference{ith_sensor} = fcn_INTERNAL_findIndexMapping(allsensor_time_duration, sensor_centiSeconds, sensor_time, fid);
+    indiciesLocalUsed_InReference{ith_sensor} = fcn_INTERNAL_findIndexMapping(allGPSSensor_GPS_startTime_Seconds, allGPSsensor_GPS_time_duration, sensor_centiSeconds, sensor_time_in_GPS_time, fid);
+    replacement_reference{ith_sensor} = fcn_INTERNAL_mapSensorIndicies(allGPSSensor_GPS_startTime_Seconds, sensor_time_in_GPS_time, sensor_centiSeconds, indiciesLocalUsed_InReference{ith_sensor}, allGPSsensor_GPS_time_duration, fill_type, debuggingOffset, fid);
+    trimmed_dataStructure.(sensor_name).(field_name) = replacement_reference{ith_sensor} + offsetSensorRelativeToGPS + debuggingOffset;
 
 end
 
 
-%% Loop through the sensors, trimming each
-% Initialize the result:
-trimmed_dataStructure = dataStructure;
-for ith_sensor = 1:N_referenceSensors
+%% Step 5: If this is GPS_Time, loop through the sensors, creating blanks for each
+if strcmp(field_name,'GPS_Time')
+    for ith_sensor = 1:N_referenceSensors
+        % Grab this sensor's data
+        sensor_name                          = GPS_Time_sensorNames{ith_sensor};
+        sensor_centiSeconds                  = GPS_centiSeconds{ith_sensor};
+        sensor_data                          = trimmed_dataStructure.(sensor_name);
+        sensor_indiciesLocalUsed_InReference = indiciesLocalUsed_InReference{ith_sensor};
+        lengthReference                      = GPS_Time_referenceLength(ith_sensor,1);
 
-    % Grab this sensor's data
-    sensor_data = dataStructure.(sensor_name);
-    sensor_indiciesLocalUsed_InReference = indiciesLocalUsed_InReference{ith_sensor};
+        % Tell user what we are doing
+        if 0~=fid
+            fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end %s values: %s\n',ith_sensor,length(GPS_Time_sensorNames),field_name, sensor_name);
+        end
 
+        trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(allGPSSensor_GPS_startTime_Seconds, lengthReference, trimmed_dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allGPSsensor_GPS_time_duration, debuggingOffset, fid);
 
-    % URHERE - you just added the above variable and need to implement it in the fcn_INTERNAL_mapSensorIndicies referenced below, which need to be written using the code around it. Need to recode GPS surrogate time in lines ~200 above
-    
-    lengthReference = NlocalTimes;
-
-    if 0~=fid
-        fprintf(fid,'\t Trimming sensor %d of %d to have correct start and end %s values: %s\n',ith_sensor,length(sensorsToTrim_names),field_name, sensor_name);
     end
-
-    indiciesToFill = find(~isnan(indiciesLocalUsed_InReference));
-
-    % Loop through all subfields
-    subfieldNames = fieldnames(sensor_data);
-    for i_subField = 1:length(subfieldNames)
-        % Grab the name of the ith subfield
-        thisFieldName = subfieldNames{i_subField};
-        dataToFix = dataStructure.(sensor_name).(thisFieldName);
-        [Nrows,Ncols] = size(dataToFix);
-        
-        if ~iscell(dataToFix) % Is it a cell? If yes, skip it
-            if Nrows ~= 1 % Is it a scalar? If yes, skip it
-                % It's an array, make sure it has right length
-                if lengthReference~= length(dataToFix)
-                    if strcmp(sensor_name,'SickLiDAR') && strcmp(thisFieldName,'Sick_Time')
-                        warning('on','backtrace');
-                        warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
-                    elseif strcmp(sensor_name,'TRIGGER_TrigBox_RearTop') && strcmp(thisFieldName,'Mode')
-                        warning('on','backtrace');
-                        warning('Trigger box ''Mode'' skipped - it will not match other data.');
-                    elseif strcmp(sensor_name,'ENCODER_USDigital_RearAxle') && strcmp(thisFieldName,'Mode')
-                        warning('on','backtrace');
-                        warning('Encoder box ''Mode'' skipped - it will not match other data.');
-                    else
-                        warning('on','backtrace');
-                        warning('Sensor %s contains a datafield %s that has an amount of data not equal to the %s. This is usually because data is missing.',sensor_name,thisFieldName, field_name);
-                    end
-                else
-                    % Replace the values
-                    replacementData = fcn_INTERNAL_mapSensorIndicies(NreferenceTimes, dataToFix,indiciesLocalUsed_InReference)
-
-                    replacementData = nan(NreferenceTimes,Ncols);
-                    replacementData(indiciesToFill,:) = dataToFix(indiciesLocalUsed_InReference(indiciesToFill),:);
-                    trimmed_dataStructure.(sensor_name).(thisFieldName) = replacementData;
-                end
-            end
-        end
-       
-        % Fix any NaN values
-        if 0==fill_type
-            % Keep the NaN
-        elseif (1==fill_type) && ~isempty(field_name) && (strcmp(thisFieldName,field_name))
-            trueTime     = offsetSensorRelativeToGPS + reference_centisecond_sequence*0.01;
-            differences  = replacementData - trueTime;
-
-            % For debugging
-            old_replacementData = replacementData;
-            % old_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
-            if 1==1
-                fprintf(1,'\n\n\nBefore: \n');
-                for ith_data = 1:min(50,NreferenceTimes)
-                    fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data) - trueTime(1), old_replacementData(ith_data)- trueTime(1), differences(ith_data));
-                end
-            end
-
-            % Insert reference times
-            badIndicies  = find(isnan(replacementData(:,1)));
-            % averageOffset = mean(differences,"omitmissing");
-
-            replacementData(badIndicies,:) = trueTime(badIndicies,:); 
-            trimmed_dataStructure.(sensor_name).(thisFieldName) = replacementData;
-
-
-            % For debugging
-            % new_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
-            if 1==0
-                differences  = replacementData - trueTime;
-                fprintf(1,'\n\n\nAfter: \n');
-                for ith_data = 1:50
-                    fprintf(1,'%.3f \t %.3f \t %.3f\n',trueTime(ith_data) - trueTime(1), replacementData(ith_data)- trueTime(1), differences(ith_data));
-                end
-            end
-            differences = diff(replacementData);
-            assert(~any(differences<0));
-
-        end
-    end % Ends for loop through the subfields
-    
-    
 end
 
 %% Plot the results (for debugging)?
@@ -432,9 +364,9 @@ end
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-    
-    % Nothing to plot        
-    
+
+    % Nothing to plot
+
 end
 
 if flag_do_debug
@@ -502,7 +434,7 @@ allSensor_endTime_Seconds = floor(lowest_end_time_centiSeconds*0.01);
 %         error('Unable to lock GPS signals to a common start time');
 %     end
 % end
-% 
+%
 % loop_iterations = 1;
 % while ~all(mod(master_end_time_centiSeconds,sensor_centiSeconds)==0)
 %     loop_iterations = loop_iterations+1;
@@ -511,7 +443,7 @@ allSensor_endTime_Seconds = floor(lowest_end_time_centiSeconds*0.01);
 %         error('Unable to lock GPS signals to a common end time');
 %     end
 % end
-% 
+%
 % % Convert back into normal seconds
 % allSensor_startTime_Seconds = master_start_time_centiSeconds*0.01;
 % allSensor_endTime_Seconds = master_end_time_centiSeconds*0.01;
@@ -520,79 +452,119 @@ allSensor_endTime_Seconds = floor(lowest_end_time_centiSeconds*0.01);
 if allSensor_startTime_Seconds>=allSensor_endTime_Seconds
     warning('on','backtrace');
     warning('\n\nAn error will be thrown due to bad GPS timings. The following table should assist in debugging this issue: \n');
-    fprintf('Sensor \t\t\t\t Start time: \t End_time\n');    
+    fprintf('Sensor \t\t\t\t Start time: \t End_time\n');
     for ith_sensor = 1:length(start_times_centiSeconds)
-        fprintf('%s \t %d  \t %d \n',GPS_Time_sensorNames{ith_sensor}, start_times_centiSeconds(ith_sensor),end_times_centiSeconds(ith_sensor));        
+        fprintf('%s \t %d  \t %d \n',GPS_Time_sensorNames{ith_sensor}, start_times_centiSeconds(ith_sensor),end_times_centiSeconds(ith_sensor));
     end
-    
+
     fprintf('Master start time (seconds): \t%d\n',allSensor_startTime_Seconds);
     fprintf('Master end time (seconds):   \t%d\n',allSensor_endTime_Seconds);
-    
+
     fprintf('\n\nTable reshifted by start time:\n');
     fprintf('Sensor \t\t\t\t Start time: \t End_time\n');
     for ith_sensor = 1:length(start_times_centiSeconds)
-        fprintf('%s \t %d  \t %d \n',GPS_Time_sensorNames{ith_sensor}, start_times_centiSeconds(ith_sensor)-allSensor_startTime_Seconds*100,end_times_centiSeconds(ith_sensor)-allSensor_startTime_Seconds*100);        
+        fprintf('%s \t %d  \t %d \n',GPS_Time_sensorNames{ith_sensor}, start_times_centiSeconds(ith_sensor)-allSensor_startTime_Seconds*100,end_times_centiSeconds(ith_sensor)-allSensor_startTime_Seconds*100);
     end
 
-        
+
     fprintf('\n\nEach sensor shifted by its own start time:\n');
     fprintf('Sensor \t\t\t\t Start time: \t End_time\n');
     for ith_sensor = 1:length(start_times_centiSeconds)
         fprintf('%s \t %d  \t %d \n',...
             GPS_Time_sensorNames{ith_sensor}, ...
             start_times_centiSeconds(ith_sensor)-start_times_centiSeconds(ith_sensor),...
-            end_times_centiSeconds(ith_sensor)-start_times_centiSeconds(ith_sensor));        
+            end_times_centiSeconds(ith_sensor)-start_times_centiSeconds(ith_sensor));
     end
-    
+
     error('Unable to synchronize GPS signals because one GPS sensor has a starting GPS_Time field that seems to "start" after another GPS sensor recording ended! This is not physically possible if the sensors are running at the same time.');
 end
 end
 
 %%
 function indiciesLocalUsedInReference = fcn_INTERNAL_removeOverlaps(indiciesLocalUsedInReference, count_of_data_in_reference_time, indiciesOverlap, overlaps, zeroIndicies, local_sensor_centiTime_unrounded, reference_centisecond_sequence, fid)
-% More than 2 overlaps? This is not fixable
-if any(count_of_data_in_reference_time>2)
-    warning('on','backtrace');
-    warning('more than 2 overlaps found - unable to continue.');
-    error('Too much overlap in data, unable to fix');
-else
-    % Tell user what is happening
-    if 0~=fid
-    end
-end
+% This function looks for indicies where there are overlaps, and finds
+% "nearby" holes where these indicies can be filled. It then shifts the
+% data so that the overlap is removed, causing the data to shift into the
+% holes.
 
-% Try to fix
+flag_do_debug = 0;
+
+Npoints = length(count_of_data_in_reference_time);
+
+% Try to fix at each index
 for ith_overlap = 1:length(indiciesOverlap)
     % Which index, in the reference time vector, are we
     % checking? This is the location where more than one entry
     % was found.
     thisOverlapIndex = indiciesOverlap(ith_overlap);
 
+    % Tell user what is happening
+
+    if  1==flag_do_debug
+        NprintsNearby = 10;
+        beforeIndex = max(thisOverlapIndex-NprintsNearby,1);
+
+        maxLength = min([Npoints length(indiciesLocalUsedInReference) length(count_of_data_in_reference_time) length(reference_centisecond_sequence) length(local_sensor_centiTime_unrounded)]);
+        afterIndex  = min(thisOverlapIndex+NprintsNearby,maxLength);
+        indicies_to_print = beforeIndex:afterIndex;
+
+        fullTable = [indicies_to_print' indiciesLocalUsedInReference(indicies_to_print,1) count_of_data_in_reference_time(indicies_to_print,1) reference_centisecond_sequence(indicies_to_print,1) local_sensor_centiTime_unrounded(indicies_to_print,1)];
+
+        fprintf(fid,'\t\t Sensor fails overlap test at index: %.0d!', thisOverlapIndex);
+        header_strings = [{'Index'}, {'indiciesLocalUsedInReference'}, {'count_in_reference'},{'reference_centisecond'},{'local_centisecond'}];
+        formatter_strings = [{'%.0d'},{'%.0f'},{'%.0f'},{'%.5f'},{'%.5f'}];
+        N_chars = 40; % All columns have same number of characters
+
+        table_data = fullTable;
+        % table_data = fullTable(beforeIndex:afterIndex,:);
+
+        fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
+    end
+
+
     % Find nearby zero overlaps
     flag_use_closest = 0;
     if ~isempty(zeroIndicies)
-        % Grab the overlaps - there should be 2 of them
-        twoIndicies = overlaps{thisOverlapIndex};
+        % Grab the overlaps - there should be N of them where N is the
+        % count
+        N_overlaps = count_of_data_in_reference_time(thisOverlapIndex);
+        overlappingIndicies = overlaps{thisOverlapIndex};
+        assert(length(overlappingIndicies)==N_overlaps);
 
-        % Find index distances to zero overlaps
-        distancesToZeros = abs(thisOverlapIndex-zeroIndicies);
-        [closestDistance, zeroToUse] = min(distancesToZeros);
-        indexClosestZero = zeroIndicies(zeroToUse);
+        % Find all zero overlaps within 10 indexes of current value
+        nearbyZeroIndicies_Indexed = intersect(find(zeroIndicies>=thisOverlapIndex-10),find(zeroIndicies<=thisOverlapIndex+10));
+        nearbyZeroIndicies = zeroIndicies(nearbyZeroIndicies_Indexed,:);
 
-        if closestDistance<10
+        % Are there enough nearby indicies to absorb overlaps?
+        if length(nearbyZeroIndicies)>=(N_overlaps-1)
+            % Find how close, in index spacing, the zeros are to the
+            % current overlap index
+            distancesToZeros = abs(thisOverlapIndex-nearbyZeroIndicies);
+            [~,closestZeros] = sort(distancesToZeros);
+            zerosToFill = nearbyZeroIndicies(closestZeros(1:N_overlaps-1));
 
-            % Shift forward, or backward?
-            before_indiciesLocalUsedInReference = indiciesLocalUsedInReference;
-            if indexClosestZero>thisOverlapIndex
-                % Shifting foward
-                dataToShift = [twoIndicies; indiciesLocalUsedInReference(thisOverlapIndex+1:(indexClosestZero-1),:)];
-                indiciesLocalUsedInReference(thisOverlapIndex:indexClosestZero,:) = dataToShift;
-            else
-                % Shifting backward
-                dataToShift = [indiciesLocalUsedInReference((indexClosestZero+1):thisOverlapIndex-1,:); twoIndicies];
-                indiciesLocalUsedInReference(indexClosestZero:thisOverlapIndex,:) = dataToShift;
-            end
-            after_indiciesLocalUsedInReference = indiciesLocalUsedInReference;
+            % Now, take all the zeros and the surplus indicies and find the
+            % range of indicies that will be "smoothed"
+            allIndicies = [thisOverlapIndex; zerosToFill];
+            indexMinimum = min(allIndicies);
+            indexMaximum = max(allIndicies);
+            index_range_to_fill = (indexMinimum:indexMaximum)';
+
+            % Figure out what goes into the fill spots
+            old_values = indiciesLocalUsedInReference(index_range_to_fill);
+            good_old_values = old_values(~isnan(old_values));
+            values_to_fill = union(good_old_values,overlappingIndicies);
+
+            % Make sure length of values to fill equals the indicies length
+            assert(length(values_to_fill)==length(index_range_to_fill));
+
+            % Update the indicies to finish the smoothing, and update the
+            % count
+            indiciesLocalUsedInReference(index_range_to_fill) = values_to_fill;
+            count_of_data_in_reference_time(indexMinimum:indexMaximum) = 1;
+
+            % Keep only the zero indicies that were NOT filled
+            zeroIndicies = setdiff(zeroIndicies,zerosToFill);
 
             % For debugging
             if 1==0
@@ -606,7 +578,7 @@ for ith_overlap = 1:length(indiciesOverlap)
             flag_use_closest = 1;
         end
     else
-        % There are no zero overlap areas in the data. Use
+        % There are no zero overlap areas anywhere in the data. Use
         % closest!
         flag_use_closest = 1;
     end
@@ -628,6 +600,7 @@ for ith_overlap = 1:length(indiciesOverlap)
         before_indiciesLocalUsedInReference = indiciesLocalUsedInReference;
         indiciesLocalUsedInReference(thisOverlapIndex,1) = bestIndex;
         after_indiciesLocalUsedInReference = indiciesLocalUsedInReference;
+        count_of_data_in_reference_time(thisOverlapIndex,1) = 1;
 
 
         % For debugging
@@ -637,19 +610,54 @@ for ith_overlap = 1:length(indiciesOverlap)
 
     end
 
+    if 1==flag_do_debug
+        % fullTable = [(1:length(count_of_data_in_reference_time))' indiciesLocalUsedInReference count_of_data_in_reference_time reference_centisecond_sequence local_sensor_centiTime_unrounded];
+        % fprintf(fid,'\n\t\t Sensor results after fix at index: %.0d', thisOverlapIndex);
+        % 
+        % header_strings = [{'Index'}, {'indiciesLocalUsedInReference'}, {'count_in_reference'},{'reference_centisecond'},{'local_centisecond'}];
+        % formatter_strings = [{'%.0d'},{'%.0f'},{'%.0f'},{'%.5f'},{'%.5f'}];
+        % N_chars = 40; % All columns have same number of characters
+        % 
+        % NprintsNearby = 10;
+        % beforeIndex = max(thisOverlapIndex-NprintsNearby,1);
+        % afterIndex  = min(thisOverlapIndex+NprintsNearby,Npoints);
+        % 
+        % table_data = fullTable(beforeIndex:afterIndex,:);
+        % fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
+
+        NprintsNearby = 10;
+        beforeIndex = max(thisOverlapIndex-NprintsNearby,1);
+
+        maxLength = min([Npoints length(indiciesLocalUsedInReference) length(count_of_data_in_reference_time) length(reference_centisecond_sequence) length(local_sensor_centiTime_unrounded)]);
+        afterIndex  = min(thisOverlapIndex+NprintsNearby,maxLength);
+        indicies_to_print = beforeIndex:afterIndex;
+
+        fullTable = [indicies_to_print' indiciesLocalUsedInReference(indicies_to_print,1) count_of_data_in_reference_time(indicies_to_print,1) reference_centisecond_sequence(indicies_to_print,1) local_sensor_centiTime_unrounded(indicies_to_print,1)];
+
+        fprintf(fid,'\n\t\t Sensor results after fix at index: %.0d', thisOverlapIndex);
+        header_strings = [{'Index'}, {'indiciesLocalUsedInReference'}, {'count_in_reference'},{'reference_centisecond'},{'local_centisecond'}];
+        formatter_strings = [{'%.0d'},{'%.0f'},{'%.0f'},{'%.5f'},{'%.5f'}];
+        N_chars = 40; % All columns have same number of characters
+
+
+        % table_data = fullTable(beforeIndex:afterIndex,:);
+        table_data = fullTable;
+        fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
+
+    end
 
 
 end
 end
 
 %% fcn_INTERNAL_findIndexMapping
-function indiciesLocalUsedInReference = fcn_INTERNAL_findIndexMapping(master_time_duration, sensor_centiSeconds, sensor_time, fid) 
+function indiciesLocalUsedInReference = fcn_INTERNAL_findIndexMapping(allSensor_startTime_Seconds, allsensor_time_duration, sensor_centiSeconds, sensor_time, fid)
 
 flag_doDebug = 1;
 DEBUG_Nprints = 20;
 
 % Determine the reference time sequence to check
-reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(master_time_duration, sensor_centiSeconds);
+reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds) + allSensor_startTime_Seconds*100;
 
 % Shift all the data
 sensor_centiTime_unrounded = (sensor_time)*100;
@@ -677,8 +685,8 @@ sensor_centiTime_to_check = round(sensor_centiTime_unrounded/sensor_centiSeconds
 
 % For debugging
 if 1==flag_doDebug
-    fprintf('\n\nMatching the following reference to true values:\n');
-    fprintf(1,'%s \t %s \t %s \n',...
+    fprintf('\n\n\t\t\tMatching the following reference to true values:\n');
+    fprintf(1,'\t\t\t%s \t %s \t %s \n',...
         fcn_DebugTools_debugPrintStringToNCharacters('(index)',20),...
         fcn_DebugTools_debugPrintStringToNCharacters('(ref_centis)',20),...
         fcn_DebugTools_debugPrintStringToNCharacters(sprintf('(sensor_centis)'),20));
@@ -686,7 +694,7 @@ if 1==flag_doDebug
         string1 = sprintf('%.0f', ith_index);
         string2 = sprintf('%.0f', reference_centisecond_sequence(ith_index));
         string3 = sprintf('%.0f', sensor_centiTime_to_check(ith_index));
-        fprintf(1,'%s \t %s \t %s \n',...
+        fprintf(1,'\t\t\t%s \t %s \t %s \n',...
             fcn_DebugTools_debugPrintStringToNCharacters(string1,20),...
             fcn_DebugTools_debugPrintStringToNCharacters(string2,20),...
             fcn_DebugTools_debugPrintStringToNCharacters(string3,20));
@@ -742,34 +750,26 @@ for ith_time = 1:NreferenceTimes
         indiciesLocalUsedInReferenceWithOverlaps(ith_time,1) = indexFound(1);
         % Are any data overlapping?
         if Nfound>1
-            overlaps{ith_time} = indexFound+indiciesLocalShift;
+            overlaps{ith_time} = indexFound;
         end
     end
 end
 
 % For debugging
 if 1==flag_doDebug
-    fprintf('\n\n Matching results, before moving overlaps:\n');
-    fprintf(1,'%s \t %s \t %s \t %s \t %s \n',...
-        fcn_DebugTools_debugPrintStringToNCharacters('(index)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(ref_centis)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(ref_count)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(sensor_centis)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(match)',20));
-    for ith_index = 1:min(DEBUG_Nprints,NreferenceTimes)
-        string1 = sprintf('%.0f', ith_index);
-        string2 = sprintf('%.0f', reference_centisecond_sequence(ith_index));
-        string3 = sprintf('%.0f', count_of_data_in_reference_time(ith_index));
-        string4 = sprintf('%.0f', sensor_centiTime_to_check(ith_index));
-        string5 = sprintf('%.0f', indiciesLocalUsedInReferenceWithOverlaps(ith_index));
-        fprintf(1,'%s \t %s \t %s \t %s \t %s \n',...
-            fcn_DebugTools_debugPrintStringToNCharacters(string1,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string2,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string3,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string4,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string5,20)...
-            );
-    end
+    fprintf('\n\n\t\t\tMatching results, before moving overlaps:\n');
+
+    NprintsNearby = min([DEBUG_Nprints length(reference_centisecond_sequence) length(count_of_data_in_reference_time) length(sensor_centiTime_to_check) length(sensor_centiTime_unrounded) length(indiciesLocalUsedInReferenceWithOverlaps)]);
+    indicies_to_print = (1:NprintsNearby);
+    fullTable = [indicies_to_print' reference_centisecond_sequence(indicies_to_print,:) count_of_data_in_reference_time(indicies_to_print,:) sensor_centiTime_to_check(indicies_to_print,:) sensor_centiTime_unrounded(indicies_to_print,:) indiciesLocalUsedInReferenceWithOverlaps(indicies_to_print,:) ];
+
+    header_strings = [{'Index'}, {'ref_centis'}, {'ref_count'},{'sensor_centis'},{'sensor_unrounded'},{'match'}];
+    formatter_strings = [{'%.0d'},{'%.0f'},{'%.0f'},{'%.0f'},{'%.2f'},{'%.0f'}];
+    N_chars = 40; % All columns have same number of characters
+
+    table_data = fullTable;
+    fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
+
 end
 
 % Were there any overlaps?
@@ -784,32 +784,22 @@ end
 
 % For debugging
 if 1==flag_doDebug
-    fprintf('\n\n Matching results, with overlaps removed:\n');
-    fprintf(1,'%s \t %s \t %s \t %s \t %s \n',...
-        fcn_DebugTools_debugPrintStringToNCharacters('(index)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(ref_centis)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(ref_count)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(sensor_centis)',20),...
-        fcn_DebugTools_debugPrintStringToNCharacters('(match)',20));
-    for ith_index = 1:min(DEBUG_Nprints,NreferenceTimes)
-        string1 = sprintf('%.0f', ith_index);
-        string2 = sprintf('%.0f', reference_centisecond_sequence(ith_index));
-        string3 = sprintf('%.0f', count_of_data_in_reference_time(ith_index));
-        string4 = sprintf('%.0f', sensor_centiTime_to_check(ith_index));
-        string5 = sprintf('%.0f', indiciesLocalUsedInReference(ith_index));
-        fprintf(1,'%s \t %s \t %s \t %s \t %s \n',...
-            fcn_DebugTools_debugPrintStringToNCharacters(string1,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string2,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string3,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string4,20),...
-            fcn_DebugTools_debugPrintStringToNCharacters(string5,20)...
-            );
-    end
+    fprintf('\n\n\t\t\tMatching results, after overlaps removed:\n');
+    NprintsNearby = min([DEBUG_Nprints length(reference_centisecond_sequence) length(count_of_data_in_reference_time) length(sensor_centiTime_to_check) length(sensor_centiTime_unrounded) length(indiciesLocalUsedInReference)]);
+    indicies_to_print = (1:NprintsNearby);
+    fullTable = [indicies_to_print' reference_centisecond_sequence(indicies_to_print,:) count_of_data_in_reference_time(indicies_to_print,:) sensor_centiTime_to_check(indicies_to_print,:) sensor_centiTime_unrounded(indicies_to_print,:) indiciesLocalUsedInReference(indicies_to_print,:) ];
+
+    header_strings = [{'Index'}, {'ref_centis'}, {'ref_count'},{'sensor_centis'},{'sensor_unrounded'},{'match'}];
+    formatter_strings = [{'%.0d'},{'%.0f'},{'%.0f'},{'%.0f'},{'%.2f'},{'%.0f'}];
+    N_chars = 40; % All columns have same number of characters
+
+    table_data = fullTable;
+    fcn_DebugTools_debugPrintTableToNCharacters(table_data, header_strings, formatter_strings,N_chars);
 end
 end % Ends fcn_INTERNAL_findIndexMapping
 
 %% fcn_INTERNAL_calculateReferenceTimeSequences
-function reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(master_time_duration, sensor_centiSeconds)
+function reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds)
 
 % Calculate reference time sequences, one for each sampling rate
 % 1 Hz, 5 Hz, 10 Hz, 20 Hz, 25 Hz, 100 Hz
@@ -819,7 +809,7 @@ NdifferentSamples = length(sampleRatesCentiseconds);
 referenceCentiSecondTimes = cell(NdifferentSamples,1);
 for ith_rate = 1:NdifferentSamples
     this_sample_interval = sampleRatesCentiseconds(ith_rate);
-    referenceCentiSecondTimes{ith_rate,1} = (0:this_sample_interval:(master_time_duration)*100)';
+    referenceCentiSecondTimes{ith_rate,1} = (0:this_sample_interval:(allsensor_time_duration)*100)';
 end
 
 
@@ -836,3 +826,128 @@ reference_centisecond_sequence   = referenceCentiSecondTimes{reference_time_inde
 
 
 end % Ends fcn_INTERNAL_calculateReferenceTimeSequences
+
+
+%% fcn_INTERNAL_mapSensorIndicies
+function replacementData = fcn_INTERNAL_mapSensorIndicies(allSensor_startTime_Seconds, dataToFix, sensor_centiSeconds, sensor_indiciesLocalUsed_InReference, allsensor_time_duration, fill_type, debuggingOffset, fid) %#ok<INUSD>
+% Creates a new data set by moving the values from a sensor data set that
+% needs to be fixed, using a reference vector that describes which indicies
+% in the sensor should be mapped back into the replacement data
+
+
+
+flag_doDebug = 0;
+debugPrintLength = 30; % How many rows to print for debugging
+
+[~,Ncols] = size(dataToFix);
+NreferenceTimes = length(sensor_indiciesLocalUsed_InReference (:,1));
+replacementData = nan(NreferenceTimes,Ncols);
+indiciesToFill = find(~isnan(sensor_indiciesLocalUsed_InReference));
+replacementData(indiciesToFill,:) = dataToFix(sensor_indiciesLocalUsed_InReference(indiciesToFill),:);
+
+
+% Fix any NaN values
+if 0==fill_type
+    % Keep the NaN
+elseif 1==fill_type
+
+    if 0~=fid
+        fprintf(fid,'\t\t Removing NaN values.\n');
+    end
+
+    % Make sure the data are strictly increasing
+    replacementData_noNan = replacementData(~isnan(replacementData(:,1)),:);
+    differences = diff(replacementData_noNan);
+    assert(all(differences>0));
+
+    % Determine the reference time sequence to use as a filler
+    reference_centisecond_sequence = fcn_INTERNAL_calculateReferenceTimeSequences(allsensor_time_duration, sensor_centiSeconds);
+
+    trueTime     = reference_centisecond_sequence*0.01 + allSensor_startTime_Seconds;
+
+    % For debugging
+    if 1==flag_doDebug
+        differences  = trueTime - replacementData;
+        old_replacementData = replacementData;
+        fprintf(1,'\n\n\n\t\t\t Before: \n');
+        table_data = [trueTime old_replacementData differences];
+        header_strings = [{'trueTime'}, {'sensorTime'},{'differences'}];
+        formatter_strings = [{'%.3f'},{'%.3f'},{'%.3f'}];
+        N_chars = 15; % All columns have same number of characters
+        actualPrintLength = min(debugPrintLength,length(table_data));
+        fcn_DebugTools_debugPrintTableToNCharacters(table_data(1:actualPrintLength,:), header_strings, formatter_strings,N_chars);
+    end
+
+    % Insert reference times
+    badIndicies  = find(isnan(replacementData(:,1)));
+    % averageOffset = mean(differences,"omitmissing");
+
+    replacementData(badIndicies,:) = trueTime(badIndicies,:);
+
+    % For debugging
+    % new_data = trimmed_dataStructure.(sensor_name).(thisFieldName);
+    if 1==flag_doDebug
+        fprintf(1,'\n\n\n\t\t\t After: \n');
+        differences  = trueTime - replacementData;
+        table_data = [trueTime replacementData differences];
+        header_strings = [{'trueTime'}, {'sensorTime'},{'differences'}];
+        formatter_strings = [{'%.3f'},{'%.3f'},{'%.3f'}];
+        N_chars = 15; % All columns have same number of characters
+        actualPrintLength = min(debugPrintLength,length(table_data));
+        fcn_DebugTools_debugPrintTableToNCharacters(table_data(1:actualPrintLength,:), header_strings, formatter_strings,N_chars);
+    end
+
+    % Make sure the data is sorted
+    differences = diff(replacementData);
+    assert(~any(differences<0));
+
+end
+
+end % fcn_INTERNAL_mapSensorIndicies
+
+%% fcn_INTERNAL_mapAllFieldsInSensor
+function trimmed_dataStructure = fcn_INTERNAL_mapAllFieldsInSensor(allSensor_startTime_Seconds, lengthReference, dataStructure, sensor_name, sensor_centiSeconds, sensor_data, sensor_indiciesLocalUsed_InReference, field_name, allsensor_time_duration, debuggingOffset, fid)
+% Goes through all the sensors, filling bad data with NaN values. Skips the
+% field associated with the query field (ROS_Time for example) and skips
+% also GPS_Time.
+
+trimmed_dataStructure = dataStructure;
+
+% Loop through all subfields
+subfieldNames = fieldnames(sensor_data);
+for i_subField = 1:length(subfieldNames)
+    % Grab the name of the ith subfield
+    thisFieldName = subfieldNames{i_subField};
+    if ~strcmp(thisFieldName,field_name) && ~strcmp(thisFieldName,'GPS_Time')
+
+        dataToFix = dataStructure.(sensor_name).(thisFieldName);
+        [Nrows,~] = size(dataToFix);
+
+        if ~iscell(dataToFix) % Is it a cell? If yes, skip it
+            if Nrows ~= 1 % Is it a scalar? If yes, skip it
+                % It's an array, make sure it has right length
+                if lengthReference~= length(dataToFix)
+                    if strcmp(sensor_name,'SickLiDAR') && strcmp(thisFieldName,'Sick_Time')
+                        warning('on','backtrace');
+                        warning('SICK lidar has a time vector that does not match data arrays. This will make this data unusable.');
+                    elseif strcmp(sensor_name,'TRIGGER_TrigBox_RearTop') && strcmp(thisFieldName,'Mode')
+                        warning('on','backtrace');
+                        warning('Trigger box ''Mode'' skipped - it will not match other data.');
+                    elseif strcmp(sensor_name,'ENCODER_USDigital_RearAxle') && strcmp(thisFieldName,'Mode')
+                        warning('on','backtrace');
+                        warning('Encoder box ''Mode'' skipped - it will not match other data.');
+                    else
+                        warning('on','backtrace');
+                        warning('Sensor %s contains a datafield %s that has an amount of data not equal to the %s. This is usually because data is missing.',sensor_name,thisFieldName, field_name);
+                    end
+                else
+                    % Replace the values
+                    data_fill_type = 0; % For data, never want to fill in the missing data with any values
+                    replacementData = fcn_INTERNAL_mapSensorIndicies(allSensor_startTime_Seconds, dataToFix, sensor_centiSeconds, sensor_indiciesLocalUsed_InReference, allsensor_time_duration, data_fill_type, debuggingOffset, fid);
+                    trimmed_dataStructure.(sensor_name).(thisFieldName) = replacementData;
+                end
+            end
+        end
+    end
+end
+end % fcn_INTERNAL_mapAllFieldsInSensor
