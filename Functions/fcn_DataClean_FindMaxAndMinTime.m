@@ -89,7 +89,9 @@ for idx_field = 1:length(fields)
         
        current_field_struct_time = current_field_struct.(time_type);
        current_field_centiSeconds = current_field_struct.centiSeconds;
-        
+       
+
+       
     end
     ROSTime_centiSeconds = round(100*current_field_struct_time/current_field_centiSeconds)*current_field_centiSeconds;
     sensor_centiSeconds = [sensor_centiSeconds; current_field_centiSeconds]; %#ok<AGROW>

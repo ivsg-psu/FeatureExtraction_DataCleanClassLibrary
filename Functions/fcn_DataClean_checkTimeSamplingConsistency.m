@@ -361,7 +361,7 @@ for i_data = 1:Ndata
             indexRange = 10;
             start_print = max(bad_index-indexRange,1);
             end_print = min(bad_index+indexRange,length(timeDifferences(:,1)));
-            temp = [sensor_data.Trigger_Time timeData  timeDifferences effectiveSamplingIntervals];
+            temp = [sensor_data.GPS_Time timeData  timeDifferences effectiveSamplingIntervals];
             fprintf(1,'\t\tExample of failure:\n')
             fprintf(1,'\t\t\t (Trigger_time) \t (%s) \t (timeDifferences) \t (effectiveSamplingIntervals)\n',field_name)
             for ith_index = start_print:end_print

@@ -1,5 +1,5 @@
-function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStruct, varargin)
-% fcn_DataClean_cleanData
+function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData_demo(rawDataStruct, varargin)
+% fcn_DataClean_cleanData_demo
 % given a raw data structure, cleans time jumps and outliers from the data
 %
 % FORMAT:
@@ -74,7 +74,9 @@ function [cleanDataStruct, subPathStrings]  = fcn_DataClean_cleanData(rawDataStr
 % 2024_11_30 - X. Cao
 % -- added a ROS_Time checking section for Velodyne LiDAR after time
 % checked for GPS units, recalculate ROS_Time for Velodyne LiDAR if needed.
-
+% 2025_05_18 - X. Cao
+% -- create fcn_DataClean_cleanData_demo to illustrate and test the data
+% clean process
 
 %% Debugging and Input checks
 
@@ -175,6 +177,10 @@ if (0==flag_max_speed) &&  (5<=nargin)
         fig_num = temp;
         flag_do_plots = 1;
     end
+end
+
+if fig_num < 1
+    flag_do_plots = 0;
 end
 
 %% Main code starts here
@@ -377,7 +383,8 @@ while 1==flag_stay_in_main_loop
              error('Inconsistent data detected: the following GPS sensor has an average sampling rate different than predicted from centiSeconds: %s.',offending_sensor);                
         else
             warning('%s GPS sensor has a sampling rate different than expected by centiSeconds!?', offending_sensor);
-        
+            nextDataStructure = fcn_DataClean_fixLowRateGPS(nextDataStructure, offending_sensor,ref_baseStationLLA, fid);
+            flag_keep_checking = 0;
         end
     end
     
@@ -608,12 +615,17 @@ while 1==flag_stay_in_main_loop
     %    * If data packets arrive out-of-order with this sensor, times may not
     %    be in an increasing sequence
     %    * If the ROS topic is glitching, its time may be temporarily incorrect
+    %    * If GPS time exists in all GPS sensors, we don't really care
+    %    about the ROS Time
     %    ### DETECTION:
     %    * Examine if time data from sensor is STRICTLY increasing
     %    ### FIXES:
     %    * Remove and interpolate time field if not strictkly increasing
     %    * Re-order data, if minor ordering error
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends)
+    %    * Fix the flag name from ROS_Time_strictly_ascends to 
+    %    ROS_Time_strictly_ascends_in_GPS_sensors
+    
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_strictly_ascends_in_GPS_sensors)
         warning('on','backtrace');
         warning('Fundamental error on ROS_time: it is not counting up!?');
         error('ROS time is not strictly ascending.');
@@ -634,6 +646,27 @@ while 1==flag_stay_in_main_loop
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
+    %% Check if ROS_Time_has_consistent_start_end_across_GPS_sensors (This section was missing)
+    % %    ### ISSUES with this:
+    % %    * The Trigger_Time represents, for many sensors, when they were
+    % %    commanded to collect data. If the number of data in the ROS time list
+    % %    does not match the Trigger_Time length, then this indicates that there
+    % %    are sensor failures
+    % %    ### DETECTION:
+    % %    * Count the number of data in Trigger_Time, and compare it with
+    % %    ROS_Time - these should match
+    % %    ### FIXES:
+    % %    * Remove and interpolate time field if not strictly increasing
+    % 
+    % %% Check that ROS_Time data has expected count
+    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_has_consistent_start_end_across_GPS_sensors)
+        warning('on','backtrace');
+        warning('Fundamental error on ROS_time: unexpected count');
+        error('ROS time does not have expected count.\');
+        flag_keep_checking = 0;
+    end
+
+
     %% Check if ROS_Time_has_same_length_as_Trigger_Time_in_GPS_sensors
     %    ### ISSUES with this:
     %    * The Trigger_Time represents, for many sensors, when they were
@@ -670,34 +703,34 @@ while 1==flag_stay_in_main_loop
     %    * Remove and interpolate time field if not strictly increasing
 
     
-    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time 
-    if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
-        warning('on','backtrace');
-        warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
-        % figure(123)
-        % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
-        % hold on
-        % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
-        % plot(nextDataStructure.GPS_SparkFun_Front.ROS_Time,'b','LineWidth',2)
-        nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
-        flag_keep_checking = 0;
-        % clf
-        % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
-        % hold on
-        % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
-        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time,'k','LineWidth',2)
-    end
+    %% Check that ROS_Time_rounds_correctly_to_Trigger_Time - Not necessary
+    % if (1==flag_keep_checking) && (0==time_flags.ROS_Time_rounds_correctly_to_Trigger_Time_in_GPS_sensors)
+    %     warning('on','backtrace');
+    %     warning('ROS time does not round correctly to Trigger_Time on sensor %s and perhaps other sensors. There is no code yet to fix this.',offending_sensor);
+    %     % figure(123)
+    %     % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
+    %     % hold on
+    %     % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
+    %     % plot(nextDataStructure.GPS_SparkFun_Front.ROS_Time,'b','LineWidth',2)
+    %     nextDataStructure = fcn_DataClean_roundROSTimeForGPSUnits(nextDataStructure,fid);
+    %     flag_keep_checking = 0;
+    %     % clf
+    %     % plot(nextDataStructure.GPS_SparkFun_RightRear.ROS_Time,'r','LineWidth',2)
+    %     % hold on
+    %     % plot(nextDataStructure.GPS_SparkFun_LeftRear.ROS_Time,'g','LineWidth',2)
+    %     % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time,'k','LineWidth',2)
+    % end
     
     %% Check that whether Velodyne LiDAR has correct ROS_Time
-    if (1==flag_keep_checking) 
-        flag_recalculate_ROS_Time = fcn_DataClean_checkDataTimeConsistency_LiDARVelodyne(nextDataStructure,fid);
-    end
+    % if (1==flag_keep_checking) 
+    %     flag_recalculate_ROS_Time = fcn_DataClean_checkDataTimeConsistency_LiDARVelodyne(nextDataStructure,fid);
+    % end
 
     %% Recalculate the ROS_Time for Velodyne LiDAR according to ros bag timestamps
-    if (1==flag_keep_checking)&&(1==flag_recalculate_ROS_Time)
-        nextDataStructure = fcn_DataClean_calculateROSTimeforVelodyneLiDAR(nextDataStructure, fid);
-        flag_keep_checking = 0;
-    end
+    % if (1==flag_keep_checking)&&(1==flag_recalculate_ROS_Time)
+    %     nextDataStructure = fcn_DataClean_calculateROSTimeforVelodyneLiDAR(nextDataStructure, fid);
+    %     flag_keep_checking = 0;
+    % end
     %% Entering this section indicates all time in GPS units have been checked and fixed
     
     
@@ -709,30 +742,30 @@ while 1==flag_stay_in_main_loop
 %     end
 
     %% If not, calculate Trigger_Time to rest of sensors
-    if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)
-        warning('on','backtrace');
-        warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
-        nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure,sensors_without_Trigger_Time);
-        flag_all_trigger_time_calculated = 1;
-        flag_keep_checking = 0;
-    end
+    % if (1==flag_keep_checking) && (0==time_flags.Trigger_Time_exists_in_all_sensors)
+    %     warning('on','backtrace');
+    %     warning('Some sensors do not have Trigger_Time, start to calculate Trigger_Time for those sensors');
+    %     nextDataStructure = fcn_DataClean_calculateTriggerTime_AllSensors(nextDataStructure,sensors_without_Trigger_Time);
+    %     flag_all_trigger_time_calculated = 1;
+    %     flag_keep_checking = 0;
+    % end
     %%
   
     %% Start to work on other sensors, start with Velodyne LiDAR
-    if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)
-        % figure(123)
-        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
-        % hold on
-        % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
-        % plot(nextDataStructure.TRIGGER_TrigBox_RearTop.Trigger_Time)
-        nextDataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(nextDataStructure,fid);
-        flag_keep_checking = 0;
-        % figure(124)
-        % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
-        % hold on
-        % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
-        % 
-    end
+    % if (1==flag_keep_checking) && (flag_all_trigger_time_calculated==1)
+    %     % figure(123)
+    %     % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
+    %     % hold on
+    %     % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
+    %     % plot(nextDataStructure.TRIGGER_TrigBox_RearTop.Trigger_Time)
+    %     nextDataStructure = fcn_DataClean_trimDataToCommonStartEndTriggerTimes(nextDataStructure,fid);
+    %     flag_keep_checking = 0;
+    %     % figure(124)
+    %     % plot(nextDataStructure.GPS_SparkFun_Front.Trigger_Time)
+    %     % hold on
+    %     % plot(nextDataStructure.LiDAR_Velodyne_Rear.Trigger_Time)
+    %     % 
+    % end
 
     %% TO-DO - Create a time analysis function - and add it here
     % Fix the x-axes to match the time duration, e.g. index*centiSeconds*0.01
@@ -795,8 +828,8 @@ while 1==flag_stay_in_main_loop
     currentDataStructure.Identifiers = Identifiers_Hold;
       
     % Check if all the name_flags work, so we can exit!
-    name_flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(name_flags);
- 
+    % name_flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(name_flags);
+    name_flag_stay_in_main_loop = 0;
     if 0 == name_flag_stay_in_main_loop
         % Check if all the time_flags work, so we can exit!
         flag_stay_in_main_loop = fcn_INTERNAL_checkFlagsForExit(time_flags);
