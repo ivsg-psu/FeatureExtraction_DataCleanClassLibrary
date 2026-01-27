@@ -109,6 +109,8 @@
 % -- updated PlotRoad to fix plotting bugs
 % 2024_12_16 - S. Brennan, sbrennan@psu.edu
 % -- updated debug library
+% 2025_09_27 - S. Brennan, sbrennan@psu.edu
+% -- updated debug library to DebugTools_v2025_09_26
 
 %
 % Known issues:
@@ -225,9 +227,14 @@ close all
 clear library_name library_folders library_url
 
 ith_library = 1;
-library_name{ith_library}    = 'DebugTools_v2024_12_16';
+library_name{ith_library}    = 'DebugTools_v2025_09_26b';
 library_folders{ith_library} = {'Functions','Data'};
-library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2024_12_16.zip';
+library_url{ith_library}     = 'https://github.com/ivsg-psu/Errata_Tutorials_DebugTools/archive/refs/tags/DebugTools_v2025_09_26b.zip';
+
+ith_library = ith_library+1;
+library_name{ith_library}    = 'LoadRawDataToMATLAB_v2025_09_23b';
+library_folders{ith_library} = {'Functions', 'Data'};
+library_url{ith_library}     = 'https://github.com/ivsg-psu/FieldDataCollection_DataCollectionProcedures_LoadRawDataToMATLAB/archive/refs/tags/LoadRawDataToMATLAB_v2025_09_23b.zip';
 
 ith_library = ith_library+1;
 library_name{ith_library}    = 'PathClass_v2024_03_14';
@@ -342,6 +349,8 @@ setenv('MATLABFLAG_DATACLEAN_FLAG_DO_DEBUG','0');
 % FORMAT:
 %
 %      rawData = fcn_DataClean_loadMappingVanDataFromFile(dataFolderString, Identifiers, (bagName), (fid), (Flags), (fig_num))
+
+% fcn_DataClean_createHashTable_LidarVelodyne
 
 % Specify the data to use
 % The data can be found in OneDrive IVSG\GitHubMirror\MappingVanDataCollection\ParsedData

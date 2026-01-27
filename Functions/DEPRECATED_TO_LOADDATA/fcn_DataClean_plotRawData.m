@@ -1,4 +1,8 @@
 function fcn_DataClean_plotRawData(rawData, varargin)
+warning('on','backtrace');
+warning(['fcn_DataClean_plotRawData is being deprecated.' ...
+    ' Use fcn_LoadRawDataToMATLAB_plotRawData instead.']);
+
 % fcn_DataClean_plotRawData
 % performs a test plot of the rawData to confirm the location that was
 % mapped

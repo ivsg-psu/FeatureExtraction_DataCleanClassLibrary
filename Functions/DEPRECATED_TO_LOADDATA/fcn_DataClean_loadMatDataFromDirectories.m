@@ -1,4 +1,8 @@
 function matDataCellArray  = fcn_DataClean_loadMatDataFromDirectories(rootdirs, varargin)
+warning('on','backtrace');
+warning(['fcn_DataClean_loadMatDataFromDirectories is being deprecated.' ...
+    ' Use fcn_LoadRawDataToMATLAB_loadMatDataFromDirectories instead.']);
+
 % fcn_DataClean_loadMatDataFromDirectories
 % imports MATLAB data from files contained in specified root
 % directories, including all subdirectories. Stores each result into a cell

@@ -7,7 +7,8 @@ function rawDataCellArray  = fcn_DataClean_loadRawDataFromDirectories(rootdirs, 
 %
 % FORMAT:
 %
-%      rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags))
+%      rawDataCellArray = fcn_DataClean_loadRawDataFromDirectories(...
+% rootdirs, Identifiers, (bagQueryString), (fid), (Flags), (saveFlags), (plotFlags))
 %
 % INPUTS:
 %
